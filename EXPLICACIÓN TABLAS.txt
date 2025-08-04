@@ -1,0 +1,182 @@
+Te voy a dar una explicación completa de las bases de datos, entidades y fragmentos de tu aplicación BithermManagement:
+📊 BASES DE DATOS
+AppDatabase (com.bithermmanagement.database)
+Versión: 8
+Ubicación: app/src/main/java/com/bithermmanagement/database/AppDatabase.kt
+Función: Base de datos principal que unifica todas las entidades del sistema
+🗂️ ENTIDADES
+1. UserEntity (Tabla: users)
+@Entity(tableName = "users")
+data class UserEntity(
+    @PrimaryKey val cod: String,
+    val nombre: String,
+    val apellidos: String,
+    val dni: String,
+    val fechaNacimiento: Date?,
+    val app: String,           // Usuario de login
+    val password: String,      // Contraseña
+    val rol: String,           // Rol del usuario
+    val swWeb: Boolean,        // Acceso web
+    val equipoAsignado: String?,
+    val fechaCalibracion: Date?,
+    val telefonoEmpresa: String?,
+    val emailEmpresa: String?,
+    val altaEmpresa: Date?,
+    val telefonoPersonal: String?,
+    val emailPersonal: String?,
+    val categoria: String?,
+    val rMedico: Boolean,      // Revisión médica
+    val accesoRLR: Boolean,    // Acceso RLR
+    val supEjec: Boolean       // Supervisor ejecutivo
+)
+
+
+
+Utilidad: Almacena información completa de usuarios/empleados del sistema.
+2. InspeccionEntity (Tabla: inspecciones)
+@Entity(tableName = "inspecciones")
+data class InspeccionEntity(
+    @PrimaryKey val id: String,
+    val instalacion: String?,
+    val unidad: String?,
+    val area: String?,
+    val linea: String?,
+    val marca: String?,
+    val modelo: String?,
+    val tipo: String?,
+    val p: String?,
+    val diametro: String?,
+    val conexion: String?,
+    val aislamiento: String?,
+    val presEntrada: String?,
+    val presSalida: String?,
+    val byPass: String?,
+    val descarga: String?,
+    val aplicacion: String?,
+    val servicio: String?,
+    val ubicacion: String?,
+    val estado: String?,
+    val fechaInspeccion: String?,
+    val fugaKgH: String?,
+    val nota: String?,
+    val identidadInspector: String?,
+    val detectorUtilizado: String?,
+    val incidencias: String?,
+    val gps: String?,
+    val foto: String?,
+    val fotoUbicacion: String?,
+    val orden: Double?,
+    val gpsFotoUbicacion: String?,
+    val extra: String?,        // JSON con datos adicionales
+    val modificadoLocal: Boolean = false
+)
+
+
+Utilidad: Registros de inspecciones de equipos industriales con fotos, GPS y datos técnicos.
+3. Equipo (Tabla: equipos)
+@Entity(tableName = "equipos")
+data class Equipo(
+    @PrimaryKey val id: String,
+    val estado: String?,
+    val area: String?,
+    val unidad: String?,
+    val marca: String?,
+    val modelo: String?,
+    val tipo: String?,
+    val diametro: String?,
+    val conexion: String?,
+    val presEntrada: String?,
+    val presSalida: String?,
+    val descarga: String?,
+    val aplicacion: String?,
+    val servicio: String?,
+    val ubicacion: String?,
+    val fechasteado: String?,
+    val nota: String?,
+    val inspector: String?,
+    val detector: String?,
+    val incidencias: String?,
+    val gps: String?,
+    val foto: String?,
+    val fotos: String?,        // JSON con lista de fotos
+    val orden: Double?,
+    val instalacion: String?,
+    val linea: String?,
+    val aislamiento: String?
+)
+
+
+Utilidad: Vista simplificada de equipos para la interfaz de usuario.
+4. MenuEntity (Tabla: menu)
+@Entity(tableName = "menu")
+data class MenuEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val fragment: String,      // Identificador del fragmento
+    val nombreVisible: String, // Nombre que ve el usuario
+    val peso: Int,             // Orden de aparición
+    val colorHex: String       // Color en formato HEX
+)
+
+Utilidad: Menús principales del sistema con colores personalizables.
+5. SubMenuEntity (Tabla: submenu)
+@Entity(tableName = "submenu")
+data class SubMenuEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val menuPrincipal: String, // Fragmento del menú padre
+    val item: String,          // Identificador del submenú
+    val rol: Int,              // Rol requerido para acceso
+    val colorHex: String,      // Color del card
+    val nombreVisible: String  // Nombre visible
+)
+Utilidad: Submenús con control de acceso por rol.
+6. FavoritoEntity (Tabla: favoritos)
+@Entity(tableName = "favoritos")
+data class FavoritoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuario: String,       // Usuario que tiene el favorito
+    val item: String           // Item favorito (submenú)
+)
+Utilidad: Favoritos personalizados por usuario.
+7. PermisoEntity (Tabla: permisos)
+@Entity(tableName = "permisos")
+data class PermisoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val usuario: String,       // Usuario
+    val fragment: String,      // Fragmento/Item
+    val permiso: Boolean       // Si tiene permiso o no
+)
+Utilidad: Control granular de permisos por usuario y funcionalidad.
+🧩 FRAGMENTOS Y SU UTILIDAD
+Fragmentos de Autenticación
+LoginActivity: Pantalla de login con credenciales
+SplashActivity: Pantalla de carga inicial
+Fragmentos de Menú Principal
+FragmentMainMenu: Menú principal con cards de colores
+FragmentSubMenuList: Lista de submenús filtrados por permisos
+FragmentFavoritos: Vista de favoritos del usuario
+Fragmentos de Usuarios
+fragmentUsuariosPerfil: Gestión de perfiles de usuario
+fragmentUsuariosFichaje: Sistema de fichaje de empleados
+Fragmentos de Inspección
+FragmentInspeccionActual: Vista principal de equipos con filtros y drag&drop
+FragmentInspeccionBusqueda: Búsqueda avanzada de inspecciones
+FragmentInspeccionConfiguracion: Configuración y sincronización con Google Sheets
+Fragmentos de Items Específicos
+FragmentItemTitle: Fragmento genérico para mostrar títulos
+FragmentInspeccionActual: Gestión de equipos en tiempo real
+   SISTEMA DE SINCRONIZACIÓN
+GoogleSheetsManager
+Descarga estructura de menús desde hoja "G.MENU"
+Sincroniza usuarios desde hoja "TRABAJADORES"
+Maneja colores HEX y permisos por rol
+MenuRepository
+Gestiona sincronización de menús, submenús, favoritos y permisos
+Mantiene funcionalidad offline con última configuración válida
+🎨 CARACTERÍSTICAS ESPECIALES
+Colores HEX: Los colores se definen en Google Sheets y se aplican dinámicamente
+Control de Permisos: Sistema granular que permite accesos especiales
+Favoritos Independientes: Los favoritos se muestran aunque no tengas permiso general
+Funcionamiento Offline: La app funciona con la última configuración sincronizada
+Drag & Drop: Reordenamiento visual de equipos con persistencia en BD
+Esta arquitectura permite una gestión completa y flexible del sistema de inspecciones industriales con control de acceso personalizado y sincronización remota.
+

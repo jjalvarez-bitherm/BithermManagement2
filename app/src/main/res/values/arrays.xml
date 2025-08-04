@@ -1,0 +1,26 @@
+<resources>
+    <string-array name="periodicidad_array">
+        <item>MONITORIZADO</item>
+        <item>MENSUAL</item>
+        <item>ESTACIONAL (INVIERNO)</item>
+        <item>TRIMESTRAL</item>
+        <item>ANUAL</item>
+        <item>PEM-UNIDAD</item>
+        <item>EMERGENCIAS</item>
+    </string-array>
+    <string-array name="instalacion_type_array">
+        <item>SW LINEA</item>
+        <item>NPT LINEA</item>
+        <item>CU LINEA</item>
+        <item>TVS</item>
+        <item>MANIFOLD</item>
+        <item>PIANILLO</item>
+    </string-array>
+    <string-array name="aislamiento_array">
+        <item>SIN BLOQUEO</item>
+        <item>BLOQUEO MAL</item>
+        <item>V/V ANTERIOR</item>
+        <item>V/V POSTERIOR</item>
+        <item>V/V ANT-POST</item>
+    </string-array>
+</resources> 

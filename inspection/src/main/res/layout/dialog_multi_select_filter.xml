@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white">
+
+    <TextView
+        android:id="@+id/txtTituloFiltro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selecciona opciones"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp"/>
+
+    <androidx.appcompat.widget.SearchView
+        android:id="@+id/searchViewFiltro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:queryHint="Buscar..."
+        android:iconifiedByDefault="false"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_chip_bitherm"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerOpcionesFiltro"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:overScrollMode="never"
+        android:background="@android:color/white"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp">
+        <Button
+            android:id="@+id/btnCancelarFiltro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CANCELAR"
+            android:textColor="#8BC34A"
+            android:background="@android:color/transparent"/>
+        <Button
+            android:id="@+id/btnAceptarFiltro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ACEPTAR"
+            android:textColor="#2196F3"
+            android:background="@android:color/transparent"/>
+    </LinearLayout>
+
+</LinearLayout> 

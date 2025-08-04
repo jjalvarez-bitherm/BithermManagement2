@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:showIn="navigation_view">
+
+    <!-- CONFIGURACIÓN -->
+    <item android:title="CONFIGURACIÓN"
+        android:id="@+id/nav_configuration"
+        android:icon="@drawable/ic_settings"
+        app:itemWeight="1">
+        <menu android:visible="false">
+            <item
+                android:id="@+id/nav_user_config"
+                android:icon="@drawable/ic_person"
+                android:title="CONF. USUARIO"
+                app:itemWeight="1" />
+            <item
+                android:id="@+id/nav_app_config"
+                android:icon="@drawable/ic_settings"
+                android:title="CONF. APLICACIÓN"
+                app:itemWeight="4" />
+            <item
+                android:id="@+id/nav_device_config"
+                android:icon="@drawable/ic_equipment"
+                android:title="CONF. EQUIPO"
+                app:itemWeight="3" />
+        </menu>
+    </item>
+
+    <!-- GESTIÓN DE TRABAJADORES -->
+    <item android:title="GESTIÓN DE TRABAJADORES"
+        android:id="@+id/nav_worker_management"
+        android:icon="@drawable/ic_workers"
+        app:itemWeight="1">
+        <menu android:visible="false">
+            <item
+                android:id="@+id/nav_my_profile"
+                android:icon="@drawable/ic_profile"
+                android:title="Mi Perfil"
+                app:itemWeight="1" />
+            <item
+                android:id="@+id/nav_my_checkin"
+                android:icon="@drawable/ic_calendar"
+                android:title="Mi Fichaje"
+                app:itemWeight="1" />
+            <item
+                android:id="@+id/nav_worker_list"
+                android:icon="@drawable/ic_workers"
+                android:title="Lista de Trabajadores"
+                app:itemWeight="3" />
+            <item
+                android:id="@+id/nav_today_checkins"
+                android:icon="@drawable/ic_calendar"
+                android:title="Fichajes de Hoy"
+                app:itemWeight="3" />
+        </menu>
+    </item>
+
+    <!-- GESTIÓN DE INSTALACIONES -->
+    <item android:title="GESTIÓN DE INSTALACIONES"
+        android:id="@+id/nav_facilities_management"
+        android:icon="@drawable/ic_building"
+        app:itemWeight="1">
+        <menu android:visible="false">
+            <item
+                android:id="@+id/nav_new_facility"
+                android:icon="@drawable/ic_add"
+                android:title="Nueva Instalación"
+                app:itemWeight="4" />
+            <item
+                android:id="@+id/nav_facilities_list"
+                android:icon="@drawable/ic_building"
+                android:title="Lista de Instalaciones"
+                app:itemWeight="1" />
+        </menu>
+    </item>
+
+    <!-- GESTIÓN DE INSPECCIÓN -->
+    <item android:title="GESTIÓN DE INSPECCIÓN"
+        android:id="@+id/nav_inspection_management"
+        android:icon="@drawable/ic_inspection"
+        app:itemWeight="1">
+        <menu android:visible="false">
+            <item
+                android:id="@+id/nav_inspection_config"
+                android:icon="@drawable/ic_settings"
+                android:title="Configuración"
+                app:itemWeight="4" />
+            <item
+                android:id="@+id/nav_current_inspection"
+                android:icon="@drawable/ic_inspection"
+                android:title="Inspección Actual"
+                app:itemWeight="2" />
+            <item
+                android:id="@+id/nav_current_download"
+                android:icon="@drawable/ic_inspection"
+                android:title="Descarga Actual"
+                app:itemWeight="2" />
+            <item
+                android:id="@+id/nav_previous_inspections"
+                android:icon="@drawable/ic_inspection"
+                android:title="Inspecciones Anteriores"
+                app:itemWeight="1" />
+            <item
+                android:id="@+id/nav_search_purger"
+                android:icon="@drawable/ic_inspection"
+                android:title="Buscar purgador"
+                app:itemWeight="1" />
+        </menu>
+    </item>
+
+    <!-- GESTIÓN DE EQUIPOS -->
+    <item android:title="GESTIÓN DE EQUIPOS"
+        android:id="@+id/nav_equipment_management"
+        android:icon="@drawable/ic_equipment"
+        app:itemWeight="1">
+        <menu android:visible="false">
+            <item
+                android:id="@+id/nav_new_equipment"
+                android:icon="@drawable/ic_add"
+                android:title="Nuevo Equipo"
+                app:itemWeight="4" />
+            <item
+                android:id="@+id/nav_equipment_list"
+                android:icon="@drawable/ic_equipment"
+                android:title="Lista de Equipos"
+                app:itemWeight="1" />
+        </menu>
+    </item>
+
+    <!-- CERRAR SESIÓN -->
+    <item
+        android:id="@+id/nav_logout"
+        android:icon="@drawable/ic_logout"
+        android:title="Cerrar Sesión"
+        app:itemWeight="1" />
+
+</menu>

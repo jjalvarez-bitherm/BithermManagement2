@@ -1,0 +1,7 @@
+backups\
+.git\
+build\
+.gradle\
+.idea\
+*.iml
+local.properties 

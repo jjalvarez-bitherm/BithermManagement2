@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bitherm_gradient"
+    android:clipToPadding="false"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:paddingBottom="120dp">
+        <!-- Layout principal -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="80dp">
+
+            <!-- Título principal -->
+            <TextView
+                android:id="@+id/txtTitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Configuración de Inspección"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                android:gravity="center"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginBottom="18dp"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="14sp"
+                android:autoSizeMaxTextSize="22sp"
+                android:autoSizeStepGranularity="1sp" />
+
+            <!-- Fila FECHA -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.25"
+                    android:text="FECHA:"
+                    android:textColor="@android:color/white"
+                    android:gravity="end|center_vertical"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="3dp" />
+                <TextView
+                    android:id="@+id/txtFecha"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.75"
+                    android:background="@drawable/bg_field"
+                    android:padding="10dp"
+                    android:textColor="@android:color/black"
+                    android:textSize="15sp"
+                    android:gravity="start|center_vertical"
+                    android:textStyle="normal"
+                    android:fontFamily="sans-serif"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:text="Seleccionar fecha" />
+            </LinearLayout>
+
+            <!-- Fila LIBRO -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.25"
+                    android:text="LIBRO:"
+                    android:textColor="@android:color/white"
+                    android:gravity="end|center_vertical"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="3dp" />
+                <Spinner
+                    android:id="@+id/spinnerLibro"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.75"
+                    android:background="@drawable/bg_field"
+                    android:padding="10dp"
+                    android:spinnerMode="dropdown" />
+            </LinearLayout>
+
+            <!-- Fila HOJA -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="18dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.25"
+                    android:text="HOJA:"
+                    android:textColor="@android:color/white"
+                    android:gravity="end|center_vertical"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="3dp" />
+                <Spinner
+                    android:id="@+id/spinnerHoja"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.75"
+                    android:background="@drawable/bg_field"
+                    android:padding="10dp"
+                    android:spinnerMode="dropdown" />
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gestión de datos:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Botones gestión de datos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="18dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDescargar"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.48"
+                    android:text="DESCARGAR"
+                    app:icon="@drawable/ic_download"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <ImageView
+                    android:id="@+id/imgBorrar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_delete"
+                    android:contentDescription="Borrar"
+                    android:padding="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="@color/md_theme_errorContainer" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnActualizar"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.48"
+                    android:text="ACTUALIZAR"
+                    app:icon="@drawable/ic_update"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gestión de fotos:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Botones gestión de fotos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="18dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDescargarFotos"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="DESCARGAR"
+                    app:icon="@drawable/ic_download"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnActualizarFotos"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="ACTUALIZAR"
+                    app:icon="@drawable/ic_update"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Resumen de la base de datos:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Caja resumen -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_resumen_transparente"
+                android:padding="16dp"
+                android:layout_marginBottom="18dp">
+                <TextView
+                    android:id="@+id/txtTotalEquipos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Total equipos: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtInspeccionados"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Equipos inspeccionados: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtModificados"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Equipos modificados: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtFotosDrive"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fotos en Drive: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtFotosNuevas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fotos nuevas: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtFotosPendientes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fotos pendientes de subir: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Opciones avanzadas:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Botones opciones avanzadas -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingTop="24dp"
+                android:paddingBottom="24dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopiarDB"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="COPIAR\nDB"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCalibrarPantalla"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="CALIBRAR\nPANTALLA"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuscarActualizaciones"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="BUSCAR\nACTUALIZACIONES"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+
+            <!-- NOTA: Tras ejecutar borrar, descargar, actualizar o fotos, se debe actualizar el resumen -->
+
+        </LinearLayout>
+        <!-- Barra de carga -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView> 

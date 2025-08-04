@@ -1,0 +1,146 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-kapt'
+    id 'kotlin-parcelize'
+    id 'dagger.hilt.android.plugin'
+}
+
+android {
+    namespace 'com.bithermmanagement'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.bithermmanagement"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    // Tarea para generar timestamp de compilación
+    task generateBuildTimestamp {
+        doLast {
+            def timestamp = new Date().format("yyyy-MM-dd HH:mm")
+            def buildInfoFile = new File("$projectDir/src/main/java/com/bithermmanagement/ui/login/BuildInfo.kt")
+            buildInfoFile.text = """
+package com.bithermmanagement.ui.login
+
+object BuildInfo {
+    const val BUILD_TIMESTAMP = "$timestamp"
+}
+"""
+        }
+    }
+    
+    // Ejecutar la tarea antes de compilar
+    preBuild.dependsOn generateBuildTimestamp
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+    buildFeatures {
+        viewBinding true
+    }
+    packagingOptions {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += 'META-INF/DEPENDENCIES'
+        }
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+dependencies {
+    implementation project(':login')
+    implementation project(':core')
+    implementation project(':navigation')
+    implementation project(':multimedia')
+    
+    // Forzar versión específica de google-api-client para evitar conflictos
+    constraints {
+        implementation('com.google.api-client:google-api-client') {
+            version {
+                strictly '1.31.5'
+            }
+        }
+    }
+    
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.7.6'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.7.0'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.7.7'
+    
+    // Room
+    implementation 'androidx.room:room-runtime:2.6.1'
+    implementation 'androidx.room:room-ktx:2.6.1'
+    kapt 'androidx.room:room-compiler:2.6.1'
+    
+    // Hilt
+    implementation 'com.google.dagger:hilt-android:2.48'
+    kapt 'com.google.dagger:hilt-android-compiler:2.48'
+    
+    // Dependencias para el sistema de fichaje
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    implementation 'com.google.android.gms:play-services-location:21.1.0'
+    implementation('com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0') {
+        exclude group: 'com.google.api-client', module: 'google-api-client'
+    }
+    implementation 'com.google.auth:google-auth-library-oauth2-http:1.19.0'
+    implementation('com.google.api-client:google-api-client-android:2.2.0') {
+        exclude group: 'com.google.api-client', module: 'google-api-client'
+    }
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    
+    // Google Drive API - Versiones compatibles
+    implementation('com.google.apis:google-api-services-drive:v3-rev136-1.25.0') {
+        exclude group: 'com.google.api-client', module: 'google-api-client'
+    }
+    implementation 'com.google.api-client:google-api-client:1.31.5'
+    implementation 'com.google.http-client:google-http-client-gson:1.31.5'
+    implementation 'com.google.http-client:google-http-client-jackson2:1.32.1'
+    
+    // Google Maps
+    implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    
+    // Glide para carga de imágenes
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    kapt 'com.github.bumptech.glide:compiler:4.16.0'
+    
+    // PhotoView para zoom de imágenes
+    implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+    
+    // CircleImageView
+    implementation 'de.hdodenhof:circleimageview:3.1.0'
+    
+    // Biometric
+    implementation 'androidx.biometric:biometric:1.2.0-alpha05'
+    
+    // Retrofit
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.0'
+    
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+} 

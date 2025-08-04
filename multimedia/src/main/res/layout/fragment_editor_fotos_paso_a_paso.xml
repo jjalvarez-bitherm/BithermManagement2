@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/black">
+
+    <!-- Header con información del paso actual -->
+    <LinearLayout
+        android:id="@+id/headerPaso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/azul_bitherm"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvPasoActual"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Paso 1: Rotación"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvTipoFoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="FOTO EQUIPO"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:background="@drawable/bg_filter_button"
+            android:padding="4dp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Área de la foto -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.bithermmanagement.multimedia.CustomPhotoView
+            android:id="@+id/photoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter" />
+
+        <!-- Overlay para recorte 1:1 (inicialmente invisible) -->
+        <com.bithermmanagement.multimedia.OverlayRecorteView
+            android:id="@+id/overlayRecorte"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <!-- Overlay para flechas y elementos editables (si se usa) -->
+        <View
+            android:id="@+id/overlayEditables"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent" />
+
+    </FrameLayout>
+
+    <!-- Barra de progreso de pasos -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_card_black"
+        android:padding="8dp">
+
+        <View
+            android:id="@+id/paso1"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="@color/azul_bitherm" />
+
+        <View
+            android:id="@+id/paso2"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="#666666" />
+
+        <View
+            android:id="@+id/paso3"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:background="#666666" />
+
+        <View
+            android:id="@+id/paso4"
+            android:layout_width="0dp"
+            android:layout_height="4dp"
+            android:layout_weight="1"
+            android:background="#666666" />
+
+    </LinearLayout>
+
+    <!-- Barra inferior con controles según el paso -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_card_black"
+        android:padding="16dp"
+        android:gravity="center">
+
+        <!-- Botón Deshacer -->
+        <ImageButton
+            android:id="@+id/btnDeshacer"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:src="@drawable/ic_undo"
+            android:contentDescription="Deshacer"
+            android:padding="11dp"
+            android:visibility="gone" />
+
+        <!-- Controles del Paso 1: Rotación -->
+        <LinearLayout
+            android:id="@+id/controlesPaso1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnGirar"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_button_rounded"
+                android:src="@drawable/ic_rotate"
+                android:contentDescription="Girar imagen"
+                android:padding="11dp" />
+        </LinearLayout>
+
+        <!-- Controles del Paso 2: Recorte -->
+        <LinearLayout
+            android:id="@+id/controlesPaso2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btnRecortar"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_button_rounded"
+                android:src="@drawable/ic_crop"
+                android:contentDescription="Recortar imagen"
+                android:padding="11dp" />
+        </LinearLayout>
+
+        <!-- Controles del Paso 3: Nota -->
+        <LinearLayout
+            android:id="@+id/controlesPaso3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btnNota"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_button_rounded"
+                android:src="@drawable/ic_add_photo"
+                android:contentDescription="Añadir nota"
+                android:padding="11dp" />
+        </LinearLayout>
+
+        <!-- Controles del Paso 4: Flecha -->
+        <LinearLayout
+            android:id="@+id/controlesPaso4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/btnFlecha"
+                android:layout_width="46dp"
+                android:layout_height="46dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_button_rounded"
+                android:src="@drawable/ic_arrow"
+                android:contentDescription="Añadir flecha"
+                android:padding="11dp" />
+        </LinearLayout>
+
+        <!-- Botones de navegación -->
+        <Button
+            android:id="@+id/btnAtras"
+            android:layout_width="wrap_content"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:text="Atrás"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnSiguiente"
+            android:layout_width="wrap_content"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:text="Siguiente" />
+
+        <Button
+            android:id="@+id/btnFin"
+            android:layout_width="wrap_content"
+            android:layout_height="46dp"
+            android:text="Fin"
+            android:visibility="gone" />
+
+        <!-- Botón Cancelar -->
+        <ImageButton
+            android:id="@+id/btnCancelar"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Cancelar"
+            android:padding="11dp" />
+
+    </LinearLayout>
+
+</LinearLayout> 

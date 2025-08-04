@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Configuración de Ubicación"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Switch para habilitar/deshabilitar tracking -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Activar tracking de ubicación"
+            android:textSize="16sp" />
+
+        <Switch
+            android:id="@+id/switch_location_tracking"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <!-- Configuración de intervalo -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Intervalo de actualización:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <SeekBar
+        android:id="@+id/seekbar_interval"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="59"
+        android:progress="14"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/text_interval"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="15 minutos"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Botón para aplicar configuración -->
+    <Button
+        android:id="@+id/button_apply"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Aplicar Configuración"
+        android:textSize="16sp"
+        android:padding="12dp" />
+
+    <!-- Información adicional -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="El servicio de ubicación funciona en segundo plano y envía logs de ubicación a Google Sheets según la configuración de cada usuario."
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_marginTop="24dp"
+        android:padding="8dp"
+        android:background="#F5F5F5" />
+
+</LinearLayout> 

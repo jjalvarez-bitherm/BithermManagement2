@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_spinner_custom"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Seleccionar tipo de foto"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <Button
+        android:id="@+id/btnFotoEquipo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="FOTO EQUIPO"
+        android:textColor="@android:color/black"
+        android:background="@drawable/bg_filter_button"
+        android:layout_marginBottom="8dp"
+        android:padding="12dp" />
+
+    <Button
+        android:id="@+id/btnFotoUbicacion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="FOTO UBICACIÓN"
+        android:textColor="@android:color/black"
+        android:background="@drawable/bg_filter_button"
+        android:layout_marginBottom="8dp"
+        android:padding="12dp" />
+
+    <Button
+        android:id="@+id/btnFotoManifold"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="FOTO MANIFOLD"
+        android:textColor="@android:color/black"
+        android:background="@drawable/bg_filter_button"
+        android:layout_marginBottom="8dp"
+        android:padding="12dp" />
+
+    <Button
+        android:id="@+id/btnFotoExtras"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="EXTRAS"
+        android:textColor="@android:color/black"
+        android:background="@drawable/bg_filter_button"
+        android:layout_marginBottom="8dp"
+        android:padding="12dp" />
+
+    <Button
+        android:id="@+id/btnCancelar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CANCELAR"
+        android:textColor="@android:color/white"
+        android:background="@color/azul_bitherm"
+        android:padding="12dp" />
+
+</LinearLayout> 

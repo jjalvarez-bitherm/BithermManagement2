@@ -1,0 +1,183 @@
+package com.bithermmanagement.ui.items
+
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.*
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.bithermmanagement.R
+import com.bithermmanagement.database.AppDatabase
+import com.bithermmanagement.database.entities.EquipoView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.RecyclerView
+import com.bithermmanagement.multimedia.MiniGaleriaFragment
+import androidx.fragment.app.commit
+
+class FragmentInspeccionEquipo : Fragment() {
+    private var equipos: List<EquipoView> = emptyList()
+    private var indexActual: Int = 0
+    private var estadosUnicos: List<String> = emptyList()
+    private lateinit var spinnerEstado: Spinner
+    private lateinit var btnAnteriorEstado: ImageButton
+    private lateinit var btnSiguienteEstado: ImageButton
+    private lateinit var btnGuardar: Button
+    private lateinit var tvIdEquipo: TextView
+    private lateinit var tvInspectorFecha: TextView
+    private lateinit var labelDatosInspector: TextView
+    private lateinit var miniGaleriaFragment: MiniGaleriaFragment
+    private lateinit var headerDatosGenerales: LinearLayout
+    private lateinit var layoutDatosGenerales: LinearLayout
+    private lateinit var headerObservaciones: LinearLayout
+    private lateinit var layoutObservaciones: LinearLayout
+    private lateinit var headerCaracteristicas: LinearLayout
+    private lateinit var layoutCaracteristicas: LinearLayout
+    private lateinit var iconCollapseDatosGenerales: ImageView
+    private lateinit var iconCollapseObservaciones: ImageView
+    private lateinit var iconCollapseCaracteristicas: ImageView
+    private var coloresEstados: Map<String, Int> = emptyMap()
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
+        Log.d("FragmentInspeccionEquipo", "onCreateView llamado")
+        return inflater.inflate(R.layout.fragment_inspeccion_equipo, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.d("FragmentInspeccionEquipo", "onViewCreated llamado")
+        spinnerEstado = view.findViewById(R.id.spinnerEstado)
+        btnAnteriorEstado = view.findViewById(R.id.btnAnteriorEstado)
+        btnSiguienteEstado = view.findViewById(R.id.btnSiguienteEstado)
+        btnGuardar = view.findViewById(R.id.btnGuardar)
+        tvIdEquipo = view.findViewById(R.id.tvIdEquipo)
+        tvInspectorFecha = view.findViewById(R.id.tvInspectorFecha)
+        labelDatosInspector = view.findViewById(R.id.labelDatosInspector)
+        headerDatosGenerales = view.findViewById(R.id.headerDatosGenerales)
+        layoutDatosGenerales = view.findViewById(R.id.layoutDatosGenerales)
+        headerObservaciones = view.findViewById(R.id.headerObservaciones)
+        layoutObservaciones = view.findViewById(R.id.layoutObservaciones)
+        headerCaracteristicas = view.findViewById(R.id.headerCaracteristicas)
+        layoutCaracteristicas = view.findViewById(R.id.layoutCaracteristicas)
+        iconCollapseDatosGenerales = view.findViewById(R.id.iconCollapseDatosGenerales)
+        iconCollapseObservaciones = view.findViewById(R.id.iconCollapseObservaciones)
+        iconCollapseCaracteristicas = view.findViewById(R.id.iconCollapseCaracteristicas)
+        // Inicializar minigalería
+        miniGaleriaFragment = childFragmentManager.findFragmentById(R.id.miniGaleriaFragment) as MiniGaleriaFragment
+        // Inicializar colapsables
+        headerDatosGenerales.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en headerDatosGenerales")
+            val expanded = layoutDatosGenerales.visibility == View.VISIBLE
+            layoutDatosGenerales.visibility = if (expanded) View.GONE else View.VISIBLE
+            iconCollapseDatosGenerales.setImageResource(if (expanded) R.drawable.ic_expand_more else R.drawable.ic_expand_less)
+            if (!expanded) {
+                layoutCaracteristicas.visibility = View.GONE
+                iconCollapseCaracteristicas.setImageResource(R.drawable.ic_expand_more)
+                layoutObservaciones.visibility = View.GONE
+                iconCollapseObservaciones.setImageResource(R.drawable.ic_expand_more)
+            }
+        }
+        headerCaracteristicas.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en headerCaracteristicas")
+            val expanded = layoutCaracteristicas.visibility == View.VISIBLE
+            layoutCaracteristicas.visibility = if (expanded) View.GONE else View.VISIBLE
+            iconCollapseCaracteristicas.setImageResource(if (expanded) R.drawable.ic_expand_more else R.drawable.ic_expand_less)
+            if (!expanded) {
+                layoutDatosGenerales.visibility = View.GONE
+                iconCollapseDatosGenerales.setImageResource(R.drawable.ic_expand_more)
+                layoutObservaciones.visibility = View.GONE
+                iconCollapseObservaciones.setImageResource(R.drawable.ic_expand_more)
+            }
+        }
+        headerObservaciones.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en headerObservaciones")
+            val expanded = layoutObservaciones.visibility == View.VISIBLE
+            layoutObservaciones.visibility = if (expanded) View.GONE else View.VISIBLE
+            iconCollapseObservaciones.setImageResource(if (expanded) R.drawable.ic_expand_more else R.drawable.ic_expand_less)
+            if (!expanded) {
+                layoutDatosGenerales.visibility = View.GONE
+                iconCollapseDatosGenerales.setImageResource(R.drawable.ic_expand_more)
+                layoutCaracteristicas.visibility = View.GONE
+                iconCollapseCaracteristicas.setImageResource(R.drawable.ic_expand_more)
+            }
+        }
+        // Navegación por flechas
+        btnAnteriorEstado.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en btnAnteriorEstado - navegando a índice ${indexActual - 1}")
+            mostrarEquipo(indexActual - 1)
+        }
+        btnSiguienteEstado.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en btnSiguienteEstado - navegando a índice ${indexActual + 1}")
+            mostrarEquipo(indexActual + 1)
+        }
+        btnGuardar.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en btnGuardar - guardando y avanzando")
+            guardarYAvanzar()
+        }
+        // Cargar datos y mostrar primer equipo
+        lifecycleScope.launch {
+            val db = AppDatabase.getDatabase(requireContext())
+            equipos = withContext(Dispatchers.IO) { db.equipoDao().getAllEquiposView() }
+            Log.d("FragmentInspeccionEquipo", "Cargados ${equipos.size} equipos desde BD")
+            estadosUnicos = equipos.mapNotNull { it.estado }.distinct().sorted()
+            setupSpinnerEstados()
+            if (equipos.isNotEmpty()) mostrarEquipo(0)
+        }
+    }
+
+    private fun setupSpinnerEstados() {
+        Log.d("FragmentInspeccionEquipo", "setupSpinnerEstados: ${estadosUnicos.size} estados únicos")
+        val estadoAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_centered, estadosUnicos)
+        estadoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerEstado.adapter = estadoAdapter
+    }
+
+    private fun mostrarEquipo(index: Int) {
+        if (equipos.isEmpty() || index !in equipos.indices) {
+            Log.d("FragmentInspeccionEquipo", "mostrarEquipo: índice $index fuera de rango (0-${equipos.size-1})")
+            return
+        }
+        indexActual = index
+        val equipo = equipos[index]
+        Log.d("FragmentInspeccionEquipo", "mostrarEquipo: índice=$index, equipoId=${equipo.id}, estado=${equipo.estado}")
+        tvIdEquipo.text = equipo.id ?: ""
+        // Actualizar spinner de estado
+        val estadoIndex = estadosUnicos.indexOf(equipo.estado)
+        if (estadoIndex >= 0) spinnerEstado.setSelection(estadoIndex)
+        else spinnerEstado.setSelection(0)
+        // Actualizar datos inspector-fecha-detector
+        val fecha = equipo.fechasteado ?: ""
+        val inspector = equipo.inspector ?: ""
+        val detector = equipo.detector ?: ""
+        val textoInspector = "[$fecha] - $inspector ($detector)"
+        labelDatosInspector.text = textoInspector
+        tvInspectorFecha.text = textoInspector
+        // Actualizar minigalería (comentado si no hay fotos)
+        // miniGaleriaFragment.setFotos(equipo.fotos)
+        // Colores de estado
+        val color = coloresEstados[equipo.estado?.uppercase()?.trim() ?: ""] ?: 0xFFFFFFFF.toInt()
+        val drawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 24f
+            setColor(color)
+            setStroke(4, Color.DKGRAY)
+        }
+        spinnerEstado.background = drawable
+        // TODO: Bloqueo de campos según lógica
+        // TODO: Mostrar datos en cards expandibles
+    }
+
+    private fun guardarYAvanzar() {
+        Log.d("FragmentInspeccionEquipo", "guardarYAvanzar: guardando equipo actual y avanzando al siguiente")
+        // TODO: Guardar cambios del equipo actual
+        mostrarEquipo(indexActual + 1)
+    }
+} 

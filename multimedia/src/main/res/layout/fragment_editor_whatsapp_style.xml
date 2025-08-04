@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/black">
+
+    <!-- Barra superior tipo WhatsApp -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:background="@android:color/black"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <!-- Botón guardar izquierda -->
+        <ImageButton
+            android:id="@+id/btnGuardar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_save"
+            android:tint="@android:color/white"
+            android:contentDescription="Guardar" />
+
+        <!-- Botones derechos -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <ImageButton
+                android:id="@+id/btnRecortar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_crop"
+                android:tint="@android:color/white"
+                android:contentDescription="Recortar" />
+
+            <ImageButton
+                android:id="@+id/btnRotar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_rotate_arrow"
+                android:tint="@android:color/white"
+                android:contentDescription="Rotar" />
+
+            <ImageButton
+                android:id="@+id/btnEmoticonos"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_emoticon"
+                android:tint="@android:color/white"
+                android:contentDescription="Emoticonos y formas" />
+
+            <ImageButton
+                android:id="@+id/btnTexto"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_text"
+                android:tint="@android:color/white"
+                android:contentDescription="Añadir texto" />
+
+            <ImageButton
+                android:id="@+id/btnDibujar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_draw"
+                android:tint="@android:color/white"
+                android:contentDescription="Dibujar" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Área de la foto -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.bithermmanagement.multimedia.CustomPhotoView
+            android:id="@+id/photoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter" />
+
+        <!-- Overlay para elementos editables -->
+        <com.bithermmanagement.multimedia.ElementosEditablesOverlay
+            android:id="@+id/overlayEditables"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent" />
+
+    </FrameLayout>
+
+    <!-- Barra inferior tipo WhatsApp -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/black"
+        android:padding="16dp">
+
+        <!-- Campo de comentario -->
+        <EditText
+            android:id="@+id/etComentario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_edit_text_rounded"
+            android:hint="Añade un comentario..."
+            android:textColorHint="#CCCCCC"
+            android:textColor="@android:color/white"
+            android:padding="12dp"
+            android:maxLines="3"
+            android:inputType="textMultiLine" />
+
+        <!-- Fila inferior: Botones y selector de tipo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical">
+
+            <!-- Botón Cancelar (izquierda, rojo) -->
+            <Button
+                android:id="@+id/btnCancelar"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Cancelar"
+                android:textColor="@android:color/white"
+                android:background="@drawable/bg_button_rounded_red"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Selector de tipo de foto (centro) -->
+            <Spinner
+                android:id="@+id/spinnerTipoFoto"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_spinner_rounded"
+                android:popupBackground="@drawable/bg_spinner_dropdown" />
+
+            <!-- Botón Aceptar (derecha, verde) -->
+            <Button
+                android:id="@+id/btnAceptar"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Aceptar"
+                android:textColor="@android:color/white"
+                android:background="@drawable/bg_button_rounded_green"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout> 

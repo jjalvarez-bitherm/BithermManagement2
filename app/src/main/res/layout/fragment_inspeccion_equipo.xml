@@ -1,0 +1,929 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="0dp">
+
+    <!-- ID del equipo fijo en la parte superior -->
+    <TextView
+        android:id="@+id/tvIdEquipoFixed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="21sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="4dp"
+        android:padding="8dp"
+        android:elevation="8dp" />
+
+    <!-- Contenido scrolleable -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/mainContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:paddingBottom="400dp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- ID/TAG del equipo (oculto, ahora usamos el flotante) -->
+            <TextView
+                android:id="@+id/tvIdEquipoOculto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textStyle="bold"
+                android:textSize="30sp"
+                android:textColor="@android:color/black"
+                android:gravity="center"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone" />
+
+            <!-- Sustituir el FrameLayout de la galería por el fragmento de la minigalería -->
+            <fragment
+                android:id="@+id/miniGaleriaFragment"
+                android:name="com.bithermmanagement.multimedia.MiniGaleriaFragment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Fila de flechas y estado -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="0dp">
+                <!-- Área de flecha izquierda -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.1"
+                    android:gravity="center"
+                    android:background="#1AFFFFFF"> <!-- Fondo blanco con 10% opacidad -->
+                    <ImageButton
+                        android:id="@+id/btnAnteriorEstado"
+                        android:layout_width="63dp"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_arrow_left_modern"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="Purgador anterior"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+                <!-- Columna central -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.8"
+                    android:gravity="center"
+                    android:orientation="vertical">
+                    <TextView
+                        android:id="@+id/tvIdEquipo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textColor="@android:color/white"
+                        android:textSize="27sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/spinnerEstado"
+                        android:layout_width="280dp"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_estado_opaco"
+                        android:gravity="center"
+                        android:popupBackground="@android:color/white" />
+
+                    <TextView
+                        android:id="@+id/textView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:layout_marginTop="8dp"
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/tvInspectorFecha"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingTop="4dp"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/white"
+                        android:textStyle="italic"
+                        android:ellipsize="end" />
+
+                    <Button
+                        android:id="@+id/btnGuardar"
+                        android:layout_width="220dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:text="GUARDAR\n&amp;\nSIGUIENTE"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:backgroundTint="@color/azul_bitherm"
+                        android:elevation="2dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginStart="0dp"
+                        android:layout_marginEnd="0dp"
+                        android:minHeight="56dp" />
+                </LinearLayout>
+                <!-- Área de flecha derecha -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.1"
+                    android:gravity="center"
+                    android:background="#1AFFFFFF"> <!-- Fondo blanco con 10% opacidad -->
+                    <ImageButton
+                        android:id="@+id/btnSiguienteEstado"
+                        android:layout_width="63dp"
+                        android:layout_height="match_parent"
+                        android:background="@android:color/transparent"
+                        android:src="@drawable/ic_arrow_right_modern"
+                        android:scaleType="fitCenter"
+                        android:contentDescription="Purgador siguiente"
+                        android:layout_gravity="center" />
+                </FrameLayout>
+            </LinearLayout>
+
+
+
+
+
+            <!-- Card DATOS GENERALES -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@android:color/black"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <LinearLayout
+                        android:id="@+id/headerDatosGenerales"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="DATOS GENERALES"
+                            android:textStyle="bold"
+                            android:textColor="@color/azul_bitherm"
+                            android:textSize="20sp"
+                            android:gravity="center_vertical" />
+                        <ImageView
+                            android:id="@+id/iconCollapseDatosGenerales"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_expand_more" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutDatosGenerales"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:padding="8dp"
+                        android:background="#222222"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Área"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerArea"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Unidad"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerUnidad"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Ubicación"
+                                android:textColor="#BBBBBB"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp" />
+                            <EditText
+                                android:id="@+id/etUbicacion"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:gravity="center_vertical"
+                                android:inputType="text"
+                                android:hint=""
+                                android:text=""
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_edittext_dark" />
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="2dp"
+                                android:gravity="center_vertical">
+                                <TextView
+                                    android:id="@+id/tvGpsCoord"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="GPS: --"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:layout_marginEnd="8dp" />
+                                <TextView
+                                    android:id="@+id/tvGpsAcc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Precisión: --"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginEnd="8dp" />
+                                <ImageButton
+                                    android:id="@+id/btnGpsTag"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@android:drawable/ic_menu_mylocation"
+                                    android:background="@android:color/transparent"
+                                    android:contentDescription="Etiqueta GPS"
+                                    android:layout_gravity="end"
+                                    android:layout_marginEnd="4dp" />
+                                <ImageButton
+                                    android:id="@+id/btnWalk"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:src="@android:drawable/ic_menu_directions"
+                                    android:background="@android:color/transparent"
+                                    android:contentDescription="Hombre caminando"
+                                    android:layout_gravity="end" />
+                            </LinearLayout>
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Instalación"
+                                android:textColor="#BBBBBB"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp" />
+                            <Spinner
+                                android:id="@+id/spinnerInstalacion"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_spinner_rounded_dark" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Nombre de línea"
+                                android:textColor="#BBBBBB"
+                                android:textSize="14sp"
+                                android:layout_marginBottom="2dp" />
+                            <EditText
+                                android:id="@+id/etLinea"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:hint="Nombre de línea"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_edittext_dark" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Aislamiento"
+                                android:textColor="#BBBBBB"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp" />
+                            <Spinner
+                                android:id="@+id/spinnerAislamiento"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_spinner_rounded_dark" />
+                        </LinearLayout>
+                        <!-- Fila Instalacion_MF y ByPass -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <!-- Nombre de Manifold (80%) -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="0.8"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Nombre de Manifold"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="14sp"
+                                    android:layout_marginBottom="2dp" />
+                                <AutoCompleteTextView
+                                    android:id="@+id/autoInstalacionMf"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:hint=""
+                                    android:text=""
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_edittext_dark" />
+                            </LinearLayout>
+                            <!-- By-Pass (20%) -->
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="0.2"
+                                android:orientation="vertical"
+                                android:gravity="center_vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="BY-PASS"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:gravity="center_horizontal"
+                                    android:layout_gravity="center_horizontal" />
+                                <CheckBox
+                                    android:id="@+id/checkboxByPass"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text=""
+                                    android:layout_gravity="center_horizontal"
+                                    android:buttonTint="@color/azul_bitherm" />
+                            </LinearLayout>
+                        </LinearLayout>
+                        <!-- Fila Periodicidad de inspección -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Periodicidad de inspección:"
+                                android:textColor="#BBBBBB"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp" />
+                            <Spinner
+                                android:id="@+id/spinnerPeriodicidad"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_spinner_rounded_dark" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Card CARACTERÍSTICAS TÉCNICAS -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@android:color/black"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <LinearLayout
+                        android:id="@+id/headerCaracteristicas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="CARACTERÍSTICAS TÉCNICAS"
+                            android:textStyle="bold"
+                            android:textColor="@color/azul_bitherm"
+                            android:textSize="20sp"
+                            android:gravity="center_vertical" />
+                        <ImageView
+                            android:id="@+id/iconCollapseCaracteristicas"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_expand_more" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutCaracteristicas"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:padding="8dp"
+                        android:background="#222222"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Marca"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerMarca"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Modelo"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerModelo"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                        </LinearLayout>
+                        <!-- Diámetro y Conexión en la misma fila -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Diámetro"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerDiametro"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Conexión"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerConexion"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                        </LinearLayout>
+                        <!-- Fila PIN, POUT, Descarga -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="PIN"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="10sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerPIN"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="POUT"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="10sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerPOUT"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="2"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Descarga"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="10sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerDescarga"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                        </LinearLayout>
+                        <!-- Tipo, Aplicación y Servicio como spinners -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Tipo"
+                                android:textColor="#BBBBBB"
+                                android:textSize="10sp"
+                                android:layout_marginBottom="2dp" />
+                            <Spinner
+                                android:id="@+id/spinnerTipo"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:textColor="@android:color/white"
+                                android:textSize="14sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_spinner_rounded_dark" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Aplicación"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="10sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerAplicacion"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Servicio"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="10sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerServicio"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="14sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Card OBSERVACIONES -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@android:color/black"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <LinearLayout
+                        android:id="@+id/headerObservaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="OBSERVACIONES"
+                            android:textStyle="bold"
+                            android:textColor="@color/azul_bitherm"
+                            android:textSize="20sp"
+                            android:gravity="center_vertical" />
+                        <ImageView
+                            android:id="@+id/iconCollapseObservaciones"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_expand_more" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutObservaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:padding="8dp"
+                        android:background="#222222"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Nota"
+                                android:textColor="#BBBBBB"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp" />
+                            <EditText
+                                android:id="@+id/etObservaciones"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:hint="Nota"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_edittext_dark" />
+                        </LinearLayout>
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Incidencias"
+                                android:textColor="#BBBBBB"
+                                android:textSize="12sp"
+                                android:layout_marginBottom="2dp" />
+                            <EditText
+                                android:id="@+id/etIncidencias"
+                                android:layout_width="match_parent"
+                                android:layout_height="56dp"
+                                android:hint="Incidencias"
+                                android:textColor="@android:color/white"
+                                android:textSize="16sp"
+                                android:gravity="left|center_vertical"
+                                android:paddingLeft="8dp"
+                                android:background="@drawable/bg_edittext_dark" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Label de información inspección actual -->
+            <TextView
+                android:id="@+id/labelInspeccionActual"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="12dp" />
+
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</LinearLayout> 

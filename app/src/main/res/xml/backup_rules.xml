@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Reglas de backup para BithermManagement
+   Incluye la base de datos y preferencias, excluye archivos sensibles
+-->
+<full-backup-content>
+    <!-- Incluir la base de datos -->
+    <include domain="database" path="bitherm_database"/>
+    
+    <!-- Incluir preferencias compartidas -->
+    <include domain="sharedpref" path="."/>
+    
+    <!-- Excluir archivos sensibles si los hay -->
+    <exclude domain="sharedpref" path="device.xml"/>
+    <exclude domain="sharedpref" path="credentials.xml"/>
+</full-backup-content>

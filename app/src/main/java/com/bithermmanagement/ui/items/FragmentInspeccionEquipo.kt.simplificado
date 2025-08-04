@@ -1,0 +1,1175 @@
+package com.bithermmanagement.ui.items
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.net.Uri
+import android.os.Bundle
+import android.os.Handler
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.bithermmanagement.R
+import com.bithermmanagement.database.dao.InspeccionDao
+import com.bithermmanagement.database.entities.Equipo
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import android.app.AlertDialog
+import org.json.JSONObject
+import com.bithermmanagement.ui.navigation.DialogNavegacionTabs
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
+import android.os.Looper
+import android.graphics.drawable.GradientDrawable
+import com.bumptech.glide.Glide
+import androidx.fragment.app.setFragmentResultListener
+import java.io.File
+
+@AndroidEntryPoint
+class FragmentInspeccionEquipo : Fragment() {
+
+    @Inject
+    lateinit var inspeccionDao: InspeccionDao
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var equipo: Equipo? = null
+
+    // Views
+    private lateinit var spinnerArea: MaterialAutoCompleteTextView
+    private lateinit var spinnerUnidad: MaterialAutoCompleteTextView
+    private lateinit var spinnerMarca: MaterialAutoCompleteTextView
+    private lateinit var spinnerModelo: MaterialAutoCompleteTextView
+    private lateinit var spinnerTipo: MaterialAutoCompleteTextView
+    private lateinit var spinnerDiametro: MaterialAutoCompleteTextView
+    private lateinit var spinnerConexion: MaterialAutoCompleteTextView
+    private lateinit var spinnerInstalacion: MaterialAutoCompleteTextView
+    private lateinit var spinnerAislamiento: MaterialAutoCompleteTextView
+    private lateinit var spinnerPresEntrada: MaterialAutoCompleteTextView
+    private lateinit var spinnerPresSalida: MaterialAutoCompleteTextView
+    private lateinit var spinnerDescarga: MaterialAutoCompleteTextView
+    private lateinit var spinnerAplicacion: MaterialAutoCompleteTextView
+    private lateinit var spinnerServicio: MaterialAutoCompleteTextView
+    private lateinit var etUbicacion: TextInputEditText
+    private lateinit var tvGPS: TextView
+    private lateinit var btnActualizarGPS: ImageButton
+    private lateinit var btnNavegar: ImageButton
+    private lateinit var etNota: TextInputEditText
+    private lateinit var etIncidencias: TextInputEditText
+    private lateinit var etLinea: TextInputEditText
+    private lateinit var viewPagerImagenes: androidx.viewpager2.widget.ViewPager2
+    private lateinit var indicadorPaginas: LinearLayout
+    private lateinit var tvIdEquipo: TextView
+    private lateinit var autoEstado: MaterialAutoCompleteTextView
+    private lateinit var labelDatosInspector: TextView
+    private lateinit var tvModeloAnterior: TextView
+
+    private var gpsRequestInProgress = false
+    private var gpsTimeoutHandler: Handler? = null
+    private var gpsTimeoutRunnable: Runnable? = null
+    private var gpsDialog: AlertDialog? = null
+    private var gpsDialogView: View? = null
+    private var gpsLocationCallback: com.google.android.gms.location.LocationCallback? = null
+    private var gpsLocationRequest: com.google.android.gms.location.LocationRequest? = null
+    private var gpsBestLocation: android.location.Location? = null
+    private var gpsBestPrecision: Float = Float.MAX_VALUE
+    private var gpsMaxWaitMillis: Long = 5000
+    private var gpsStartTime: Long = 0L
+    private var coloresEstados: Map<String, Int> = emptyMap()
+
+    private val valoresInstalacionPorDefecto = listOf("MANIFOLD VAPOR", "MANIFOLD CONDENSADO", "EN LINEA", "PIANILLO")
+    private val valoresAislamientoPorDefecto = listOf("V/V ANTEIOR Y POST", "V/V ANTERIOR", "TVS", "SIN AISLAMIENTO")
+
+    // Variables para la navegación de purgadores
+    private var listaEquipos: List<Equipo> = emptyList()
+    private var indiceActual: Int = 0
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        private const val ARG_LISTA_EQUIPOS = "ARG_LISTA_EQUIPOS"
+        private const val ARG_INDICE_ACTUAL = "ARG_INDICE_ACTUAL"
+        fun newInstance(lista: List<Equipo>, indice: Int): FragmentInspeccionEquipo {
+            val fragment = FragmentInspeccionEquipo()
+            val args = Bundle()
+            args.putSerializable(ARG_LISTA_EQUIPOS, ArrayList(lista))
+            args.putInt(ARG_INDICE_ACTUAL, indice)
+            fragment.arguments = args
+            Log.d("FragmentInspeccionEquipo", "newInstance: Recibida lista de ${lista.size} equipos, índice inicial: $indice")
+            Log.d("FragmentInspeccionEquipo", "DEBUG: Primeros 3 IDs de la lista: ${lista.take(3).map { it.id }}")
+            return fragment
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.let { args ->
+            @Suppress("UNCHECKED_CAST")
+            listaEquipos = (args.getSerializable(ARG_LISTA_EQUIPOS) as? ArrayList<Equipo>) ?: emptyList()
+            indiceActual = args.getInt(ARG_INDICE_ACTUAL, 0)
+            equipo = if (listaEquipos.isNotEmpty() && indiceActual in listaEquipos.indices) listaEquipos[indiceActual] else null
+            Log.d("FragmentInspeccionEquipo", "onCreate: Lista recibida con ${listaEquipos.size} equipos, índice actual: $indiceActual")
+            Log.d("FragmentInspeccionEquipo", "DEBUG: listaEquipos IDs: ${listaEquipos.take(5).map { it.id }}")
+            Log.d("FragmentInspeccionEquipo", "DEBUG: equipo seleccionado: ${equipo?.id}")
+        }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        Log.d("FragmentInspeccionEquipo", "onCreateView")
+        return inflater.inflate(R.layout.fragment_detalle_equipo, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.d("FragmentInspeccionEquipo", "onViewCreated")
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        initializeViews(view)
+        setupSpinners()
+        setupEstadoDropdown()
+        setupGPS()
+        setupCarruselImagenes()
+        cargarDatosEquipo()
+        coloresEstados = cargarColoresEstados()
+
+        etUbicacion.textSize = etUbicacion.textSize / resources.displayMetrics.scaledDensity + 2f
+
+        // Asignar listeners a los botones de navegación
+        view.findViewById<View>(R.id.navAnteriorBlock)?.setOnClickListener {
+            Log.d("NavegacionPurgador", "Flecha ANTERIOR pulsada. Índice actual: $indiceActual")
+            navegarPurgador(-1)
+        }
+        view.findViewById<View>(R.id.navSiguienteBlock)?.setOnClickListener {
+            Log.d("NavegacionPurgador", "Flecha SIGUIENTE pulsada. Índice actual: $indiceActual")
+            navegarPurgador(1)
+        }
+
+        // Botón Guardar y Siguiente
+        view.findViewById<android.widget.Button>(R.id.btnGuardar)?.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "Botón GUARDAR Y SIGUIENTE pulsado")
+            guardarYAvanzar()
+        }
+
+        btnNavegar.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "CLICK en btnNavegar - iniciando navegación GPS")
+            val regex = Regex("(-?\\d+\\.\\d+),\\s*(-?\\d+\\.\\d+)")
+            val match = regex.find(tvGPS.text.toString())
+            if (match != null) {
+                val latDestino = match.groupValues[1]
+                val lonDestino = match.groupValues[2]
+                Log.d("FragmentInspeccionEquipo", "NAVEGANDO a Google Maps: lat=$latDestino, lon=$lonDestino")
+                val gmmIntentUri = android.net.Uri.parse("google.navigation:q=$latDestino,$lonDestino&mode=w")
+                val mapIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, gmmIntentUri)
+                mapIntent.setPackage("com.google.android.apps.maps")
+                if (mapIntent.resolveActivity(requireContext().packageManager) != null) {
+                    startActivity(mapIntent)
+                } else {
+                    android.widget.Toast.makeText(requireContext(), "Google Maps no está instalado", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                android.widget.Toast.makeText(requireContext(), "No se pudieron extraer las coordenadas destino", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Escuchar cambios de foto principal desde el visor
+        parentFragmentManager.setFragmentResultListener("foto_principal_actualizada", viewLifecycleOwner) { _, bundle ->
+            val nuevaRuta = bundle.getString("ruta_foto")
+            Log.d("FragmentInspeccionEquipo", "Recibido setFragmentResultListener con ruta: $nuevaRuta")
+            if (!nuevaRuta.isNullOrBlank()) {
+                val existe = java.io.File(nuevaRuta).exists()
+                Log.d("FragmentInspeccionEquipo", "¿Existe el archivo? $existe")
+                if (existe) {
+                    Log.d("FragmentInspeccionEquipo", "Imagen cargada en carrusel")
+                    cargarCarruselImagenes()
+                } else {
+                    Log.e("FragmentInspeccionEquipo", "El archivo de la foto principal no existe: $nuevaRuta")
+                }
+            } else {
+                Log.e("FragmentInspeccionEquipo", "Ruta de foto principal vacía o nula")
+            }
+        }
+    }
+
+    private fun initializeViews(view: View) {
+        Log.d("FragmentInspeccionEquipo", "Inicializando views")
+        spinnerArea = view.findViewById(R.id.spinnerArea)
+        spinnerUnidad = view.findViewById(R.id.spinnerUnidad)
+        spinnerMarca = view.findViewById(R.id.spinnerMarca)
+        spinnerModelo = view.findViewById(R.id.spinnerModelo)
+        spinnerTipo = view.findViewById(R.id.spinnerTipo)
+        spinnerDiametro = view.findViewById(R.id.spinnerDiametro)
+        spinnerConexion = view.findViewById(R.id.spinnerConexion)
+        spinnerInstalacion = view.findViewById(R.id.spinnerInstalacion)
+        spinnerAislamiento = view.findViewById(R.id.spinnerAislamiento)
+        spinnerPresEntrada = view.findViewById(R.id.spinnerPresEntrada)
+        spinnerPresSalida = view.findViewById(R.id.spinnerPresSalida)
+        spinnerDescarga = view.findViewById(R.id.spinnerDescarga)
+        spinnerAplicacion = view.findViewById(R.id.spinnerAplicacion)
+        spinnerServicio = view.findViewById(R.id.spinnerServicio)
+        etUbicacion = view.findViewById(R.id.etUbicacion)
+        tvGPS = view.findViewById(R.id.tvGPS)
+        btnActualizarGPS = view.findViewById(R.id.btnActualizarGPS)
+        btnNavegar = view.findViewById(R.id.btnNavegar)
+        etNota = view.findViewById(R.id.etNota)
+        etIncidencias = view.findViewById(R.id.etIncidencias)
+        etLinea = view.findViewById(R.id.etLinea)
+        tvIdEquipo = view.findViewById(R.id.tvIdEquipo)
+        autoEstado = view.findViewById(R.id.autoEstado)
+        labelDatosInspector = view.findViewById(R.id.labelDatosInspector)
+        tvModeloAnterior = view.findViewById(R.id.tvModeloAnterior)
+        autoEstado.setText("HOLA", false)
+
+        // Hacer todos los dropdowns solo seleccionables (no editables), excepto aislamiento
+        val dropdowns = listOf(
+            spinnerArea, spinnerUnidad, spinnerMarca, spinnerModelo, spinnerTipo, spinnerDiametro,
+            spinnerConexion, spinnerInstalacion, spinnerPresEntrada, spinnerPresSalida, spinnerDescarga, spinnerAplicacion, spinnerServicio
+        )
+        dropdowns.forEach {
+            it.setKeyListener(null)
+            it.isCursorVisible = false
+            it.isFocusable = false
+            it.isFocusableInTouchMode = false
+            it.setOnClickListener { v -> (v as? com.google.android.material.textfield.MaterialAutoCompleteTextView)?.showDropDown() }
+        }
+        // El de aislamiento sí permite texto libre
+        spinnerAislamiento.isFocusable = true
+        spinnerAislamiento.isFocusableInTouchMode = true
+        spinnerAislamiento.isCursorVisible = true
+        spinnerAislamiento.setKeyListener(android.text.method.TextKeyListener.getInstance())
+    }
+
+    private fun cargarDatosEquipo() {
+        Log.d("EquipoDebug", "Cargando datos del equipo: $equipo")
+        equipo?.let { equipo ->
+            Log.d("EquipoDebug", "Campos del equipo: id=${equipo.id}, area=${equipo.area}, unidad=${equipo.unidad}, ubicacion=${equipo.ubicacion}, gps=${equipo.gpsCoord}, instalacion=${equipo.instalacion}, linea=${equipo.linea}, estado=${equipo.estado}, marca=${equipo.marca}, modelo=${equipo.modelo}, tipo=${equipo.tipo}, diametro=${equipo.diametro}, conexion=${equipo.conexion}, aislamiento=${equipo.aislamiento}, presEntrada=${equipo.presEntrada}, presSalida=${equipo.presSalida}, descarga=${equipo.descarga}, aplicacion=${equipo.aplicacion}, servicio=${equipo.servicio}, nota=${equipo.nota}, incidencias=${equipo.incidencias}")
+            tvIdEquipo.text = equipo.id ?: ""
+            tvIdEquipo.setTypeface(null, android.graphics.Typeface.BOLD)
+            val estado = equipo.estado ?: ""
+            autoEstado.setText(estado, false)
+            autoEstado.post {
+                setEstadoBackground(estado)
+            }
+            autoEstado.textSize = 21f // 16sp + 5pt aprox
+            spinnerArea.setText(equipo.area ?: "", false)
+            spinnerUnidad.setText(equipo.unidad ?: "", false)
+            spinnerMarca.setText(equipo.marca ?: "", false)
+            spinnerModelo.setText(equipo.modelo ?: "", false)
+            spinnerTipo.setText(equipo.tipo ?: "", false)
+            spinnerDiametro.setText(equipo.diametro ?: "", false)
+            spinnerConexion.setText(equipo.conexion ?: "", false)
+            spinnerInstalacion.setText(equipo.instalacion ?: "", false)
+            spinnerAislamiento.setText(equipo.aislamiento ?: "", false)
+            spinnerPresEntrada.setText(equipo.presEntrada ?: "", false)
+            spinnerPresSalida.setText(equipo.presSalida ?: "", false)
+            spinnerDescarga.setText(equipo.descarga ?: "", false)
+            spinnerAplicacion.setText(equipo.aplicacion ?: "", false)
+            spinnerServicio.setText(equipo.servicio ?: "", false)
+            etUbicacion.setText(equipo.ubicacion ?: "")
+            etNota.setText(equipo.nota ?: "")
+            etIncidencias.setText(equipo.incidencias ?: "")
+            etLinea.setText(equipo.linea ?: "")
+            // Cargar GPS con formato correcto
+            val gpsCoord = equipo.gpsCoord ?: ""
+            val gpsAcc = equipo.gpsAcc ?: ""
+            
+            if (gpsCoord.isNotEmpty() && gpsAcc.isNotEmpty()) {
+                val accParts = gpsAcc.split(", ")
+                if (accParts.size >= 1) {
+                    val precision = accParts[0]
+                    tvGPS.text = "GPS: $gpsCoord (±$precision)"
+                } else {
+                    tvGPS.text = "GPS: $gpsCoord"
+                }
+            } else if (gpsCoord.isNotEmpty()) {
+                tvGPS.text = "GPS: $gpsCoord"
+            } else {
+                tvGPS.text = ""
+            }
+            // Cargar carrusel de imágenes
+            cargarCarruselImagenes()
+            
+            // Actualizar información del inspector
+            actualizarInformacionInspector()
+        }
+    }
+
+    private fun setEstadoBackground(estado: String) {
+        val color = coloresEstados[estado.uppercase().trim()] ?: resources.getColor(R.color.gray_light, null)
+        autoEstado.setTextColor(android.graphics.Color.BLACK)
+        autoEstado.setHintTextColor(android.graphics.Color.BLACK)
+        // Crear fondo dinámico con borde y esquinas redondeadas
+        val drawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 24f
+            setColor(color)
+            setStroke(4, android.graphics.Color.DKGRAY)
+        }
+        autoEstado.background = drawable
+    }
+
+    private fun setupSpinners() {
+        Log.d("FragmentInspeccionEquipo", "Configurando spinners (inicio)")
+        lifecycleScope.launch {
+            try {
+                Log.d("SpinnerDebug", "Antes de obtener áreas")
+                val areas = inspeccionDao.getAreasUnicas()
+                spinnerArea.setOnClickListener {
+                    showCenteredDropdown("Área", areas) { seleccion ->
+                        spinnerArea.setText(seleccion, false)
+                        actualizarUnidadesPorArea(seleccion)
+                        // Abrir automáticamente el dropdown de unidad tras actualizar
+                        spinnerUnidad.post { spinnerUnidad.showDropDown() }
+                    }
+                }
+                // UNIDAD: se actualiza al seleccionar área
+                spinnerUnidad.setOnClickListener {
+                    val area = spinnerArea.text.toString()
+                    actualizarUnidadesPorArea(area)
+                }
+                // INSTALACIÓN: valores de BD o por defecto
+                spinnerInstalacion.setOnClickListener {
+                    lifecycleScope.launch {
+                        val instalaciones = inspeccionDao.getInstalacionesUnicas().ifEmpty { valoresInstalacionPorDefecto }
+                        showCenteredDropdown("Instalación", instalaciones) { seleccion ->
+                            spinnerInstalacion.setText(seleccion, false)
+                        }
+                    }
+                }
+                // AISLAMIENTO: valores de BD + por defecto + texto libre
+                spinnerAislamiento.setOnClickListener {
+                    lifecycleScope.launch {
+                        val aislamientosBD = inspeccionDao.getAislamientosUnicos()
+                        val aislamientos = (aislamientosBD + valoresAislamientoPorDefecto).distinct()
+                        showCenteredDropdown("Aislamiento", aislamientos) { seleccion ->
+                            spinnerAislamiento.setText(seleccion, false)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("SpinnerDebug", "Error en setupSpinners: ${e.message}", e)
+            }
+        }
+        spinnerMarca.setOnClickListener {
+            lifecycleScope.launch {
+                val marcas = inspeccionDao.getMarcasUnicas()
+                showCenteredDropdown("Marca", marcas) { seleccion ->
+                    spinnerMarca.setText(seleccion, false)
+                    actualizarModelosPorMarca(seleccion)
+                    // Abrir automáticamente el dropdown de modelo tras actualizar
+                    spinnerModelo.post { spinnerModelo.showDropDown() }
+                }
+            }
+        }
+        spinnerModelo.setOnClickListener {
+            val marca = spinnerMarca.text.toString()
+            lifecycleScope.launch {
+                val modelos = inspeccionDao.getModelosUnicosPorMarcas(listOf(marca))
+                showCenteredDropdown("Modelo", modelos) { seleccion ->
+                    spinnerModelo.setText(seleccion, false)
+                    // Actualizar tipos por marca y modelo seleccionado
+                    actualizarTiposPorMarcaModelo(marca, seleccion)
+                    // Abrir automáticamente el dropdown de tipo tras actualizar
+                    spinnerTipo.post { spinnerTipo.showDropDown() }
+                }
+            }
+        }
+        spinnerTipo.setOnClickListener {
+            val marca = spinnerMarca.text.toString()
+            val modelo = spinnerModelo.text.toString()
+            lifecycleScope.launch {
+                val tipos = if (marca.isNotEmpty() && modelo.isNotEmpty()) {
+                    inspeccionDao.getTiposUnicosPorMarcaModelo(marca, modelo)
+                } else {
+                    inspeccionDao.getTiposUnicos()
+                }
+                showCenteredDropdown("Tipo", tipos) { seleccion ->
+                    spinnerTipo.setText(seleccion, false)
+                }
+            }
+        }
+        spinnerDiametro.setOnClickListener {
+            lifecycleScope.launch {
+                val diametros = inspeccionDao.getDiametrosUnicos()
+                showCenteredDropdown("Diámetro", diametros) { seleccion ->
+                    spinnerDiametro.setText(seleccion, false)
+                }
+            }
+        }
+        spinnerConexion.setOnClickListener {
+            lifecycleScope.launch {
+                val conexiones = inspeccionDao.getConexionesUnicas()
+                showCenteredDropdown("Conexión", conexiones) { seleccion ->
+                    spinnerConexion.setText(seleccion, false)
+                }
+            }
+        }
+        spinnerPresEntrada.setOnClickListener {
+            lifecycleScope.launch {
+                val presiones = inspeccionDao.getPresionesEntradaUnicas()
+                showCenteredDropdown("Pres. Entrada", presiones) { seleccion ->
+                    spinnerPresEntrada.setText(seleccion, false)
+                    // Actualizar presiones de salida por entrada seleccionada
+                    actualizarPresionesSalidaPorEntrada(seleccion)
+                }
+            }
+        }
+        spinnerPresSalida.setOnClickListener {
+            val presionEntrada = spinnerPresEntrada.text.toString()
+            lifecycleScope.launch {
+                val presiones = if (presionEntrada.isNotEmpty()) {
+                    inspeccionDao.getPresionesSalidaMenoresQue(presionEntrada)
+                } else {
+                    inspeccionDao.getPresionesSalidaUnicas()
+                }
+                showCenteredDropdown("Pres. Salida", presiones) { seleccion ->
+                    spinnerPresSalida.setText(seleccion, false)
+                }
+            }
+        }
+        spinnerDescarga.setOnClickListener {
+            lifecycleScope.launch {
+                val descargas = inspeccionDao.getDescargasUnicas()
+                showCenteredDropdown("Descarga", descargas) { seleccion ->
+                    spinnerDescarga.setText(seleccion, false)
+                }
+            }
+        }
+        spinnerAplicacion.setOnClickListener {
+            lifecycleScope.launch {
+                val aplicaciones = inspeccionDao.getAplicacionesUnicas()
+                showCenteredDropdown("Aplicación", aplicaciones) { seleccion ->
+                    spinnerAplicacion.setText(seleccion, false)
+                }
+            }
+        }
+        spinnerServicio.setOnClickListener {
+            lifecycleScope.launch {
+                val servicios = inspeccionDao.getServiciosUnicos()
+                showCenteredDropdown("Servicio", servicios) { seleccion ->
+                    spinnerServicio.setText(seleccion, false)
+                }
+            }
+        }
+    }
+
+    private fun actualizarUnidadesPorArea(area: String) {
+        lifecycleScope.launch {
+            val unidades = inspeccionDao.getUnidadesPorArea(area)
+            val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, unidades)
+            spinnerUnidad.setAdapter(adapter)
+            showCenteredDropdown("Unidad", unidades) { seleccion ->
+                spinnerUnidad.setText(seleccion, false)
+            }
+        }
+    }
+
+    private fun setupGPS() {
+        Log.d("FragmentInspeccionEquipo", "Configurando GPS")
+        btnActualizarGPS.setOnClickListener {
+            Log.d("FragmentInspeccionEquipo", "Obteniendo coordenadas del GPS en segundo plano")
+            
+            // Obtener la última ubicación del GPS en segundo plano
+            val lastLocation = com.bithermmanagement.ui.MainMenuActivity.GpsProvider.lastLocation
+            
+            if (lastLocation != null) {
+                val precision = lastLocation.accuracy
+                val coordinates = "${lastLocation.latitude}, ${lastLocation.longitude}"
+                
+                Log.d("FragmentInspeccionEquipo", "GPS obtenido: $coordinates, precisión: ${"%.1f".format(precision)}m")
+                
+                // Actualizar la UI con formato unificado
+                tvGPS.text = "GPS: ${"%.6f".format(lastLocation.latitude)}, ${"%.6f".format(lastLocation.longitude)} (±${"%.1f".format(precision)}m)"
+                etUbicacion.setText(coordinates)
+                
+                android.widget.Toast.makeText(
+                    requireContext(), 
+                    "Coordenadas actualizadas: $coordinates", 
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Log.d("FragmentInspeccionEquipo", "No hay ubicación GPS disponible, iniciando captura manual")
+                android.widget.Toast.makeText(
+                    requireContext(), 
+                    "No hay GPS disponible, iniciando captura manual...", 
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                
+                if (!gpsRequestInProgress) {
+                    mostrarDialogoGPS()
+                }
+            }
+        }
+    }
+
+    private fun mostrarDialogoGPS() {
+        gpsRequestInProgress = true
+        gpsMaxWaitMillis = 5000
+        gpsBestLocation = null
+        gpsBestPrecision = Float.MAX_VALUE
+        gpsStartTime = System.currentTimeMillis()
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Captura de GPS")
+        val dialogView = layoutInflater.inflate(R.layout.dialog_gps_capture, null)
+        gpsDialogView = dialogView
+        val tvEstado = dialogView.findViewById<TextView>(R.id.tvEstadoGPS)
+        val tvPrecision = dialogView.findViewById<TextView>(R.id.tvPrecisionGPS)
+        tvEstado.text = "Obteniendo ubicación..."
+        tvPrecision.text = "Precisión: -- m"
+        builder.setView(dialogView)
+        builder.setCancelable(false)
+        builder.setPositiveButton("Aceptar esta precisión", null)
+        builder.setNeutralButton("Esperar más", null)
+        builder.setNegativeButton("Cancelar") { _, _ -> cancelarCapturaGPS() }
+        gpsDialog = builder.create()
+        gpsDialog?.setOnShowListener {
+            gpsDialog?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
+            gpsDialog?.getButton(AlertDialog.BUTTON_NEUTRAL)?.isEnabled = false
+        }
+        gpsDialog?.show()
+        iniciarCapturaGPS(tvEstado, tvPrecision)
+    }
+
+    private fun iniciarCapturaGPS(tvEstado: TextView, tvPrecision: TextView) {
+        val fusedLocationProvider = fusedLocationClient
+        gpsLocationRequest = com.google.android.gms.location.LocationRequest.create().apply {
+            interval = 1000
+            fastestInterval = 500
+            priority = com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
+            numUpdates = 20
+        }
+        gpsLocationCallback = object : com.google.android.gms.location.LocationCallback() {
+            override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
+                Log.d("GPS", "onLocationResult llamado")
+                val location = result.lastLocation
+                if (location != null) {
+                    val precision = location.accuracy
+                    Log.d("GPS", "Lat: ${location.latitude}, Lon: ${location.longitude}, Precisión: $precision")
+                    tvEstado.text = "Ubicación recibida"
+                    tvPrecision.text = "Precisión: ${"%.1f".format(precision)} m"
+                    if (precision < gpsBestPrecision) {
+                        gpsBestPrecision = precision
+                        gpsBestLocation = location
+                    }
+                    val elapsed = System.currentTimeMillis() - gpsStartTime
+                    if (gpsBestPrecision <= 10f) {
+                        finalizarDialogoGPS(true)
+                        fusedLocationProvider.removeLocationUpdates(this)
+                    } else if (elapsed >= 20000) { // 20 segundos
+                        Log.d("GPS", "Timeout alcanzado (20s)")
+                        finalizarDialogoGPS(false)
+                        fusedLocationProvider.removeLocationUpdates(this)
+                    }
+                } else {
+                    Log.d("GPS", "Location es null")
+                }
+            }
+            override fun onLocationAvailability(availability: com.google.android.gms.location.LocationAvailability) {
+                Log.d("GPS", "onLocationAvailability: ${availability.isLocationAvailable}")
+            }
+        }
+        if (checkLocationPermission()) {
+            fusedLocationProvider.requestLocationUpdates(gpsLocationRequest!!, gpsLocationCallback!!, null)
+        }
+        // Handler para timeout manual
+        gpsTimeoutHandler = android.os.Handler()
+        gpsTimeoutRunnable = Runnable {
+            if (gpsRequestInProgress) {
+                Log.d("GPS", "Timeout handler (20s)")
+                finalizarDialogoGPS(false)
+                fusedLocationProvider.removeLocationUpdates(gpsLocationCallback!!)
+            }
+        }
+        gpsTimeoutHandler?.postDelayed(gpsTimeoutRunnable!!, 20000)
+    }
+
+    private fun finalizarDialogoGPS(precisionOk: Boolean) {
+        gpsRequestInProgress = false
+        gpsTimeoutHandler?.removeCallbacks(gpsTimeoutRunnable!!)
+        val tvEstado = gpsDialogView?.findViewById<TextView>(R.id.tvEstadoGPS)
+        val tvPrecision = gpsDialogView?.findViewById<TextView>(R.id.tvPrecisionGPS)
+        val precision = gpsBestPrecision
+        val location = gpsBestLocation
+        val btnPositivo = gpsDialog?.getButton(AlertDialog.BUTTON_POSITIVE)
+        val btnNeutral = gpsDialog?.getButton(AlertDialog.BUTTON_NEUTRAL)
+        val btnNegativo = gpsDialog?.getButton(AlertDialog.BUTTON_NEGATIVE)
+        if (location == null) {
+            tvEstado?.text = "No se pudo obtener ubicación."
+            tvPrecision?.text = "Precisión: -- m"
+            btnPositivo?.isEnabled = false
+            btnNeutral?.isEnabled = false
+            btnNegativo?.isEnabled = true
+            return
+        }
+        tvEstado?.text = "Precisión obtenida: ${"%.1f".format(precision)} m"
+        tvPrecision?.text = "Coordenadas: ${location.latitude}, ${location.longitude}"
+        btnNegativo?.setOnClickListener { cancelarCapturaGPS() }
+        if (precision <= 10f) {
+            btnPositivo?.text = "Asignar"
+            btnPositivo?.isEnabled = true
+            btnNeutral?.isEnabled = false
+            btnPositivo?.setOnClickListener {
+                tvGPS.text = "GPS: ${"%.6f".format(location.latitude)}, ${"%.6f".format(location.longitude)} (±${"%.1f".format(precision)}m)"
+                etUbicacion.setText("${location.latitude}, ${location.longitude}")
+                gpsDialog?.dismiss()
+            }
+        } else {
+            btnPositivo?.text = "Aceptar esta precisión"
+            btnPositivo?.isEnabled = true
+            btnNeutral?.isEnabled = true
+            btnPositivo?.setOnClickListener {
+                tvGPS.text = "GPS: ${"%.6f".format(location.latitude)}, ${"%.6f".format(location.longitude)} (±${"%.1f".format(precision)}m)"
+                etUbicacion.setText("${location.latitude}, ${location.longitude}")
+                gpsDialog?.dismiss()
+            }
+            btnNeutral?.setOnClickListener {
+                gpsDialog?.dismiss()
+                mostrarDialogoGPS()
+            }
+        }
+    }
+
+    private fun cancelarCapturaGPS() {
+        gpsRequestInProgress = false
+        gpsTimeoutHandler?.removeCallbacks(gpsTimeoutRunnable!!)
+        gpsDialog?.dismiss()
+        val fusedLocationProvider = fusedLocationClient
+        gpsLocationCallback?.let { fusedLocationProvider.removeLocationUpdates(it) }
+    }
+
+    private fun checkLocationPermission(): Boolean {
+        return if (ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+            false
+        } else {
+            true
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            LOCATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    mostrarDialogoGPS()
+                }
+            }
+        }
+    }
+
+    private fun setupCarruselImagenes() {
+        // Configurar ViewPager2
+        viewPagerImagenes = requireView().findViewById(R.id.viewPagerImagenes)
+        indicadorPaginas = requireView().findViewById(R.id.indicadorPaginas)
+        
+        // Configurar el carrusel cuando se carguen los datos del equipo
+        cargarCarruselImagenes()
+    }
+    
+    private fun cargarCarruselImagenes() {
+        Log.d("CarruselDebug", "Iniciando carga del carrusel de imágenes")
+        Log.d("CarruselDebug", "Equipo: ${equipo?.id}")
+        Log.d("CarruselDebug", "Fotos del equipo: ${equipo?.fotos}")
+        Log.d("CarruselDebug", "Foto del equipo: ${equipo?.foto}")
+        
+        val listaImagenes = (equipo?.fotos ?: listOfNotNull(equipo?.foto))
+            .filter { !it.isNullOrBlank() }
+        
+        Log.d("CarruselDebug", "Lista de imágenes filtrada: $listaImagenes")
+        Log.d("CarruselDebug", "Cantidad de imágenes: ${listaImagenes.size}")
+        
+        if (listaImagenes.isNotEmpty()) {
+            Log.d("CarruselDebug", "Configurando adapter con ${listaImagenes.size} imágenes")
+            val adapter = CarruselImagenesAdapter(listaImagenes)
+            viewPagerImagenes.adapter = adapter
+            
+            // Configurar indicador de páginas
+            setupIndicadorPaginas(listaImagenes.size)
+            
+            // Listener para cambios de página
+            viewPagerImagenes.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    Log.d("CarruselDebug", "Página seleccionada: $position")
+                    actualizarIndicadorPaginas(position, listaImagenes.size)
+                }
+            })
+        } else {
+            Log.d("CarruselDebug", "No hay imágenes, mostrando placeholder")
+            // Si no hay imágenes, mostrar placeholder
+            val adapter = CarruselImagenesAdapter(listOf(""))
+            viewPagerImagenes.adapter = adapter
+        }
+    }
+    
+    private fun setupIndicadorPaginas(totalImagenes: Int) {
+        indicadorPaginas.removeAllViews()
+        
+        for (i in 0 until totalImagenes) {
+            val dot = ImageView(requireContext()).apply {
+                setImageResource(R.drawable.ic_dot)
+                val params = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    marginEnd = resources.getDimensionPixelSize(R.dimen.dot_margin)
+                }
+                layoutParams = params
+            }
+            indicadorPaginas.addView(dot)
+        }
+        
+        actualizarIndicadorPaginas(0, totalImagenes)
+    }
+    
+    private fun actualizarIndicadorPaginas(posicionActual: Int, totalImagenes: Int) {
+        for (i in 0 until indicadorPaginas.childCount) {
+            val dot = indicadorPaginas.getChildAt(i) as ImageView
+            if (i == posicionActual) {
+                dot.setImageResource(R.drawable.ic_dot_selected)
+            } else {
+                dot.setImageResource(R.drawable.ic_dot)
+            }
+        }
+    }
+
+    private fun mostrarDialogoImagen() {
+        val opciones = arrayOf("Ver imagen", "Capturar nueva", "Borrar imagen")
+        AlertDialog.Builder(requireContext())
+            .setTitle("Imagen del equipo")
+            .setItems(opciones) { _, which ->
+                when (which) {
+                    0 -> {
+                        Log.d("ImagenEquipo", "Ver imagen")
+                        // Lógica para ver imagen grande - usar el carrusel existente
+                    }
+                    1 -> {
+                        Log.d("ImagenEquipo", "Capturar nueva imagen")
+                        // Lógica para capturar imagen
+                        capturarImagenEquipo()
+                    }
+                    2 -> {
+                        Log.d("ImagenEquipo", "Borrar imagen")
+                        borrarImagenEquipo()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun capturarImagenEquipo() {
+        Log.d("ImagenEquipo", "Iniciar captura de imagen")
+        // Aquí iría la lógica de Intent para cámara, etc.
+    }
+
+    private fun borrarImagenEquipo() {
+        Log.d("ImagenEquipo", "Borrar imagen equipo")
+        // Aquí iría la lógica para borrar la imagen y actualizar la UI
+    }
+
+    // Para centrar el dropdown en pantalla, se usará un Dialog personalizado
+    private fun showCenteredDropdown(title: String, items: List<String>, onSelect: (String) -> Unit) {
+        val dialog = android.app.AlertDialog.Builder(requireContext())
+            .setTitle(title)
+            .setItems(items.toTypedArray()) { d, which ->
+                onSelect(items[which])
+                d.dismiss()
+            }
+            .setNegativeButton("Cancelar", null)
+            .create()
+        dialog.show()
+        // Centrar el diálogo
+        val window = dialog.window
+        window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.85).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
+        window?.setGravity(android.view.Gravity.CENTER)
+    }
+
+    private fun cargarColoresEstados(): Map<String, Int> {
+        val map = mutableMapOf<String, Int>()
+        val json = JSONObject(requireContext().assets.open("estados_colores.json").bufferedReader().use { it.readText() })
+        json.keys().forEach { estado ->
+            val colorHex = json.getString(estado)
+            try {
+                val estadoKey = estado.uppercase().trim()
+                val colorInt = android.graphics.Color.parseColor(colorHex)
+                map[estadoKey] = colorInt
+            } catch (e: Exception) {
+                android.util.Log.w("ColoresEstados", "Color inválido para estado $estado: $colorHex")
+            }
+        }
+        return map
+    }
+
+    private fun actualizarModelosPorMarca(marca: String) {
+        Log.d("FragmentInspeccionEquipo", "Actualizando modelos para marca: $marca")
+        lifecycleScope.launch {
+            try {
+                Log.d("SpinnerDebug", "Antes de obtener modelos para marca '$marca'")
+                val modelos = inspeccionDao.getModelosUnicosPorMarcas(listOf(marca))
+                Log.d("SpinnerDebug", "Modelos para marca '$marca': $modelos")
+                val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, modelos.toList())
+                spinnerModelo.setAdapter(adapter)
+                // Limpiar selección actual
+                spinnerModelo.setText("", false)
+                // Actualizar tipos por marca y modelo
+                actualizarTiposPorMarcaModelo(marca, "")
+            } catch (e: Exception) {
+                Log.e("SpinnerDebug", "Error al obtener modelos: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun actualizarTiposPorMarcaModelo(marca: String, modelo: String) {
+        Log.d("FragmentInspeccionEquipo", "Actualizando tipos para marca: $marca, modelo: $modelo")
+        lifecycleScope.launch {
+            try {
+                val tipos = if (marca.isNotEmpty() && modelo.isNotEmpty()) {
+                    inspeccionDao.getTiposUnicosPorMarcaModelo(marca, modelo)
+                } else {
+                    inspeccionDao.getTiposUnicos()
+                }
+                Log.d("SpinnerDebug", "Tipos para marca '$marca' y modelo '$modelo': $tipos")
+                val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, tipos.toList())
+                spinnerTipo.setAdapter(adapter)
+                // Limpiar selección actual
+                spinnerTipo.setText("", false)
+            } catch (e: Exception) {
+                Log.e("SpinnerDebug", "Error al obtener tipos: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun actualizarPresionesSalidaPorEntrada(presionEntrada: String) {
+        Log.d("FragmentInspeccionEquipo", "Actualizando presiones de salida para entrada: $presionEntrada")
+        lifecycleScope.launch {
+            try {
+                val presionesSalida = if (presionEntrada.isNotEmpty()) {
+                    // Obtener presiones de salida menores que la de entrada
+                    inspeccionDao.getPresionesSalidaMenoresQue(presionEntrada)
+                } else {
+                    inspeccionDao.getPresionesSalidaUnicas()
+                }
+                Log.d("SpinnerDebug", "Presiones de salida para entrada '$presionEntrada': $presionesSalida")
+                val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, presionesSalida.toList())
+                spinnerPresSalida.setAdapter(adapter)
+                // Limpiar selección actual
+                spinnerPresSalida.setText("", false)
+            } catch (e: Exception) {
+                Log.e("SpinnerDebug", "Error al obtener presiones de salida: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun navegarPurgador(direccion: Int) {
+        Log.d("NavegacionPurgador", "Intentando navegar. Índice actual: $indiceActual, dirección: $direccion, total: ${listaEquipos.size}")
+        if (listaEquipos.isEmpty()) return
+        val nuevoIndice = indiceActual + direccion
+        if (nuevoIndice in listaEquipos.indices) {
+            Log.d("NavegacionPurgador", "Navegando a índice: $nuevoIndice (ID: ${listaEquipos[nuevoIndice].id})")
+            indiceActual = nuevoIndice
+            equipo = listaEquipos[indiceActual]
+            Log.d("NavegacionPurgador", "Nuevo equipo seleccionado: $equipo")
+            cargarDatosEquipo()
+        } else {
+            Log.d("NavegacionPurgador", "Índice fuera de rango: $nuevoIndice")
+        }
+    }
+
+    private fun setupEstadoDropdown() {
+        lifecycleScope.launch {
+            try {
+                val estados = inspeccionDao.getEstadosUnicos()
+                
+                // Ordenar estados por color (agrupar colores similares)
+                val estadosOrdenados = estados.sortedWith { estado1, estado2 ->
+                    val color1 = coloresEstados[estado1.uppercase().trim()] ?: 0
+                    val color2 = coloresEstados[estado2.uppercase().trim()] ?: 0
+                    color1.compareTo(color2)
+                }
+                
+                Log.d("EstadoDropdown", "Estados ordenados: $estadosOrdenados")
+                Log.d("EstadoDropdown", "Colores disponibles: $coloresEstados")
+                
+                // Crear adapter personalizado con colores
+                val adapter = object : ArrayAdapter<String>(requireContext(), android.R.layout.simple_dropdown_item_1line, estadosOrdenados) {
+                    override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                        val view = super.getView(position, convertView, parent)
+                        val estado = getItem(position)
+                        if (estado != null) {
+                            val color = coloresEstados[estado.uppercase().trim()]
+                            if (color != null) {
+                                view.setBackgroundColor(color)
+                                (view as? android.widget.TextView)?.setTextColor(android.graphics.Color.BLACK)
+                            }
+                        }
+                        return view
+                    }
+                    
+                    override fun getDropDownView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View {
+                        val view = super.getDropDownView(position, convertView, parent)
+                        val estado = getItem(position)
+                        if (estado != null) {
+                            val color = coloresEstados[estado.uppercase().trim()]
+                            if (color != null) {
+                                view.setBackgroundColor(color)
+                                (view as? android.widget.TextView)?.setTextColor(android.graphics.Color.BLACK)
+                            }
+                        }
+                        return view
+                    }
+                }
+                
+                autoEstado.setAdapter(adapter)
+                
+                // Mostrar dropdown centrado con colores
+                autoEstado.setOnClickListener {
+                    val dialog = android.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Estado")
+                        .setItems(estadosOrdenados.toTypedArray()) { d, which ->
+                            val estadoSeleccionado = estadosOrdenados[which]
+                            autoEstado.setText(estadoSeleccionado, false)
+                            setEstadoBackground(estadoSeleccionado)
+                            d.dismiss()
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .create()
+                    dialog.show()
+                    
+                    // Aplicar colores a los items del diálogo después de que se muestre
+                    dialog.listView.post {
+                        for (i in 0 until dialog.listView.count) {
+                            val itemView = dialog.listView.getChildAt(i)
+                            if (itemView != null) {
+                                val estado = estadosOrdenados[i]
+                                val color = coloresEstados[estado.uppercase().trim()]
+                                Log.d("EstadoDropdown", "Estado: $estado, Color: $color")
+                                if (color != null) {
+                                    itemView.setBackgroundColor(color)
+                                    (itemView as? android.widget.TextView)?.setTextColor(android.graphics.Color.BLACK)
+                                }
+                            }
+                        }
+                    }
+                    
+                    val window = dialog.window
+                    window?.setLayout((resources.displayMetrics.widthPixels * 0.85).toInt(), android.view.WindowManager.LayoutParams.WRAP_CONTENT)
+                    window?.setGravity(android.view.Gravity.CENTER)
+                }
+            } catch (e: Exception) {
+                Log.e("EstadoDropdown", "Error al cargar estados: ${e.message}", e)
+            }
+        }
+    }
+
+    private fun actualizarInformacionInspector() {
+        equipo?.let { equipo ->
+            val fechaEstado = equipo.fechaInspeccion ?: ""
+            val inspector = equipo.identidadInspector ?: ""
+            val detector = equipo.detectorUtilizado ?: ""
+            
+            Log.d("FragmentInspeccionEquipo", "=== DEBUG DATOS INSPECTOR ===")
+            Log.d("FragmentInspeccionEquipo", "fechaInspeccion: '$fechaEstado'")
+            Log.d("FragmentInspeccionEquipo", "identidadInspector: '$inspector'")
+            Log.d("FragmentInspeccionEquipo", "detectorUtilizado: '$detector'")
+            Log.d("FragmentInspeccionEquipo", "Equipo ID: ${equipo.id}")
+            
+            val textoInspector = if (fechaEstado.isNotEmpty() && inspector.isNotEmpty()) {
+                "$fechaEstado - $inspector ($detector)"
+            } else {
+                "Sin datos de inspección anterior"
+            }
+            
+            labelDatosInspector.text = textoInspector
+            
+            // Actualizar modelo anterior
+            val marca = equipo.marca ?: ""
+            val modelo = equipo.modelo ?: ""
+            val diametro = equipo.diametro ?: ""
+            val conexion = equipo.conexion ?: ""
+            
+            val textoModelo = if (marca.isNotEmpty() && modelo.isNotEmpty()) {
+                val diamConex = if (diametro.isNotEmpty() && conexion.isNotEmpty()) {
+                    "($diametro-$conexion)"
+                } else if (diametro.isNotEmpty()) {
+                    "($diametro)"
+                } else if (conexion.isNotEmpty()) {
+                    "($conexion)"
+                } else {
+                    ""
+                }
+                "$marca - $modelo $diamConex"
+            } else {
+                ""
+            }
+            
+            tvModeloAnterior.text = textoModelo
+            
+            Log.d("FragmentInspeccionEquipo", "Texto final inspector: '$textoInspector'")
+            Log.d("FragmentInspeccionEquipo", "Texto final modelo: '$textoModelo'")
+            Log.d("FragmentInspeccionEquipo", "=== FIN DEBUG ===")
+        } ?: run {
+            Log.e("FragmentInspeccionEquipo", "Equipo es null, no se puede actualizar información")
+            labelDatosInspector.text = "Sin datos de inspección anterior"
+            tvModeloAnterior.text = ""
+        }
+    }
+
+    private fun guardarYAvanzar() {
+        Log.d("FragmentInspeccionEquipo", "=== INICIO GUARDAR Y AVANZAR ===")
+        
+        equipo?.let { equipoActual ->
+            // Obtener datos actuales del usuario logueado
+            val fechaActual = obtenerFechaActual()
+            val inspectorActual = obtenerInspectorActual()
+            val detectorActual = obtenerDetectorActual()
+            
+            Log.d("FragmentInspeccionEquipo", "Datos del usuario actual:")
+            Log.d("FragmentInspeccionEquipo", "  - Fecha: $fechaActual")
+            Log.d("FragmentInspeccionEquipo", "  - Inspector: $inspectorActual")
+            Log.d("FragmentInspeccionEquipo", "  - Detector: $detectorActual")
+            
+            // Obtener coordenadas GPS actuales al momento de guardar
+            val lastLocation = com.bithermmanagement.ui.MainMenuActivity.GpsProvider.lastLocation
+            val coordenadasGPS = if (lastLocation != null) {
+                "${lastLocation.latitude}, ${lastLocation.longitude}"
+            } else {
+                equipoActual.gpsCoord ?: ""
+            }
+            
+            val precisionGPS = if (lastLocation != null) {
+                "${"%.1f".format(lastLocation.accuracy)}m"
+            } else {
+                equipoActual.gpsAcc ?: ""
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "GPS actual:")
+            Log.d("FragmentInspeccionEquipo", "  - Coordenadas: $coordenadasGPS")
+            Log.d("FragmentInspeccionEquipo", "  - Precisión: $precisionGPS")
+            
+            // Obtener datos de los campos
+            val estado = autoEstado.text.toString()
+            val ubicacion = etUbicacion.text.toString()
+            val nota = etNota.text.toString()
+            val incidencias = etIncidencias.text.toString()
+            val linea = etLinea.text.toString()
+            
+            Log.d("FragmentInspeccionEquipo", "Datos de los campos:")
+            Log.d("FragmentInspeccionEquipo", "  - Estado: $estado")
+            Log.d("FragmentInspeccionEquipo", "  - Ubicación: $ubicacion")
+            Log.d("FragmentInspeccionEquipo", "  - Nota: $nota")
+            Log.d("FragmentInspeccionEquipo", "  - Incidencias: $incidencias")
+            Log.d("FragmentInspeccionEquipo", "  - Línea: $linea")
+            
+            // Crear equipo actualizado con los nuevos datos
+            val equipoActualizado = equipoActual.copy(
+                fechaInspeccion = fechaActual,
+                identidadInspector = inspectorActual,
+                detectorUtilizado = detectorActual,
+                estado = estado,
+                ubicacion = ubicacion,
+                nota = nota,
+                incidencias = incidencias,
+                linea = linea,
+                gpsCoord = coordenadasGPS,
+                gpsAcc = precisionGPS,
+                modificadoLocal = true
+            )
+            
+            Log.d("FragmentInspeccionEquipo", "Equipo actualizado creado:")
+            Log.d("FragmentInspeccionEquipo", "  - ID: ${equipoActualizado.id}")
+            Log.d("FragmentInspeccionEquipo", "  - Fecha inspección: ${equipoActualizado.fechaInspeccion}")
+            Log.d("FragmentInspeccionEquipo", "  - Inspector: ${equipoActualizado.identidadInspector}")
+            Log.d("FragmentInspeccionEquipo", "  - Detector: ${equipoActualizado.detectorUtilizado}")
+            
+            // Guardar en la base de datos
+            lifecycleScope.launch {
+                try {
+                    inspeccionDao.actualizarEquipo(equipoActualizado)
+                    Log.d("FragmentInspeccionEquipo", "✅ Equipo actualizado exitosamente en BD: ${equipoActualizado.id}")
+                    
+                    // Actualizar el equipo local
+                    equipo = equipoActualizado
+                    listaEquipos[indiceActual] = equipoActualizado
+                    
+                    // Actualizar la información del inspector en la UI
+                    actualizarInformacionInspector()
+                    
+                    Log.d("FragmentInspeccionEquipo", "✅ Datos guardados correctamente, navegando al siguiente...")
+                    
+                    // Navegar al siguiente purgador
+                    navegarPurgador(1)
+                    
+                } catch (e: Exception) {
+                    Log.e("FragmentInspeccionEquipo", "❌ Error guardando equipo: ${e.message}", e)
+                    // Mostrar error al usuario
+                    mostrarError("Error al guardar: ${e.message}")
+                }
+            }
+        } ?: run {
+            Log.e("FragmentInspeccionEquipo", "❌ Equipo es null, no se puede guardar")
+            mostrarError("No hay equipo seleccionado para guardar")
+        }
+        
+        Log.d("FragmentInspeccionEquipo", "=== FIN GUARDAR Y AVANZAR ===")
+    }
+
+    private fun obtenerFechaActual(): String {
+        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+        return sdf.format(java.util.Date())
+    }
+
+    private fun obtenerInspectorActual(): String {
+        // Obtener del SharedPreferences
+        val prefs = requireContext().getSharedPreferences("bitherm_prefs", android.content.Context.MODE_PRIVATE)
+        val swWeb = prefs.getString("sw_web", "SW WEB") ?: "SW WEB"
+        Log.d("FragmentInspeccionEquipo", "Inspector actual obtenido: $swWeb")
+        return swWeb
+    }
+
+    private fun obtenerDetectorActual(): String {
+        // Obtener del SharedPreferences
+        val prefs = requireContext().getSharedPreferences("bitherm_prefs", android.content.Context.MODE_PRIVATE)
+        val equipoAsignado = prefs.getString("equipo_asignado", "Detector") ?: "Detector"
+        Log.d("FragmentInspeccionEquipo", "Detector actual obtenido: $equipoAsignado")
+        return equipoAsignado
+    }
+
+    private fun mostrarError(mensaje: String) {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Error")
+            .setMessage(mensaje)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+} 

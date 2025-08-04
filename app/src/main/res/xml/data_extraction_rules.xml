@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Reglas de extracción de datos para BithermManagement
+   Configura qué datos se incluyen en el backup en la nube y transferencia de dispositivos
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Incluir la base de datos en el backup en la nube -->
+        <include domain="database" path="bitherm_database"/>
+        
+        <!-- Incluir preferencias compartidas -->
+        <include domain="sharedpref" path="."/>
+        
+        <!-- Excluir archivos sensibles -->
+        <exclude domain="sharedpref" path="device.xml"/>
+        <exclude domain="sharedpref" path="credentials.xml"/>
+    </cloud-backup>
+    
+    <device-transfer>
+        <!-- Incluir la base de datos en la transferencia de dispositivos -->
+        <include domain="database" path="bitherm_database"/>
+        
+        <!-- Incluir preferencias compartidas -->
+        <include domain="sharedpref" path="."/>
+        
+        <!-- Excluir archivos sensibles -->
+        <exclude domain="sharedpref" path="device.xml"/>
+        <exclude domain="sharedpref" path="credentials.xml"/>
+    </device-transfer>
+</data-extraction-rules>

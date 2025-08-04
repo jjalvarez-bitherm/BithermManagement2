@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_persona"
+        android:icon="@drawable/ic_person"
+        android:title="" />
+    <item
+        android:id="@+id/nav_mensajes"
+        android:icon="@drawable/ic_message"
+        android:title="" />
+    <item
+        android:id="@+id/nav_tareas"
+        android:icon="@drawable/ic_tasks"
+        android:title="" />
+    <item
+        android:id="@+id/nav_camara"
+        android:icon="@drawable/ic_camera"
+        android:title="" />
+    <item
+        android:id="@+id/nav_notas"
+        android:icon="@drawable/ic_note"
+        android:title="" />
+</menu> 

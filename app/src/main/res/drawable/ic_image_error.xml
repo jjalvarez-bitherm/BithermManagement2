@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <!-- Círculo azul claro de fondo -->
+    <path
+        android:fillColor="#B2EBF2"
+        android:pathData="M32,2A30,30 0 1,1 2,32A30,30 0 1,1 32,2Z"/>
+    <!-- Silueta simplificada del purgador -->
+    <path
+        android:fillColor="#222222"
+        android:pathData="M20,32 L44,32 L44,40 L36,40 L36,48 L28,48 L28,40 L20,40 Z M30,18 L34,18 L34,32 L30,32 Z M38,40 L42,44 L38,48 Z"/>
+</vector> 

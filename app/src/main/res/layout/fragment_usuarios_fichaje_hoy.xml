@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bitherm_gradient"
+    android:clipToPadding="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="80dp">
+
+        <!-- Card: Control de Fichajes del Día -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:backgroundTint="@color/black"
+            android:elevation="6dp"
+            app:cardCornerRadius="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Control de Fichajes del Día"
+                    android:textStyle="bold"
+                    android:textColor="@color/azul_bitherm"
+                    android:textSize="18sp"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Controles de navegación de fecha y actualización -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <ImageButton
+                        android:id="@+id/btn_fecha_anterior"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@android:color/transparent"
+                        android:src="@android:drawable/ic_media_previous"
+                        android:contentDescription="Anterior"
+                        app:tint="@color/azul_bitherm"/>
+
+                    <Button
+                        android:id="@+id/btn_actualizar_fichajes"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="Actualizar"
+                        android:backgroundTint="@color/verde_bitherm"
+                        android:textColor="@android:color/black"
+                        android:textAllCaps="false"
+                        android:textSize="16sp"/>
+
+                    <ImageButton
+                        android:id="@+id/btn_fecha_siguiente"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:background="@android:color/transparent"
+                        android:src="@android:drawable/ic_media_next"
+                        android:contentDescription="Siguiente"
+                        app:tint="@color/azul_bitherm"/>
+                </LinearLayout>
+
+                <!-- Label de fecha seleccionada -->
+                <TextView
+                    android:id="@+id/label_fecha_seleccionada"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="16sp"
+                    android:background="@android:color/transparent"
+                    android:text="Fecha"/>
+
+                <!-- Lista de usuarios -->
+                <LinearLayout
+                    android:id="@+id/layout_usuarios_fichaje_hoy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+</ScrollView> 

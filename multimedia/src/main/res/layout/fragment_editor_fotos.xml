@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/black">
+
+    <!-- Área de la foto -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.github.chrisbanes.photoview.PhotoView
+            android:id="@+id/photoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter" />
+
+    </FrameLayout>
+
+    <!-- Barra inferior con controles -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_card_black"
+        android:padding="16dp"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/btnFlecha"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:contentDescription="Dibujar flecha"
+            android:padding="11dp" />
+
+        <ImageButton
+            android:id="@+id/btnTexto"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:contentDescription="Añadir nota"
+            android:padding="11dp" />
+
+        <ImageButton
+            android:id="@+id/btnRecortar"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:contentDescription="Recortar imagen"
+            android:padding="11dp" />
+
+        <ImageButton
+            android:id="@+id/btnGirar"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:contentDescription="Girar imagen"
+            android:padding="11dp" />
+
+        <ImageButton
+            android:id="@+id/btnCancelar"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_button_rounded"
+            android:contentDescription="Cancelar"
+            android:padding="11dp" />
+
+        <ImageButton
+            android:id="@+id/btnGuardar"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:background="@drawable/bg_button_rounded"
+            android:contentDescription="Guardar"
+            android:padding="11dp" />
+
+    </LinearLayout>
+
+</LinearLayout> 
+ 
+ 

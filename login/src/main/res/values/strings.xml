@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">BithermManagement</string>
+    
+    <!-- Splash Screen -->
+    <string name="splash_loading">Cargando...</string>
+    
+    <!-- Login Screen -->
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_username_hint">Usuario</string>
+    <string name="login_password_hint">Contraseña</string>
+    <string name="login_button_text">Entrar</string>
+    <string name="login_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="login_error_invalid_credentials">Usuario o contraseña incorrectos</string>
+    <string name="login_error_network">Error de conexión. Verifica tu conexión a internet</string>
+    <string name="login_error_server">Error del servidor. Inténtalo más tarde</string>
+    <string name="login_loading">Verificando credenciales...</string>
+    
+    <!-- Biometric -->
+    <string name="biometric_title">Autenticación Biométrica</string>
+    <string name="biometric_subtitle">Usa tu huella dactilar o PIN</string>
+    <string name="biometric_negative_button">Cancelar</string>
+    <string name="biometric_error_not_available">La autenticación biométrica no está disponible</string>
+    <string name="biometric_error_no_enrolled">No hay huellas dactilares registradas</string>
+    
+    <!-- Common -->
+    <string name="ok">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="retry">Reintentar</string>
+</resources> 

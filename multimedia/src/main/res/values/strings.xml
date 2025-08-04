@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mini_gallery_equipo">Foto equipo</string>
+    <string name="mini_gallery_ubicacion">Foto ubicación</string>
+    <string name="mini_gallery_manifold">Foto manifold</string>
+    <string name="mini_gallery_mapa">Mapa GPS</string>
+</resources> 

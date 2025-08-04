@@ -1,0 +1,475 @@
+package com.bithermmanagement.ui.inspection
+
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bithermmanagement.R
+import com.bithermmanagement.databinding.FragmentInspectionBinding
+import com.bithermmanagement.data.InspectionItem
+import com.bithermmanagement.ui.inspection.adapter.InspectionAdapter
+import com.bithermmanagement.utils.GoogleDriveHelper
+import com.bithermmanagement.utils.GoogleSheetsHelper
+import com.bithermmanagement.utils.LocationHelper
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
+import javax.inject.Inject
+
+@AndroidEntryPoint
+class InspectionFragment : Fragment() {
+
+    private var _binding: FragmentInspectionBinding? = null
+    private val binding get() = _binding!!
+    
+    @Inject
+    lateinit var googleDriveHelper: GoogleDriveHelper
+    
+    @Inject
+    lateinit var googleSheetsHelper: GoogleSheetsHelper
+    
+    private lateinit var locationHelper: LocationHelper
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var inspectionAdapter: InspectionAdapter
+    
+    private var currentPhotoPath: String? = null
+    private var currentItemId: String? = null
+    private var currentItemPosition: Int = 0
+    private var inspectionItems: List<InspectionItem> = emptyList()
+    
+    private val SPREADSHEET_ID = "TU_SPREADSHEET_ID" // Reemplazar con el ID real
+    
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            getCurrentLocation()
+        } else {
+            Toast.makeText(context, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            currentPhotoPath?.let { path ->
+                currentItemId?.let { itemId ->
+                    inspectionAdapter.updateItemPhoto(itemId, path)
+                    // Marcar como foto principal si es la primera
+                    val item = inspectionItems.find { it.id == itemId }
+                    item?.let {
+                        if (it.photoPath == null) {
+                            it.isPrimaryPhoto = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "InspectionFragment"
+        private const val REQUEST_CAMERA_PERMISSION = 100
+        private const val REQUEST_LOCATION_PERMISSION = 101
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentInspectionBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        
+        setupViews()
+        setupListeners()
+        loadInspectionData()
+    }
+
+    private fun setupViews() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
+        locationHelper = LocationHelper(requireContext())
+        
+        // Configurar RecyclerView
+        inspectionAdapter = InspectionAdapter(
+            onItemClick = { item, position -> 
+                currentItemId = item.id
+                currentItemPosition = position
+                checkLocationPermission()
+            },
+            onPhotoClick = { item ->
+                currentItemId = item.id
+                checkCameraPermission()
+            },
+            onStatusChange = { item ->
+                item.isModified = true
+                updatePendingTasks()
+            },
+            onDataChange = { item ->
+                item.isModified = true
+                updatePendingTasks()
+            }
+        )
+        
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = inspectionAdapter
+        }
+        
+        // Configurar spinners de filtro
+        setupFilterSpinners()
+    }
+
+    private fun setupListeners() {
+        binding.btnPrevious.setOnClickListener {
+            if (currentItemPosition > 0) {
+                navigateToItem(currentItemPosition - 1)
+            }
+        }
+        
+        binding.btnNext.setOnClickListener {
+            if (currentItemPosition < inspectionItems.size - 1) {
+                navigateToItem(currentItemPosition + 1)
+            }
+        }
+        
+        binding.btnSaveInspection.setOnClickListener {
+            saveInspectionToSheets()
+        }
+        
+        binding.btnUploadPhotos.setOnClickListener {
+            uploadPhotosToDrive()
+        }
+        
+        binding.btnSyncData.setOnClickListener {
+            syncDataToSheets()
+        }
+    }
+
+    private fun setupFilterSpinners() {
+        val statusOptions = listOf(
+            "Todos", "Bien", "Fuera de servicio", "No Vapor", "Baja temperatura", 
+            "Fuga continua", "Anulado", "Antes fugaba", "No encontrado", "Inaccesible", 
+            "Mal instalado", "Ciclo corto", "Falta purgador", "Fuga parcial"
+        )
+        
+        val statusAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, statusOptions)
+        statusAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        binding.spinnerStatusFilter.adapter = statusAdapter
+        
+        binding.spinnerStatusFilter.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedStatus = statusOptions[position]
+                if (selectedStatus != "Todos") {
+                    val filteredItems = inspectionItems.filter { it.status == selectedStatus }
+                    inspectionAdapter.updateData(filteredItems)
+                } else {
+                    inspectionAdapter.updateData(inspectionItems)
+                }
+            }
+            
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+    }
+
+    private fun loadInspectionData() {
+        // Simular carga de datos - en producción esto vendría de la base de datos
+        val mockItems = listOf(
+            InspectionItem(
+                id = "PURG-001",
+                tag = "Purgador 001",
+                description = "Purgador de vapor principal",
+                location = "Área A - Unidad 1",
+                status = "Bien",
+                brand = "Spirax Sarco",
+                model = "FT14-4.5",
+                notes = "Funcionando correctamente"
+            ),
+            InspectionItem(
+                id = "PURG-002",
+                tag = "Purgador 002",
+                description = "Purgador de condensado",
+                location = "Área A - Unidad 2",
+                status = "Fuga continua",
+                brand = "Armstrong",
+                model = "D-3",
+                notes = "Requiere mantenimiento"
+            ),
+            InspectionItem(
+                id = "PURG-003",
+                tag = "Purgador 003",
+                description = "Purgador de alta presión",
+                location = "Área B - Unidad 1",
+                status = "No Vapor",
+                brand = "TLV",
+                model = "J3X",
+                notes = "Sin suministro de vapor"
+            )
+        )
+        
+        inspectionItems = mockItems
+        inspectionAdapter.updateData(mockItems)
+        updateNavigationButtons()
+    }
+
+    private fun navigateToItem(position: Int) {
+        if (position in 0 until inspectionItems.size) {
+            currentItemPosition = position
+            currentItemId = inspectionItems[position].id
+            binding.recyclerView.smoothScrollToPosition(position)
+            updateNavigationButtons()
+            updateCurrentItemInfo()
+        }
+    }
+
+    private fun updateNavigationButtons() {
+        binding.btnPrevious.isEnabled = currentItemPosition > 0
+        binding.btnNext.isEnabled = currentItemPosition < inspectionItems.size - 1
+        
+        binding.tvNavigationInfo.text = "${currentItemPosition + 1} de ${inspectionItems.size}"
+    }
+
+    private fun updateCurrentItemInfo() {
+        val currentItem = inspectionItems.getOrNull(currentItemPosition)
+        currentItem?.let {
+            binding.tvCurrentItemTag.text = it.tag
+            binding.tvCurrentItemStatus.text = it.status
+            binding.tvCurrentItemLocation.text = it.location
+        }
+    }
+
+    private fun checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) 
+            != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA_PERMISSION)
+        } else {
+            dispatchTakePictureIntent()
+        }
+    }
+
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) 
+            != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_LOCATION_PERMISSION)
+        } else {
+            getCurrentLocation()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            REQUEST_CAMERA_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    dispatchTakePictureIntent()
+                } else {
+                    Toast.makeText(context, "Se necesita permiso de cámara para tomar fotos", Toast.LENGTH_SHORT).show()
+                }
+            }
+            REQUEST_LOCATION_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getCurrentLocation()
+                } else {
+                    Toast.makeText(context, "Se necesita permiso de ubicación para obtener GPS", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun dispatchTakePictureIntent() {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            takePictureIntent.resolveActivity(requireActivity().packageManager)?.also {
+                val photoFile: File? = try {
+                    createImageFile()
+                } catch (ex: Exception) {
+                    null
+                }
+                photoFile?.also {
+                    val photoURI: Uri = FileProvider.getUriForFile(
+                        requireContext(),
+                        "${requireContext().packageName}.fileprovider",
+                        it
+                    )
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                    takePictureLauncher.launch(takePictureIntent)
+                }
+            }
+        }
+    }
+
+    private fun createImageFile(): File {
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val storageDir: File = requireContext().getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)!!
+        return File.createTempFile(
+            "INSPECTION_${timeStamp}_",
+            ".jpg",
+            storageDir
+        ).apply {
+            currentPhotoPath = absolutePath
+        }
+    }
+
+    private fun getCurrentLocation() {
+        lifecycleScope.launch {
+            locationHelper.getCurrentLocation(
+                onSuccess = { location ->
+                    val locationString = "${location.latitude},${location.longitude}"
+                    currentItemId?.let { itemId ->
+                        inspectionAdapter.updateItemGPS(itemId, locationString)
+                        updatePendingTasks()
+                    }
+                },
+                onFailure = { exception ->
+                    Toast.makeText(context, "Error al obtener ubicación: ${exception.message}", Toast.LENGTH_SHORT).show()
+                }
+            )
+        }
+    }
+
+    private fun updatePendingTasks() {
+        val modifiedItems = inspectionItems.filter { it.isModified }
+        val itemsWithPhotos = inspectionItems.filter { it.photoPath != null && !it.photoPath!!.startsWith("http") }
+        
+        binding.tvPendingData.text = "Datos pendientes: ${modifiedItems.size}"
+        binding.tvPendingPhotos.text = "Fotos pendientes: ${itemsWithPhotos.size}"
+        
+        binding.btnSaveInspection.isEnabled = modifiedItems.isNotEmpty()
+        binding.btnUploadPhotos.isEnabled = itemsWithPhotos.isNotEmpty()
+    }
+
+    private fun saveInspectionToSheets() {
+        val modifiedItems = inspectionItems.filter { it.isModified }
+        if (modifiedItems.isEmpty()) {
+            Toast.makeText(context, "No hay datos modificados para guardar", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val formattedData = formatInspectionData(modifiedItems)
+                val currentDate = SimpleDateFormat("yyyy-MM-dd_HH-mm", Locale.getDefault()).format(Date())
+                val sheetName = "Inspección_$currentDate"
+                val range = "$sheetName!A1"
+                
+                val success = googleSheetsHelper.updateSheet(SPREADSHEET_ID, range, formattedData)
+                
+                withContext(Dispatchers.Main) {
+                    if (success) {
+                        Toast.makeText(context, "Datos guardados exitosamente", Toast.LENGTH_SHORT).show()
+                        modifiedItems.forEach { it.isModified = false }
+                        inspectionAdapter.notifyDataSetChanged()
+                        updatePendingTasks()
+                    } else {
+                        Toast.makeText(context, "Error al guardar los datos", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun uploadPhotosToDrive() {
+        val itemsWithPhotos = inspectionItems.filter { it.photoPath != null && !it.photoPath!!.startsWith("http") }
+        if (itemsWithPhotos.isEmpty()) {
+            Toast.makeText(context, "No hay fotos para subir", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                var uploadedCount = 0
+                for (item in itemsWithPhotos) {
+                    item.photoPath?.let { localPath ->
+                        val driveFileId = googleDriveHelper.uploadPhoto(localPath, item.id)
+                        if (driveFileId != null) {
+                            item.photoPath = driveFileId
+                            uploadedCount++
+                        }
+                    }
+                }
+                
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "$uploadedCount fotos subidas exitosamente", Toast.LENGTH_SHORT).show()
+                    inspectionAdapter.notifyDataSetChanged()
+                    updatePendingTasks()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error al subir fotos: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun syncDataToSheets() {
+        // Sincronizar todos los datos pendientes
+        saveInspectionToSheets()
+        uploadPhotosToDrive()
+    }
+
+    private fun formatInspectionData(items: List<InspectionItem>): List<List<String>> {
+        val headers = listOf("ID", "Tag", "Descripción", "Ubicación", "Estado", "Marca", "Modelo", "Notas", "GPS", "Foto Principal", "Fotos Adicionales", "Fecha")
+        val data = mutableListOf(headers)
+        
+        val currentDate = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        
+        items.forEach { item ->
+            val row = listOf(
+                item.id,
+                item.tag,
+                item.description,
+                item.location,
+                item.status,
+                item.brand,
+                item.model,
+                item.notes,
+                item.gpsLocation ?: "",
+                if (item.isPrimaryPhoto) item.photoPath ?: "" else "",
+                if (!item.isPrimaryPhoto) item.photoPath ?: "" else "",
+                currentDate
+            )
+            data.add(row)
+        }
+        
+        return data
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+} 

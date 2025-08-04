@@ -1,0 +1,24 @@
+package com.bithermmanagement
+
+import android.app.Application
+import android.util.Log
+import com.bithermmanagement.database.AppDatabase
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class BithermApplication : Application() {
+    
+    override fun onCreate() {
+        super.onCreate()
+        
+        // TEMPORAL: Borrar base de datos para evitar problemas de migración
+        // Comentar esta línea después de la primera ejecución exitosa
+        try {
+            Log.d("BithermApplication", "Borrando base de datos para recreación limpia...")
+            AppDatabase.resetDatabase(this)
+            Log.d("BithermApplication", "Base de datos borrada exitosamente")
+        } catch (e: Exception) {
+            Log.e("BithermApplication", "Error borrando base de datos", e)
+        }
+    }
+} 

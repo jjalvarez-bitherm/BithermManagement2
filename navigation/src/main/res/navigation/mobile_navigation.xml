@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@id/mainMenuFragment">
+
+    <fragment
+        android:id="@+id/mainMenuFragment"
+        android:name="com.bithermmanagement.navigation.MainMenuFragment"
+        android:label="MainMenuFragment"
+        tools:layout="@layout/fragment_main_menu" >
+        <action
+            android:id="@+id/action_mainMenuFragment_to_subMenuFragment"
+            app:destination="@id/subMenuFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/subMenuFragment"
+        android:name="com.bithermmanagement.navigation.SubMenuFragment"
+        android:label="SubMenuFragment"
+        tools:layout="@layout/fragment_sub_menu" >
+        <argument
+            android:name="mainMenuKey"
+            app:argType="string" />
+        <argument
+            android:name="mainMenuName"
+            app:argType="string" />
+    </fragment>
+</navigation> 

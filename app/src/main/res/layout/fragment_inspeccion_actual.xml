@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/azul_bitherm">
+
+    <!-- Barra superior -->
+    <LinearLayout
+        android:id="@+id/barraSuperior"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/azul_bitherm"
+        android:padding="8dp">
+
+        <ImageButton
+            android:id="@+id/btnHamburger"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_menu_hamburguesa"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/tvTituloBarra"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Inspección Actual"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center_vertical|center_horizontal" />
+
+        <ImageButton
+            android:id="@+id/btnFiltroEstado"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_checkbox_filled"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/txtFiltroEstado"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ALL"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:gravity="center_vertical|center_horizontal"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp" />
+    </LinearLayout>
+
+    <!-- Pestana para mostrar barra superior -->
+    <LinearLayout
+        android:id="@+id/pestanaBarraSuperior"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@color/azul_bitherm"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <ImageView
+            android:id="@+id/iconoHamburguesaPestana"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_menu_hamburguesa"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Nueva Barra de Estado Mejorada -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@color/azul_bitherm"
+        android:padding="8dp"
+        android:gravity="center_vertical">
+
+        <!-- Campo de búsqueda (30% del ancho) -->
+        <EditText
+            android:id="@+id/etBuscar"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="0.3"
+            android:background="@drawable/bg_spinner_custom"
+            android:hint="Buscar..."
+            android:textColor="@android:color/black"
+            android:textColorHint="#757575"
+            android:textSize="12sp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:gravity="center_vertical"
+            android:inputType="text"
+            android:imeOptions="actionSearch" />
+
+        <!-- Botón de filtro ÁREA (28% del ancho) -->
+        <Button
+            android:id="@+id/btnFiltroArea"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="0.28"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_filter_button"
+            android:text="AREA"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="0dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp" />
+
+        <!-- Botón de filtro UNIDAD (28% del ancho) -->
+        <Button
+            android:id="@+id/btnFiltroUnidad"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="0.28"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_filter_button"
+            android:text="UNIDAD"
+            android:textColor="@android:color/black"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="0dp"
+            android:minHeight="0dp"
+            android:minWidth="0dp" />
+
+        <!-- Botón Play/Pause (7% del ancho) -->
+        <ImageButton
+            android:id="@+id/btnPlayPause"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="0.07"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_button_play_pause"
+            android:src="@drawable/ic_play"
+            android:scaleType="centerInside"
+            android:padding="4dp" />
+
+        <!-- Filtro de estado (7% del ancho) -->
+        <TextView
+            android:id="@+id/tvFiltroEstado"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="0.07"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/bg_filter_button"
+            android:text="T"
+            android:textColor="@android:color/black"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground" />
+
+    </LinearLayout>
+
+    <!-- RecyclerView para los equipos -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerPurgadores"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp" />
+
+</LinearLayout> 

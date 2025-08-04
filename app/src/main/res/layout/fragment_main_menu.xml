@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/bitherm_gradient">
+
+    <TextView
+        android:id="@+id/label_menu_principal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Menú principal:"
+        android:textStyle="bold"
+        android:textSize="30sp"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="4dp"
+        android:padding="8dp"
+        android:elevation="4dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_main_menu"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp"
+        android:clipToPadding="false"
+        android:background="@android:color/transparent"/>
+
+</LinearLayout> 

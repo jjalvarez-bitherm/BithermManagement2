@@ -1,0 +1,63 @@
+{
+  "app_config": {
+    "app_name": "BithermManagement",
+    "package_name": "com.bithermmanagement",
+    "version_name": "1.0",
+    "version_code": 1
+  },
+  "login_module": {
+    "splash_screen": {
+      "duration_ms": 2000,
+      "logo_path": "@drawable/ic_launcher_foreground",
+      "background_color": "@color/white",
+      "text_color": "@color/black"
+    },
+    "login_screen": {
+      "title": "Iniciar Sesión",
+      "username_hint": "Usuario",
+      "password_hint": "Contraseña",
+      "login_button_text": "Entrar",
+      "forgot_password_text": "¿Olvidaste tu contraseña?",
+      "background_color": "@color/white",
+      "primary_color": "@color/purple_500",
+      "error_color": "@color/red_500"
+    },
+    "biometric": {
+      "enabled": true,
+      "title": "Autenticación Biométrica",
+      "subtitle": "Usa tu huella dactilar o PIN",
+      "negative_button": "Cancelar"
+    }
+  },
+  "google_sheets": {
+    "spreadsheet_id": "",
+    "credentials_file": "credentials2.json",
+    "sheets": {
+      "users": {
+        "name": "Usuarios",
+        "columns": {
+          "username": "A",
+          "password": "B",
+          "name": "C",
+          "email": "D",
+          "role": "E",
+          "active": "F",
+          "last_login": "G"
+        }
+      }
+    }
+  },
+  "user_data_fields": [
+    "username",
+    "name", 
+    "email",
+    "role",
+    "permissions",
+    "preferences"
+  ],
+  "navigation": {
+    "main_activity": "MainActivity",
+    "login_activity": "LoginActivity",
+    "splash_activity": "SplashActivity"
+  }
+} 
