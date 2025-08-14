@@ -13,7 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.bithermmanagement.core.base.DebugBaseActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -44,7 +44,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 
-class FichajeActivity : AppCompatActivity() {
+class FichajeActivity : DebugBaseActivity() {
     
     // UI Components
     private lateinit var workerNameTextView: TextView

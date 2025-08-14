@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import android.util.Log
 
 @AndroidEntryPoint
 class FragmentDetalleEquipo : Fragment() {
@@ -82,6 +83,11 @@ class FragmentDetalleEquipo : Fragment() {
             val textView = view.findViewById<TextView>(resources.getIdentifier(viewId, "id", requireContext().packageName))
             textView?.text = valor ?: "N/A"
         }
+        
+        // Log para debugging
+        Log.d("FragmentDetalleEquipo", "Mostrando equipo: ${equipo.id}")
+        Log.d("FragmentDetalleEquipo", "Campos mostrados: ${campos.size}")
+        Log.d("FragmentDetalleEquipo", "Campos con valor: ${campos.count { it.value != null && it.value != "N/A" }}")
     }
 
     companion object {

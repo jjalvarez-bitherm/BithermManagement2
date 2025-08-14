@@ -11,7 +11,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.bithermmanagement.core.base.DebugBaseActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.commit
 import com.bithermmanagement.R
@@ -27,9 +27,13 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.content.Intent
+import com.bithermmanagement.core.utils.DebugConfigManager
+import android.view.LayoutInflater
+import android.widget.Switch
+import android.widget.Toast
 
 @AndroidEntryPoint
-class MainMenuActivity : AppCompatActivity() {
+class MainMenuActivity : DebugBaseActivity() {
     
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
@@ -153,17 +157,7 @@ class MainMenuActivity : AppCompatActivity() {
         // Configurar icono GPS
         val iconGps = findViewById<ImageView>(R.id.icon_gps)
         iconGps.setOnClickListener {
-            val loc = bestLocation
-            val msg = if (loc != null) {
-                "Coordenadas:\n${loc.latitude}, ${loc.longitude}\nPrecisión: ${"%.1f".format(loc.accuracy)} m"
-            } else {
-                "No hay localización disponible aún."
-            }
-            AlertDialog.Builder(this)
-                .setTitle("GPS Actual")
-                .setMessage(msg)
-                .setPositiveButton("OK", null)
-                .show()
+            showGpsDebugDialog()
         }
     }
 
@@ -206,5 +200,48 @@ class MainMenuActivity : AppCompatActivity() {
             // También activar GPS automático cuando se concedan permisos
             initializeAutomaticGps()
         }
+    }
+
+    private fun showGpsDebugDialog() {
+        // Crear el layout personalizado
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_gps_debug, null)
+        
+        // Configurar información GPS
+        val tvGpsInfo = dialogView.findViewById<TextView>(R.id.tv_gps_info)
+        val loc = bestLocation
+        val gpsText = if (loc != null) {
+            "📍 GPS Actual\n\nCoordenadas:\n${loc.latitude}, ${loc.longitude}\n\nPrecisión: ${"%.1f".format(loc.accuracy)} m"
+        } else {
+            "📍 GPS Actual\n\nNo hay localización disponible aún."
+        }
+        tvGpsInfo.text = gpsText
+        
+        // Configurar switch de debug
+        val switchDebug = dialogView.findViewById<Switch>(R.id.switch_debug)
+        switchDebug.isChecked = DebugConfigManager.isDebugModeEnabled(this)
+        
+                            switchDebug.setOnCheckedChangeListener { _, isChecked ->
+                        DebugConfigManager.setDebugMode(this, isChecked)
+                        val message = if (isChecked) "🐛 Debug Mode ENABLED" else "🐛 Debug Mode DISABLED"
+                        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+                        
+                        // Actualizar el debug observer
+                        val debugObserver = com.bithermmanagement.core.utils.DebugLifecycleObserver.getInstance(this)
+                        debugObserver.updateDebugMode()
+                    }
+        
+        // Crear y mostrar el diálogo
+        AlertDialog.Builder(this)
+            .setTitle("GPS & Debug")
+            .setView(dialogView)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                // Revertir el estado del switch si se cancela
+                switchDebug.isChecked = DebugConfigManager.isDebugModeEnabled(this)
+                dialog.dismiss()
+            }
+            .show()
     }
 } 

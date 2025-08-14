@@ -68,4 +68,14 @@ dependencies {
 
     // Security
     implementation("androidx.security:security-crypto:1.0.0")
+    
+    // AppCompat & Lifecycle (para el sistema de debug)
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.lifecycle:lifecycle-process:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    
+    // UI Components (para el overlay de debug)
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.0")
+    implementation("androidx.viewpager2:viewpager2:1.0.0")
 }

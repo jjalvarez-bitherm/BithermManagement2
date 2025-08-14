@@ -2,10 +2,10 @@ package com.bithermmanagement
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import com.bithermmanagement.core.base.DebugBaseActivity
 import com.bithermmanagement.ui.login.LoginActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : DebugBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         

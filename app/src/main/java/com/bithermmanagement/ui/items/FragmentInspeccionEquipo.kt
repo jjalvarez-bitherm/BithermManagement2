@@ -40,6 +40,7 @@ import android.app.AlertDialog
 import android.content.Context
 import org.json.JSONObject
 
+@AndroidEntryPoint
 class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualizadaListener {
     companion object {
         private const val ARG_EQUIPO_ID = "equipo_id"
@@ -182,6 +183,21 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             equipos.clear()
             equipos.addAll(withContext(Dispatchers.IO) { db.equipoDao().getAllEquipos() })
             estadosUnicos = equipos.mapNotNull { it.estado }.distinct().sorted()
+            
+            Log.d("FragmentInspeccionEquipo", "=== VERIFICACIÓN DE DATOS ===")
+            Log.d("FragmentInspeccionEquipo", "Total equipos cargados: ${equipos.size}")
+            if (equipos.isNotEmpty()) {
+                val primerEquipo = equipos[0]
+                Log.d("FragmentInspeccionEquipo", "Primer equipo: ID=${primerEquipo.id}")
+                Log.d("FragmentInspeccionEquipo", "Primer equipo: Area=${primerEquipo.area}, Unidad=${primerEquipo.unidad}")
+                Log.d("FragmentInspeccionEquipo", "Primer equipo: Marca=${primerEquipo.marca}, Modelo=${primerEquipo.modelo}")
+                Log.d("FragmentInspeccionEquipo", "Primer equipo: Estado=${primerEquipo.estado}")
+                Log.d("FragmentInspeccionEquipo", "Primer equipo: Ubicacion=${primerEquipo.ubicacion}")
+            } else {
+                Log.e("FragmentInspeccionEquipo", "⚠️ NO HAY EQUIPOS EN LA BASE DE DATOS")
+            }
+            Log.d("FragmentInspeccionEquipo", "Estados únicos: $estadosUnicos")
+            Log.d("FragmentInspeccionEquipo", "=== FIN VERIFICACIÓN ===")
             
             // Configurar spinners primero
             setupSpinners()

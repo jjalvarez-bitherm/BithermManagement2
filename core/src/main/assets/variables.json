@@ -59,5 +59,30 @@
     "main_activity": "MainActivity",
     "login_activity": "LoginActivity",
     "splash_activity": "SplashActivity"
+  },
+  "debug_config": {
+    "enabled": false,
+    "show_popups": true,
+    "show_background_colors": true,
+    "log_level": "DEBUG",
+    "popup_delay_ms": 3000,
+    "gesture_activation": {
+      "triple_tap_enabled": true,
+      "double_tap_enabled": true,
+      "tap_timeout_ms": 500
+    },
+    "overlay": {
+      "position": "top_right",
+      "auto_hide": true,
+      "auto_hide_delay_ms": 3000,
+      "background_color": "#1A000000",
+      "text_color": "#FFFFFF"
+    },
+    "features": {
+      "fragment_tracking": true,
+      "layout_analysis": true,
+      "view_hierarchy": true,
+      "performance_monitoring": true
+    }
   }
 } 

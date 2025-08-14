@@ -223,9 +223,134 @@ class FragmentInspeccionConfiguracion : Fragment() {
         btnActualizar.setOnClickListener {
             Log.d("FragmentInspeccionConfiguracion", "=== CLICK EN BOTÓN ACTUALIZAR ===")
             Log.d("FragmentInspeccionConfiguracion", "CLICK en btnActualizar")
-            Toast.makeText(requireContext(), "Función de actualizar pendiente de implementar", Toast.LENGTH_SHORT).show()
+            
+            // Obtener el campo de orden seleccionado previamente
+            val campoOrdenSeleccionado = prefs.getString("campo_orden_seleccionado", null)
+            
+            Toast.makeText(requireContext(), "Sincronizando equipos desde Google Sheets...", Toast.LENGTH_SHORT).show()
+            setLoading(true)
+            
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val context = requireContext()
+                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                    
+                    Log.d("FragmentInspeccionConfiguracion", "Iniciando sincronización de equipos...")
+                    Log.d("FragmentInspeccionConfiguracion", "Campo de orden: $campoOrdenSeleccionado")
+                    
+                    val resultado = sheetsManager.sincronizarEquipos(campoOrdenSeleccionado)
+                    
+                    withContext(Dispatchers.Main) {
+                        if (resultado) {
+                            Toast.makeText(context, "✅ Equipos sincronizados correctamente", Toast.LENGTH_LONG).show()
+                            Log.d("FragmentInspeccionConfiguracion", "✅ Sincronización de equipos exitosa")
+                        } else {
+                            Toast.makeText(context, "❌ Error sincronizando equipos", Toast.LENGTH_LONG).show()
+                            Log.e("FragmentInspeccionConfiguracion", "❌ Error en sincronización de equipos")
+                        }
+                        setLoading(false)
+                    }
+                } catch (e: Exception) {
+                    Log.e("FragmentInspeccionConfiguracion", "Error sincronizando equipos: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "❌ Error: ${e.message}", Toast.LENGTH_LONG).show()
+                        setLoading(false)
+                    }
+                }
+            }
         }
-
+        imgBorrar.setOnClickListener {
+            Log.d("FragmentInspeccionConfiguracion", "CLICK en imgBorrar")
+            Toast.makeText(requireContext(), "Base de datos restablecida", Toast.LENGTH_SHORT).show()
+            prefs.edit().clear().apply()
+            spinnerLibro.isEnabled = true
+            spinnerHoja.isEnabled = true
+            txtFecha.isEnabled = true
+            setLoading(true)
+            lifecycleScope.launch(Dispatchers.IO) {
+                val db = AppDatabase.getDatabase(requireContext())
+                db.equipoDao().borrarTodo()
+                withContext(Dispatchers.Main) {
+                    setLoading(false)
+                    setupFecha(null, false)
+                    setupDropdownsGoogle(null, null, false)
+                    cargarResumen()
+                }
+            }
+        }
+        btnDescargarFotos.setOnClickListener {
+            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnDescargarFotos")
+            Toast.makeText(requireContext(), "Gestión de fotos en construcción", Toast.LENGTH_SHORT).show()
+            setLoading(true)
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Simulación de carga de fotos
+                withContext(Dispatchers.Main) {
+                    setLoading(false)
+                    cargarResumen()
+                }
+            }
+        }
+        btnActualizarFotos.setOnClickListener {
+            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnActualizarFotos")
+            Toast.makeText(requireContext(), "Gestión de fotos en construcción", Toast.LENGTH_SHORT).show()
+            setLoading(true)
+            lifecycleScope.launch(Dispatchers.IO) {
+                // Simulación de actualización de fotos
+                withContext(Dispatchers.Main) {
+                    setLoading(false)
+                    cargarResumen()
+                }
+            }
+        }
+        btnCopiarDB.setOnClickListener {
+            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnCopiarDB")
+            Toast.makeText(requireContext(), "Copiar DB (en construcción)", Toast.LENGTH_SHORT).show()
+            // Lógica de copia de base de datos aquí
+        }
+        btnCalibrarPantalla.setOnClickListener {
+            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnCalibrarPantalla")
+            Toast.makeText(requireContext(), "Calibrar pantalla (en construcción)", Toast.LENGTH_SHORT).show()
+        }
+        btnBuscarActualizaciones.setOnClickListener {
+            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnBuscarActualizaciones")
+            Toast.makeText(requireContext(), "Listando hojas disponibles...", Toast.LENGTH_SHORT).show()
+            setLoading(true)
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val context = requireContext()
+                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                    
+                    Log.d("FragmentInspeccionConfiguracion", "Listando hojas del spreadsheet...")
+                    val hojas = sheetsManager.listarHojas(sheetsManager.spreadsheetIdPublic)
+                    
+                    Log.d("FragmentInspeccionConfiguracion", "Hojas encontradas: ${hojas.joinToString(", ")}")
+                    
+                    // Verificar cada hoja que podría contener equipos
+                    for (hoja in hojas) {
+                        if (hoja.contains("EQUIPO", ignoreCase = true) || hoja.contains("INSPECCION", ignoreCase = true)) {
+                            Log.d("FragmentInspeccionConfiguracion", "Verificando hoja: $hoja")
+                            try {
+                                val cabeceras = sheetsManager.leerCabecera(sheetsManager.spreadsheetIdPublic, hoja)
+                                Log.d("FragmentInspeccionConfiguracion", "Cabeceras de $hoja: ${cabeceras.joinToString(", ")}")
+                            } catch (e: Exception) {
+                                Log.e("FragmentInspeccionConfiguracion", "Error leyendo cabeceras de $hoja: ${e.message}")
+                            }
+                        }
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                        Toast.makeText(requireContext(), "Hojas listadas en logs", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("FragmentInspeccionConfiguracion", "Error listando hojas: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        setLoading(false)
+                        Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
         btnDescargar.setOnClickListener {
             Log.d("FragmentInspeccionConfiguracion", "CLICK en btnDescargar")
             
@@ -346,151 +471,6 @@ class FragmentInspeccionConfiguracion : Fragment() {
                     withContext(Dispatchers.Main) {
                         setLoading(false)
                         Toast.makeText(requireContext(), "Error en descarga: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
-        
-        // Botón para actualizar solo los colores de estados
-        btnActualizar.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnActualizar - Actualizando colores")
-            
-            val libroSeleccionado = spinnerLibro.selectedItem?.toString()
-            if (libroSeleccionado.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "Selecciona un libro primero", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            
-            Toast.makeText(requireContext(), "Actualizando colores de estados...", Toast.LENGTH_SHORT).show()
-            setLoading(true)
-            
-            lifecycleScope.launch(Dispatchers.IO) {
-                try {
-                    val context = requireContext()
-                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
-                    
-                    // Obtener el ID del libro seleccionado
-                    val libroId = obtenerLibroId(libroSeleccionado)
-                    if (libroId == null) {
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, "Error: No se pudo obtener el ID del libro", Toast.LENGTH_LONG).show()
-                            setLoading(false)
-                        }
-                        return@launch
-                    }
-                    
-                    // Actualizar colores de estados
-                    val coloresActualizados = sheetsManager.actualizarColoresEstados(
-                        spreadsheetId = libroId,
-                        sheetName = "EQUIPOS" // Hoja EQUIPOS - busca columnas dinámicamente
-                    )
-                    
-                    withContext(Dispatchers.Main) {
-                        setLoading(false)
-                        if (coloresActualizados) {
-                            Toast.makeText(context, "Colores de estados actualizados exitosamente", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(context, "Error: No se pudieron actualizar los colores", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                    
-                } catch (e: Exception) {
-                    Log.e("FragmentInspeccionConfiguracion", "Error actualizando colores: ${e.message}", e)
-                    withContext(Dispatchers.Main) {
-                        setLoading(false)
-                        Toast.makeText(requireContext(), "Error actualizando colores: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
-        imgBorrar.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en imgBorrar")
-            Toast.makeText(requireContext(), "Base de datos restablecida", Toast.LENGTH_SHORT).show()
-            prefs.edit().clear().apply()
-            spinnerLibro.isEnabled = true
-            spinnerHoja.isEnabled = true
-            txtFecha.isEnabled = true
-            setLoading(true)
-            lifecycleScope.launch(Dispatchers.IO) {
-                val db = AppDatabase.getDatabase(requireContext())
-                db.equipoDao().borrarTodo()
-                withContext(Dispatchers.Main) {
-                    setLoading(false)
-                    setupFecha(null, false)
-                    setupDropdownsGoogle(null, null, false)
-                    cargarResumen()
-                }
-            }
-        }
-        btnDescargarFotos.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnDescargarFotos")
-            Toast.makeText(requireContext(), "Gestión de fotos en construcción", Toast.LENGTH_SHORT).show()
-            setLoading(true)
-            lifecycleScope.launch(Dispatchers.IO) {
-                // Simulación de carga de fotos
-                withContext(Dispatchers.Main) {
-                    setLoading(false)
-                    cargarResumen()
-                }
-            }
-        }
-        btnActualizarFotos.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnActualizarFotos")
-            Toast.makeText(requireContext(), "Gestión de fotos en construcción", Toast.LENGTH_SHORT).show()
-            setLoading(true)
-            lifecycleScope.launch(Dispatchers.IO) {
-                // Simulación de actualización de fotos
-                withContext(Dispatchers.Main) {
-                    setLoading(false)
-                    cargarResumen()
-                }
-            }
-        }
-        btnCopiarDB.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnCopiarDB")
-            Toast.makeText(requireContext(), "Copiar DB (en construcción)", Toast.LENGTH_SHORT).show()
-            // Lógica de copia de base de datos aquí
-        }
-        btnCalibrarPantalla.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnCalibrarPantalla")
-            Toast.makeText(requireContext(), "Calibrar pantalla (en construcción)", Toast.LENGTH_SHORT).show()
-        }
-        btnBuscarActualizaciones.setOnClickListener {
-            Log.d("FragmentInspeccionConfiguracion", "CLICK en btnBuscarActualizaciones")
-            Toast.makeText(requireContext(), "Listando hojas disponibles...", Toast.LENGTH_SHORT).show()
-            setLoading(true)
-            lifecycleScope.launch(Dispatchers.IO) {
-                try {
-                    val context = requireContext()
-                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
-                    
-                    Log.d("FragmentInspeccionConfiguracion", "Listando hojas del spreadsheet...")
-                    val hojas = sheetsManager.listarHojas(sheetsManager.spreadsheetIdPublic)
-                    
-                    Log.d("FragmentInspeccionConfiguracion", "Hojas encontradas: ${hojas.joinToString(", ")}")
-                    
-                    // Verificar cada hoja que podría contener equipos
-                    for (hoja in hojas) {
-                        if (hoja.contains("EQUIPO", ignoreCase = true) || hoja.contains("INSPECCION", ignoreCase = true)) {
-                            Log.d("FragmentInspeccionConfiguracion", "Verificando hoja: $hoja")
-                            try {
-                                val cabeceras = sheetsManager.leerCabecera(sheetsManager.spreadsheetIdPublic, hoja)
-                                Log.d("FragmentInspeccionConfiguracion", "Cabeceras de $hoja: ${cabeceras.joinToString(", ")}")
-                            } catch (e: Exception) {
-                                Log.e("FragmentInspeccionConfiguracion", "Error leyendo cabeceras de $hoja: ${e.message}")
-                            }
-                        }
-                    }
-                    
-                    withContext(Dispatchers.Main) {
-                        setLoading(false)
-                        Toast.makeText(requireContext(), "Hojas listadas en logs", Toast.LENGTH_LONG).show()
-                    }
-                } catch (e: Exception) {
-                    Log.e("FragmentInspeccionConfiguracion", "Error listando hojas: ${e.message}", e)
-                    withContext(Dispatchers.Main) {
-                        setLoading(false)
-                        Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             }

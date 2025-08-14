@@ -9,7 +9,6 @@ import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.bithermmanagement.core.data.LoginRepository
 import com.bithermmanagement.core.data.SessionManager
-import com.bithermmanagement.login.databinding.ActivitySplashBinding
 import com.bithermmanagement.navigation.NavigationActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -23,7 +22,6 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class SplashActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivitySplashBinding
     private val viewModel: LoginViewModel by viewModels()
     @Inject
     lateinit var sessionManager: SessionManager
@@ -32,14 +30,13 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivitySplashBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_splash)
 
         // Establecer la fecha y hora de compilación
         val buildTime = BuildConfig.BUILD_TIME
         val buildDate = Date(buildTime)
         val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
-        binding.tvBuildInfo.text = "Compilado: ${format.format(buildDate)}"
+        findViewById<android.widget.TextView>(R.id.tvBuildInfo).text = "Compilado: ${format.format(buildDate)}"
 
         lifecycleScope.launch {
             delay(3000)
