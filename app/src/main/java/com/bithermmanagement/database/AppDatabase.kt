@@ -24,6 +24,12 @@ import com.bithermmanagement.database.dao.FavoritoDao
 import com.bithermmanagement.database.dao.PermisoDao
 import com.bithermmanagement.fichaje.dao.FichajeDao
 import com.bithermmanagement.fichaje.models.FichajeEntity
+import com.bithermmanagement.ausencias.dao.AbsenceRecordDao
+import com.bithermmanagement.ausencias.dao.AbsenceRequestDao
+import com.bithermmanagement.ausencias.dao.AbsenceLogDao
+import com.bithermmanagement.ausencias.models.AbsenceRecord
+import com.bithermmanagement.ausencias.models.AbsenceRequest
+import com.bithermmanagement.ausencias.models.AbsenceLog
 
 @Database(
     entities = [
@@ -33,9 +39,12 @@ import com.bithermmanagement.fichaje.models.FichajeEntity
         SubMenuEntity::class,
         FavoritoEntity::class,
         PermisoEntity::class,
-        FichajeEntity::class
+        FichajeEntity::class,
+        AbsenceRecord::class,
+        AbsenceRequest::class,
+        AbsenceLog::class
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, Converters::class)
@@ -48,6 +57,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun favoritoDao(): FavoritoDao
     abstract fun permisoDao(): PermisoDao
     abstract fun fichajeDao(): FichajeDao
+    abstract fun absenceRecordDao(): AbsenceRecordDao
+    abstract fun absenceRequestDao(): AbsenceRequestDao
+    abstract fun absenceLogDao(): AbsenceLogDao
 
     companion object {
         @Volatile
@@ -497,6 +509,30 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Esta migración crea las nuevas tablas para el sistema de ausencias
+                // Room las creará automáticamente, pero podemos añadir índices si es necesario
+                try {
+                    // Crear índices para mejorar el rendimiento de las consultas de ausencias
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_employee_id ON absence_records(employeeId)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_start_date ON absence_records(startDate)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_status ON absence_records(status)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_type ON absence_records(absenceType)")
+                    
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_employee_id ON absence_requests(employeeId)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_status ON absence_requests(status)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_priority ON absence_requests(priority)")
+                    
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_absence_id ON absence_logs(absenceId)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_timestamp ON absence_logs(timestamp)")
+                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_action ON absence_logs(action)")
+                } catch (e: Exception) {
+                    // Si hay algún error, continuar
+                }
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -504,7 +540,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "bitherm_database"
                 )
-                .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_14_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21)
+                .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_14_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
                 .build()
                 INSTANCE = instance
                 instance
