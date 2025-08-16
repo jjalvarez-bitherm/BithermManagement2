@@ -14,6 +14,7 @@ import com.bithermmanagement.R
 import com.bithermmanagement.database.AppDatabase
 import com.bithermmanagement.data.UserData
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.api.services.sheets.v4.model.ValueRange
 import kotlinx.coroutines.CoroutineScope
@@ -64,8 +65,8 @@ class fragmentUsuariosPerfil : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val credentialsStream = requireContext().assets.open("credentials.json")
-        googleSheetsHelper = GoogleSheetsManager(credentialsStream, requireContext())
+        val settingsManager = SettingsManager(requireContext())
+        googleSheetsHelper = settingsManager.getGoogleSheetsManager() ?: throw IllegalStateException("No se pudo crear GoogleSheetsManager")
         val prefs = requireContext().getSharedPreferences("bitherm_prefs", 0)
         usuarioActual = prefs.getString("saved_user", "") ?: ""
         cargarDatosPerfil()
@@ -76,8 +77,16 @@ class fragmentUsuariosPerfil : Fragment() {
             try {
                 val prefs = requireContext().getSharedPreferences("bitherm_prefs", 0)
                 val usuarioActual = prefs.getString("saved_user", "") ?: ""
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("PERFIL_DEBUG", "No se pudo crear GoogleSheetsManager")
+                    withContext(Dispatchers.Main) {
+                        mostrarError("Error de configuración. Verifica las credenciales.")
+                    }
+                    return@launch
+                }
 
                 // Usar el nuevo método para obtener los datos agrupados por card
                 val datosPorGrupo = sheetsManager.getUserProfileDataByApp(usuarioActual)
@@ -173,8 +182,16 @@ class fragmentUsuariosPerfil : Fragment() {
                     CoroutineScope(Dispatchers.IO).launch {
                         val prefs = requireContext().getSharedPreferences("bitherm_prefs", 0)
                         val usuarioActual = prefs.getString("saved_user", "") ?: ""
-                        val credentialsStream = requireContext().assets.open("credentials.json")
-                        val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                        val settingsManager = SettingsManager(requireContext())
+                        val sheetsManager = settingsManager.getGoogleSheetsManager()
+                        
+                        if (sheetsManager == null) {
+                            Log.e("PERFIL_DEBUG", "No se pudo crear GoogleSheetsManager")
+                            withContext(Dispatchers.Main) {
+                                android.widget.Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", android.widget.Toast.LENGTH_LONG).show()
+                            }
+                            return@launch
+                        }
                         val exito = sheetsManager.updateUserCellByApp(usuarioActual, campo, nuevoValor)
                         withContext(Dispatchers.Main) {
                             if (exito) {

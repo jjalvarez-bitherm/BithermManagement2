@@ -21,7 +21,7 @@ class GoogleSheetsHelper(private val context: Context) {
 
     private fun getCredentials(): GoogleCredentials {
         return try {
-            val inputStream: InputStream = context.assets.open("credentials2.json")
+            val inputStream: InputStream = context.assets.open("credentials_default.json")
             GoogleCredentials.fromStream(inputStream)
                 .createScoped(SCOPES)
         } catch (e: IOException) {

@@ -60,14 +60,28 @@ captures/
 # Google Services (e.g. APIs or Firebase)
 # google-services.json
 
-# Credentials and sensitive files
+# Credentials and sensitive files - EXCLUDIR TODAS LAS CREDENCIALES
 **/credentials.json
 **/credentials2.json
 **/drive_credentials.json
+**/credentials_default.json
+**/credencitals-bitherm.json
 **/*credentials*.json
+**/*credencitals*.json
 **/*.key
 **/*.pem
 **/*.p12
+**/*.jks
+**/*.keystore
+
+# Service Account files
+**/service-account*.json
+**/bitherm*.json
+**/google*.json
+
+# OAuth client secrets
+**/client_secret*.json
+**/oauth*.json
 
 # Freeline
 freeline.py

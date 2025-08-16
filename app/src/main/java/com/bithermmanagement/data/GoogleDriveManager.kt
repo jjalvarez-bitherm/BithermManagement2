@@ -2,6 +2,7 @@ package com.bithermmanagement.data
 
 import android.content.Context
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
@@ -12,17 +13,47 @@ import com.google.api.services.drive.model.File
 import java.io.File as JavaFile
 import java.io.FileInputStream
 import com.google.api.client.http.FileContent
+import java.util.*
 
-class GoogleDriveManager(private val credentialsStream: InputStream, private val context: Context) {
+class GoogleDriveManager(
+    private val credentialsStream: InputStream?, 
+    private val context: Context,
+    private val useOAuth: Boolean = false,
+    private val oAuthEmail: String = ""
+) {
     private val driveService: Drive
 
     init {
-        val credentials = GoogleCredential.fromStream(credentialsStream)
-            .createScoped(listOf(DriveScopes.DRIVE_READONLY))
+        val credentials = if (useOAuth) {
+            // Para OAuth, usar GoogleAccountCredential
+            val oAuthManager = GoogleOAuthManager(context)
+            if (!oAuthManager.isSignedIn()) {
+                throw IllegalStateException("Usuario no autenticado con Google")
+            }
+            val account = oAuthManager.getCurrentAccount()
+            if (account?.email != oAuthEmail) {
+                throw IllegalStateException("Email no coincide con la cuenta autenticada")
+            }
+            
+            GoogleAccountCredential.usingOAuth2(
+                context,
+                Collections.singleton(DriveScopes.DRIVE_READONLY)
+            ).apply {
+                selectedAccount = account.account
+            }
+        } else {
+            // Para Service Account, usar credenciales del archivo
+            if (credentialsStream == null) {
+                throw IllegalStateException("Se requieren credenciales para cuenta de servicio")
+            }
+            GoogleCredential.fromStream(credentialsStream)
+                .createScoped(listOf(DriveScopes.DRIVE_READONLY))
+        }
+        
         driveService = Drive.Builder(
             NetHttpTransport(),
             JacksonFactory.getDefaultInstance(),
-            credentials as HttpRequestInitializer
+            credentials
         )
             .setApplicationName("BithermManagement")
             .build()

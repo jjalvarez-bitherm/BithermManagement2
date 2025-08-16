@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bithermmanagement.R
 import androidx.lifecycle.lifecycleScope
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import com.bithermmanagement.data.UserData
 import kotlinx.coroutines.launch
 import com.bithermmanagement.database.AppDatabase
@@ -67,8 +68,8 @@ class FragmentMainMenu : Fragment() {
     }
     private fun obtenerGoogleSheetsManager(): GoogleSheetsManager? {
         return try {
-            val credentialsStream = requireContext().assets.open("credentials.json")
-            GoogleSheetsManager(credentialsStream, requireContext())
+            val settingsManager = SettingsManager(requireContext())
+            settingsManager.getGoogleSheetsManager()
         } catch (e: Exception) {
             null
         }

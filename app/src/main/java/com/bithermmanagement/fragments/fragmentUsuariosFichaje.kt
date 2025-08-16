@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import java.text.SimpleDateFormat
 import java.util.*
 import android.Manifest
@@ -101,8 +102,14 @@ class fragmentUsuariosFichaje : Fragment() {
         val usuarioLogin = prefs.getString("username", "") ?: ""
 
         CoroutineScope(Dispatchers.Main).launch {
-            val credentialsStream = requireContext().assets.open("credentials.json")
-            val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+            val settingsManager = SettingsManager(requireContext())
+            val sheetsManager = settingsManager.getGoogleSheetsManager()
+            
+            if (sheetsManager == null) {
+                Log.e("FICHAJE", "No se pudo crear GoogleSheetsManager")
+                Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
             Log.d("FICHAJE", "Buscando usuario con username: '" + usuarioLogin + "'")
             val (header, filaUsuario) = sheetsManager.getUserRowByApp(usuarioLogin)
             var filaEncontrada = filaUsuario
@@ -579,7 +586,14 @@ class fragmentUsuariosFichaje : Fragment() {
         Log.d("FICHAJE-OT-MES", "[obtenerOTsUsuarioHoy] INICIO para usuario: $usuario")
         return withContext(Dispatchers.IO) {
             try {
-                val sheetsManager = GoogleSheetsManager(requireContext().assets.open("credentials.json"), requireContext())
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("FICHAJE-OT-MES", "No se pudo crear GoogleSheetsManager")
+                    return@withContext emptyList()
+                }
+                
                 val response = sheetsManager.sheetsServicePublic.spreadsheets().values()
                     .get(sheetsManager.spreadsheetIdPublic, "FICHAJE-OT-MES!A:G")
                     .execute()
@@ -712,8 +726,13 @@ class fragmentUsuariosFichaje : Fragment() {
     private suspend fun getLugarDesdeUbicacion(location: Location?): Pair<String, String> = withContext(Dispatchers.IO) {
         if (location == null) return@withContext Pair("LUGAR DESCONOCIDO", "")
         try {
-            val credentialsStream = requireContext().assets.open("credentials.json")
-            val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+            val settingsManager = SettingsManager(requireContext())
+            val sheetsManager = settingsManager.getGoogleSheetsManager()
+            
+            if (sheetsManager == null) {
+                Log.e("GPS-DEPURACION", "No se pudo crear GoogleSheetsManager")
+                return@withContext Pair("LUGAR DESCONOCIDO", "")
+            }
             val response = sheetsManager.sheetsServicePublic.spreadsheets().values()
                 .get(sheetsManager.spreadsheetIdPublic, "EQUIPOS!E2:G")
                 .execute()
@@ -757,7 +776,13 @@ class fragmentUsuariosFichaje : Fragment() {
 
     private suspend fun calcularHorasTrabajadasHoy(usuario: String): Float {
         // Cálculo real de horas trabajadas hoy
-        val sheetsManager = GoogleSheetsManager(requireContext().assets.open("credentials.json"), requireContext())
+        val settingsManager = SettingsManager(requireContext())
+        val sheetsManager = settingsManager.getGoogleSheetsManager()
+        
+        if (sheetsManager == null) {
+            Log.e("FICHAJE", "No se pudo crear GoogleSheetsManager")
+            return 0f
+        }
         val hoy = dateFormat.format(Date())
         var horas = 0f
         withContext(Dispatchers.IO) {
@@ -788,7 +813,13 @@ class fragmentUsuariosFichaje : Fragment() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(requireContext(), "Guardando distribución de OTs...", Toast.LENGTH_SHORT).show()
                 }
-                val sheetsManager = GoogleSheetsManager(requireContext().assets.open("credentials.json"), requireContext())
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("FICHAJE-OT-MES", "No se pudo crear GoogleSheetsManager")
+                    return@launch
+                }
                 val response = sheetsManager.sheetsServicePublic.spreadsheets().values()
                     .get(sheetsManager.spreadsheetIdPublic, "FICHAJE-OT-MES!A1:ZZ")
                     .execute()
@@ -860,8 +891,13 @@ class fragmentUsuariosFichaje : Fragment() {
     private fun logAutomaticoLocaleLogs(location: Location?, nombreLugar: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("LOCALE-LOGS", "No se pudo crear GoogleSheetsManager")
+                    return@launch
+                }
                 val prefs = requireContext().getSharedPreferences("bitherm_prefs", Context.MODE_PRIVATE)
                 val usuarioLogin = prefs.getString("username", "") ?: ""
                 // Leer configuración de LOCALE-LOGS (A2:C)
@@ -918,8 +954,13 @@ class fragmentUsuariosFichaje : Fragment() {
             override fun run() {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        val credentialsStream = requireContext().assets.open("credentials.json")
-                        val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                        val settingsManager = SettingsManager(requireContext())
+                        val sheetsManager = settingsManager.getGoogleSheetsManager()
+                        
+                        if (sheetsManager == null) {
+                            Log.e("LOCALE-LOGS", "No se pudo crear GoogleSheetsManager")
+                            return@launch
+                        }
                         val prefs = requireContext().getSharedPreferences("bitherm_prefs", Context.MODE_PRIVATE)
                         val usuarioLogin = prefs.getString("username", "") ?: ""
                         // Leer configuración de LOCALE-LOGS (A2:C)

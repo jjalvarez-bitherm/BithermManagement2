@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import java.text.SimpleDateFormat
 import java.util.*
 import android.graphics.Typeface
@@ -71,12 +72,17 @@ class fragmentUsuariosFichajeHoy : Fragment() {
         Log.d(TAG, "cargarUsuariosFichajeHoy: Iniciando carga de datos")
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                Log.d(TAG, "cargarUsuariosFichajeHoy: Abriendo credentials.json")
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                Log.d(TAG, "cargarUsuariosFichajeHoy: Credentials abiertos correctamente")
+                Log.d(TAG, "cargarUsuariosFichajeHoy: Obteniendo GoogleSheetsManager desde SettingsManager")
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
                 
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
-                Log.d(TAG, "cargarUsuariosFichajeHoy: GoogleSheetsManager creado")
+                if (sheetsManager == null) {
+                    Log.e(TAG, "cargarUsuariosFichajeHoy: No se pudo crear GoogleSheetsManager")
+                    Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                
+                Log.d(TAG, "cargarUsuariosFichajeHoy: GoogleSheetsManager creado correctamente")
                 
                 // Obtener todos los trabajadores
                 Log.d(TAG, "cargarUsuariosFichajeHoy: Obteniendo trabajadores...")
@@ -387,8 +393,14 @@ class fragmentUsuariosFichajeHoy : Fragment() {
         Log.d(TAG, "guardarFichajeEditado: Iniciando para $username - $fecha $entrada-$salida")
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e(TAG, "guardarFichajeEditado: No se pudo crear GoogleSheetsManager")
+                    Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
                 
                 // Aquí implementarías la lógica para actualizar los fichajes en Google Sheets
                 Log.d(TAG, "guardarFichajeEditado: Lógica de actualización en Google Sheets (pendiente de implementar)")
@@ -408,8 +420,14 @@ class fragmentUsuariosFichajeHoy : Fragment() {
         Log.d(TAG, "añadirFichajeManual: Iniciando para $username - $fecha $entrada-$salida")
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e(TAG, "añadirFichajeManual: No se pudo crear GoogleSheetsManager")
+                    Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
                 
                 // Aquí implementarías la lógica para añadir fichajes en Google Sheets
                 Log.d(TAG, "añadirFichajeManual: Lógica de añadir en Google Sheets (pendiente de implementar)")

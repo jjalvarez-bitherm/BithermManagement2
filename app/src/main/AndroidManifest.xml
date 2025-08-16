@@ -64,6 +64,12 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.BithermManagement.Navigation" />
 
+        <activity
+            android:name="com.bithermmanagement.ui.settings.SettingsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BithermManagement.Navigation" />
+
     </application>
 
 </manifest>

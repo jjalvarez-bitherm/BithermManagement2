@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bithermmanagement.R
 import com.bithermmanagement.data.GoogleDriveManager
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import com.bithermmanagement.database.AppDatabase
 import com.bithermmanagement.database.entities.Equipo
 import com.bithermmanagement.ui.dialogs.SeleccionOrdenDialog
@@ -68,6 +69,19 @@ class FragmentInspeccionConfiguracion : Fragment() {
         "servicio", "ubicacion", "estado", "fechaInspeccion", "fugaKgH", "nota", "identidadInspector", 
         "detectorUtilizado", "incidencias", "gps", "foto", "fotoUbic", "gpsAcc", "instalacionMf"
     )
+    
+    /**
+     * Obtiene un GoogleSheetsManager configurado según la configuración actual
+     */
+    private fun obtenerGoogleSheetsManager(): GoogleSheetsManager? {
+        return try {
+            val settingsManager = SettingsManager(requireContext())
+            settingsManager.getGoogleSheetsManager()
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionConfiguracion", "Error al obtener GoogleSheetsManager: ${e.message}")
+            null
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -152,9 +166,32 @@ class FragmentInspeccionConfiguracion : Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val context = requireContext()
-                val credentialsStream = context.assets.open("credentials.json")
-                val driveManager = GoogleDriveManager(credentialsStream, context)
-                val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                val settingsManager = SettingsManager(context)
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("FragmentInspeccionConfiguracion", "No se pudo crear GoogleSheetsManager")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
+                
+                // Crear GoogleDriveManager con la configuración correcta
+                val settings = settingsManager.getSettings()
+                val credentialsStream = if (settings.useOAuth) {
+                    null // Para OAuth no necesitamos credenciales
+                } else {
+                    settingsManager.getCredentialsInputStream() // Para Service Account sí necesitamos credenciales
+                }
+                
+                val driveManager = GoogleDriveManager(
+                    credentialsStream = credentialsStream,
+                    context = context,
+                    useOAuth = settings.useOAuth,
+                    oAuthEmail = settings.oAuthEmail
+                )
+                
                 val spreadsheets = driveManager.listarSpreadsheetsApp()
                 libros = spreadsheets.filter { it.name.endsWith("(APP)") }
                 Log.d("FragmentInspeccionConfiguracion", "Libros encontrados: ${libros.size}")
@@ -190,7 +227,16 @@ class FragmentInspeccionConfiguracion : Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val context = requireContext()
-                val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                val sheetsManager = obtenerGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("FragmentInspeccionConfiguracion", "No se pudo crear GoogleSheetsManager")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
+                
                 val hojasList = sheetsManager.listarHojas(libroId)
                 hojas = hojasList
                 Log.d("FragmentInspeccionConfiguracion", "Hojas encontradas: ${hojas.size}")
@@ -233,7 +279,15 @@ class FragmentInspeccionConfiguracion : Fragment() {
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val context = requireContext()
-                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                    val sheetsManager = obtenerGoogleSheetsManager()
+                    
+                    if (sheetsManager == null) {
+                        Log.e("FragmentInspeccionConfiguracion", "No se pudo crear GoogleSheetsManager")
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                        }
+                        return@launch
+                    }
                     
                     Log.d("FragmentInspeccionConfiguracion", "Iniciando sincronización de equipos...")
                     Log.d("FragmentInspeccionConfiguracion", "Campo de orden: $campoOrdenSeleccionado")
@@ -318,7 +372,15 @@ class FragmentInspeccionConfiguracion : Fragment() {
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val context = requireContext()
-                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                    val sheetsManager = obtenerGoogleSheetsManager()
+                    
+                    if (sheetsManager == null) {
+                        Log.e("FragmentInspeccionConfiguracion", "No se pudo crear GoogleSheetsManager")
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                        }
+                        return@launch
+                    }
                     
                     Log.d("FragmentInspeccionConfiguracion", "Listando hojas del spreadsheet...")
                     val hojas = sheetsManager.listarHojas(sheetsManager.spreadsheetIdPublic)
@@ -368,7 +430,16 @@ class FragmentInspeccionConfiguracion : Fragment() {
             lifecycleScope.launch(Dispatchers.IO) {
                 try {
                     val context = requireContext()
-                    val sheetsManager = GoogleSheetsManager(context.assets.open("credentials.json"), context)
+                    val settingsManager = SettingsManager(context)
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
+                
+                if (sheetsManager == null) {
+                    Log.e("FragmentInspeccionConfiguracion", "No se pudo crear GoogleSheetsManager")
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    }
+                    return@launch
+                }
                     
                     // Obtener el campo de orden seleccionado previamente
                     val campoOrdenSeleccionado = prefs.getString("campo_orden_seleccionado", null)
@@ -751,7 +822,11 @@ class FragmentInspeccionConfiguracion : Fragment() {
 
     private suspend fun obtenerHojaId(libroId: String, hojaNombre: String): String? {
         return try {
-            val sheetsManager = GoogleSheetsManager(requireContext().assets.open("credentials.json"), requireContext())
+            val sheetsManager = obtenerGoogleSheetsManager()
+            if (sheetsManager == null) {
+                Log.e("FragmentInspeccionConfiguracion", "No se pudo crear GoogleSheetsManager")
+                return null
+            }
             val hojasList = sheetsManager.listarHojasConInfo(libroId)
             val hoja = hojasList.find { it.name.equals(hojaNombre, ignoreCase = true) }
             hoja?.id

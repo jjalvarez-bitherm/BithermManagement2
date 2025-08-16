@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.util.Log
 import android.view.MotionEvent
+import android.os.Build
 
 class OverlayRecorteView @JvmOverloads constructor(
     context: Context,
@@ -70,7 +71,11 @@ class OverlayRecorteView @JvmOverloads constructor(
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paintFondo)
             
             // Limpiar el área del recorte (hacerla transparente)
-            canvas.clipOutRect(rect)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                canvas.clipOutRect(rect)
+            } else {
+                canvas.clipRect(rect, Region.Op.DIFFERENCE)
+            }
             canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
             
             // Restaurar el canvas

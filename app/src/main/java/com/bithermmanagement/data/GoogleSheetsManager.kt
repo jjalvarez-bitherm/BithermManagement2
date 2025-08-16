@@ -2,10 +2,10 @@ package com.bithermmanagement.data
 
 import android.content.Context
 import android.util.Log
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.http.HttpRequestInitializer
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.services.sheets.v4.Sheets
 import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.ValueRange
@@ -19,7 +19,10 @@ import java.util.Date
 import java.util.Locale
 import org.json.JSONObject
 
-class GoogleSheetsManager(private val credentialsStream: InputStream, private val context: Context) {
+class GoogleSheetsManager(
+    private val authAdapter: GoogleAuthAdapter,
+    private val context: Context
+) {
     private val TAG = "GoogleSheetsManager"
     private val spreadsheetId = "1IyWGyxYDDTWY5SHh2xLBxtakSZX_xhZFo2jta4JeSW4"
     private val range = "TRABAJADORES!A2:T"  // Cambiado a T (20 columnas)
@@ -27,16 +30,11 @@ class GoogleSheetsManager(private val credentialsStream: InputStream, private va
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
     init {
-        val credentials = GoogleCredential.fromStream(credentialsStream)
-            .createScoped(listOf(SheetsScopes.SPREADSHEETS))
-
-        sheetsService = Sheets.Builder(
-            NetHttpTransport(),
-            JacksonFactory.getDefaultInstance(),
-            credentials as HttpRequestInitializer
-        )
-        .setApplicationName("BithermManagement")
-        .build()
+        Log.d(TAG, "GoogleSheetsManager.init: Inicializando con GoogleAuthAdapter...")
+        
+        // Usar el adapter para crear el servicio de Sheets
+        sheetsService = authAdapter.createSheetsService()
+        Log.d(TAG, "GoogleSheetsManager.init: Inicialización completada exitosamente")
     }
 
     val sheetsServicePublic: Sheets get() = sheetsService
@@ -54,10 +52,19 @@ class GoogleSheetsManager(private val credentialsStream: InputStream, private va
                 Log.d(TAG, "Usuario: $app, Contraseña: $pass")
                 
                 Log.d(TAG, "1. Obteniendo cabecera de la hoja...")
-                val headerResponse = sheetsService.spreadsheets().values()
-                    .get(spreadsheetId, "TRABAJADORES!A2:2")
-                    .execute()
-                Log.d(TAG, "2. Respuesta de cabecera obtenida")
+                Log.d(TAG, "   Spreadsheet ID: $spreadsheetId")
+                Log.d(TAG, "   Sheets Service: ${sheetsService != null}")
+                
+                val headerResponse = try {
+                    sheetsService.spreadsheets().values()
+                        .get(spreadsheetId, "TRABAJADORES!A2:2")
+                        .execute()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error al obtener cabecera: ${e.message}")
+                    Log.e(TAG, "Stack trace: ${e.stackTraceToString()}")
+                    throw e
+                }
+                Log.d(TAG, "2. Respuesta de cabecera obtenida exitosamente")
                 
                 val headerRow = headerResponse.getValues()?.firstOrNull() ?: emptyList<Any>()
                 Log.d(TAG, "3. Cabecera obtenida: ${headerRow.joinToString(", ")}")

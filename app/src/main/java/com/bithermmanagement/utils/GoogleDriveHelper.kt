@@ -29,7 +29,7 @@ class GoogleDriveHelper @Inject constructor(private val context: Context) {
     private fun getDriveService(): Drive? {
         return try {
             // Usar credenciales de servicio para Drive
-            val inputStream = context.assets.open("drive_credentials.json")
+            val inputStream = context.assets.open("credentials_default.json")
             val credentials = GoogleCredentials.fromStream(inputStream)
                 .createScoped(listOf(DriveScopes.DRIVE_FILE))
 

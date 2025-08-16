@@ -25,7 +25,7 @@ class GoogleSheetsManager @Inject constructor(
 
     init {
         try {
-            val credentialsStream = context.assets.open("credentials2.json")
+            val credentialsStream = context.assets.open("credentials_default.json")
             val credentials = GoogleCredential.fromStream(credentialsStream)
                 .createScoped(listOf(SheetsScopes.SPREADSHEETS))
 

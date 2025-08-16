@@ -265,7 +265,7 @@ class DebugLifecycleObserver(private val context: Context) : DefaultLifecycleObs
             val currentFragment = activity.supportFragmentManager.fragments.lastOrNull()
             if (currentFragment != null && currentFragment.view != null) {
                 Log.d("DebugLifecycleObserver", "showDebugOverlay: Updating with current fragment")
-                updateDebugInfo(currentFragment, currentFragment.view!!)
+                updateDebugInfo(currentFragment, currentFragment.requireView())
             }
         }
     }

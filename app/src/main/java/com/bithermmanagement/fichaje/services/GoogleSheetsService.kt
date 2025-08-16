@@ -27,7 +27,7 @@ class GoogleSheetsService(private val context: Context) {
     private fun initializeSheetsService() {
         try {
             // Cargar credenciales desde assets
-            val inputStream = context.assets.open("credentials.json")
+            val inputStream = context.assets.open("credentials_default.json")
             val credential = GoogleCredential.fromStream(inputStream)
                 .createScoped(listOf(SheetsScopes.SPREADSHEETS))
             

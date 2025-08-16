@@ -11,6 +11,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import com.bithermmanagement.R
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import com.bithermmanagement.data.UserData
 import com.bithermmanagement.databinding.ActivityLoginBinding
 import com.bithermmanagement.ui.MainMenuActivity
@@ -33,7 +34,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var executor: Executor
     private lateinit var biometricPrompt: BiometricPrompt
     private lateinit var promptInfo: BiometricPrompt.PromptInfo
-    private lateinit var googleSheetsManager: GoogleSheetsManager
+    private var googleSheetsManager: GoogleSheetsManager? = null
     private var loginAttempts = 0
     private val MAX_LOGIN_ATTEMPTS = 6
 
@@ -115,10 +116,19 @@ class LoginActivity : AppCompatActivity() {
             performLogin(savedUser, savedPass)
         }
 
-        // Inicializar GoogleSheetsManager con las credenciales
+        // Inicializar GoogleSheetsManager con la configuración actual
         Log.d("LoginActivity", "Inicializando GoogleSheetsManager")
-        val credentialsStream = assets.open("credentials.json")
-        googleSheetsManager = GoogleSheetsManager(credentialsStream, this)
+        val settingsManager = SettingsManager(this)
+        
+        val settings = settingsManager.getSettings()
+        Log.d("LoginActivity", "Configuración cargada: useOAuth=${settings.useOAuth}, oAuthEmail='${settings.oAuthEmail}', useDefaultCredentials=${settings.useDefaultCredentials}")
+        
+        // Obtener credenciales
+        googleSheetsManager = settingsManager.getGoogleSheetsManager()
+        if (googleSheetsManager == null) {
+            // Si no hay credenciales, mostrar mensaje para configurar
+            Toast.makeText(this, "Por favor, configura las credenciales en Configuración", Toast.LENGTH_LONG).show()
+        }
 
         // Configurar pantalla completa
         window.insetsController?.let { controller ->
@@ -135,6 +145,7 @@ class LoginActivity : AppCompatActivity() {
 
         setupBiometricAuthentication()
         setupLoginButton()
+        setupSettingsButton()
         
         // Establecer timestamp de compilación
         try {
@@ -197,6 +208,14 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupSettingsButton() {
+        binding.btnSettings.setOnClickListener {
+            Log.d("LoginActivity", "Botón configuración pulsado")
+            val intent = Intent(this, com.bithermmanagement.ui.settings.SettingsActivity::class.java)
+            startActivity(intent)
+        }
+    }
+
     private fun performLogin(username: String, password: String) {
         Log.d("LoginActivity", "Iniciando performLogin para $username")
         if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
@@ -210,7 +229,7 @@ class LoginActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             Log.d("LoginActivity", "Llamando a googleSheetsManager.getUserData")
             val userData = withContext(Dispatchers.IO) {
-                googleSheetsManager.getUserData(username, password)
+                googleSheetsManager?.getUserData(username, password)
             }
             Log.d("LoginActivity", "Resultado getUserData: $userData")
             if (userData != null) {
@@ -240,12 +259,14 @@ class LoginActivity : AppCompatActivity() {
                     .apply()
                 Log.d("LoginActivity", "Sincronizando menús para usuario ${userData.app}")
                 withContext(Dispatchers.IO) {
-                    com.bithermmanagement.data.MenuRepository.syncMenusForUser(
-                        this@LoginActivity,
-                        userData.app,
-                        userData.getRolPound(),
-                        googleSheetsManager
-                    )
+                    googleSheetsManager?.let { manager ->
+                        com.bithermmanagement.data.MenuRepository.syncMenusForUser(
+                            this@LoginActivity,
+                            userData.app,
+                            userData.getRolPound(),
+                            manager
+                        )
+                    }
                 }
                 Log.d("LoginActivity", "Navegando a MainMenuActivity")
                 navigateToStartPage(userData)

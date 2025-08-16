@@ -63,7 +63,7 @@ class VariablesManager @Inject constructor(
             if (sheetsConfig != null) {
                 GoogleSheetsConfig(
                     spreadsheetId = sheetsConfig.get("spreadsheet_id")?.asString ?: "",
-                    credentialsFile = sheetsConfig.get("credentials_file")?.asString ?: "credentials.json",
+                    credentialsFile = sheetsConfig.get("credentials_file")?.asString ?: "credentials_default.json",
                     usersSheet = sheetsConfig.getAsJsonObject("sheets")?.getAsJsonObject("users")?.get("name")?.asString ?: "Usuarios",
                     userColumns = sheetsConfig.getAsJsonObject("sheets")?.getAsJsonObject("users")?.getAsJsonObject("columns")?.let { columns ->
                         UserColumns(

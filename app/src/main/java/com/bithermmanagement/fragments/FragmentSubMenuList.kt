@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bithermmanagement.R
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import com.bithermmanagement.data.UserData
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -69,8 +70,8 @@ class FragmentSubMenuList : Fragment() {
     }
     private fun obtenerGoogleSheetsManager(): GoogleSheetsManager? {
         return try {
-            val credentialsStream = requireContext().assets.open("credentials.json")
-            GoogleSheetsManager(credentialsStream, requireContext())
+            val settingsManager = SettingsManager(requireContext())
+            settingsManager.getGoogleSheetsManager()
         } catch (e: Exception) {
             null
         }

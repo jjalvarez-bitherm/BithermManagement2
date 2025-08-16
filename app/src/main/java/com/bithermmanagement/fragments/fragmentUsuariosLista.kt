@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
 import java.text.SimpleDateFormat
 import java.util.*
 import android.graphics.Typeface
@@ -244,11 +245,14 @@ class fragmentUsuariosLista : Fragment() {
         Log.d(TAG, "cargarUsuariosDisponibles: Iniciando carga de usuarios")
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                Log.d(TAG, "cargarUsuariosDisponibles: Abriendo credentials.json")
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                Log.d(TAG, "cargarUsuariosDisponibles: Credentials abiertos correctamente")
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
                 
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                if (sheetsManager == null) {
+                    Log.e(TAG, "No se pudo crear GoogleSheetsManager")
+                    Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
                 Log.d(TAG, "cargarUsuariosDisponibles: GoogleSheetsManager creado")
                 
                 Log.d(TAG, "cargarUsuariosDisponibles: Obteniendo usuarios...")
@@ -303,11 +307,14 @@ class fragmentUsuariosLista : Fragment() {
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                Log.d(TAG, "generarReporte: Abriendo credentials.json")
-                val credentialsStream = requireContext().assets.open("credentials.json")
-                Log.d(TAG, "generarReporte: Credentials abiertos correctamente")
+                val settingsManager = SettingsManager(requireContext())
+                val sheetsManager = settingsManager.getGoogleSheetsManager()
                 
-                val sheetsManager = GoogleSheetsManager(credentialsStream, requireContext())
+                if (sheetsManager == null) {
+                    Log.e(TAG, "No se pudo crear GoogleSheetsManager")
+                    Toast.makeText(requireContext(), "Error de configuración. Verifica las credenciales.", Toast.LENGTH_LONG).show()
+                    return@launch
+                }
                 Log.d(TAG, "generarReporte: GoogleSheetsManager creado")
                 
                 // Obtener fichajes del período
