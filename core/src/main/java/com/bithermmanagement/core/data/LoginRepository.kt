@@ -24,12 +24,23 @@ class LoginRepository @Inject constructor(
     }
 
     suspend fun validateCredentials(user: String, pass: String): UserData? {
+        android.util.Log.d("LoginRepository", "=== validateCredentials INICIADO para usuario: $user ===")
+        
         val userData = googleSheetsManager.getUserData(user, pass)
+        android.util.Log.d("LoginRepository", "getUserData resultado: $userData")
+        
         return if (userData != null && !userData.rol.isNullOrEmpty() && userData.rol != "0") {
+            android.util.Log.d("LoginRepository", "Usuario válido encontrado: ${userData.nombre} ${userData.apellidos}")
+            android.util.Log.d("LoginRepository", "Asignando a _loggedInUser...")
             _loggedInUser.value = userData
+            android.util.Log.d("LoginRepository", "Asignando a variablesManager.currentUser...")
             variablesManager.currentUser = userData
+            android.util.Log.d("LoginRepository", "VariablesManager.currentUser asignado: ${variablesManager.currentUser}")
+            android.util.Log.d("LoginRepository", "=== validateCredentials EXITOSO ===")
             userData
         } else {
+            android.util.Log.w("LoginRepository", "Usuario no válido o credenciales incorrectas")
+            android.util.Log.d("LoginRepository", "=== validateCredentials FALLIDO ===")
             null
         }
     }

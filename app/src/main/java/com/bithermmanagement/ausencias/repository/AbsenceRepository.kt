@@ -4,16 +4,19 @@ import com.bithermmanagement.ausencias.dao.AbsenceRecordDao
 import com.bithermmanagement.ausencias.dao.AbsenceRequestDao
 import com.bithermmanagement.ausencias.dao.AbsenceLogDao
 import com.bithermmanagement.ausencias.models.*
+import com.bithermmanagement.ausencias.services.GoogleSheetsTransferService
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.Calendar
 
 @Singleton
 class AbsenceRepository @Inject constructor(
     private val absenceRecordDao: AbsenceRecordDao,
     private val absenceRequestDao: AbsenceRequestDao,
-    private val absenceLogDao: AbsenceLogDao
+    private val absenceLogDao: AbsenceLogDao,
+    private val googleSheetsTransferService: GoogleSheetsTransferService
 ) {
     
     // ===== ABSENCE RECORDS =====
@@ -34,6 +37,18 @@ class AbsenceRepository @Inject constructor(
     
     fun getAbsencesForDateRange(startDate: Date, endDate: Date): Flow<List<AbsenceRecord>> = 
         absenceRecordDao.getAbsencesForDateRange(startDate, endDate)
+    
+    suspend fun getAbsencesByMonth(year: Int, month: Int): List<AbsenceRecord> {
+        val calendar = Calendar.getInstance()
+        calendar.set(year, month, 1, 0, 0, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startOfMonth = calendar.time
+        
+        calendar.add(Calendar.MONTH, 1)
+        val endOfMonth = calendar.time
+        
+        return absenceRecordDao.getAbsencesByMonth(startOfMonth, endOfMonth)
+    }
     
     suspend fun getAbsenceById(id: Long): AbsenceRecord? = absenceRecordDao.getAbsenceById(id)
     
@@ -128,6 +143,28 @@ class AbsenceRepository @Inject constructor(
         )
         
         insertLog(log)
+        
+        // Guardar en Google Sheets AUSENCIAS-LOGS
+        try {
+            val dateFormat = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+            val requestDateFormat = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+            
+            googleSheetsTransferService.writeNewAbsenceRequestToLogs(
+                employeeId = employeeId,
+                employeeName = employeeName,
+                absenceType = absenceType.displayName,
+                startDate = dateFormat.format(startDate),
+                endDate = dateFormat.format(endDate),
+                workingDays = totalDays,
+                description = description,
+                requestDate = requestDateFormat.format(Date())
+            )
+            
+        } catch (e: Exception) {
+            // Si falla el guardado en Google Sheets, no fallamos la operación local
+            // pero registramos el error
+            android.util.Log.e("AbsenceRepository", "Error guardando en Google Sheets: ${e.message}", e)
+        }
         
         return requestId
     }

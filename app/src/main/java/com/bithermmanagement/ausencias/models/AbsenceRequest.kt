@@ -46,7 +46,8 @@ enum class RequestStatus(val displayName: String, val color: String) {
     EN_REVISION("En Revisión", "#2196F3"),
     APROBADA("Aprobada", "#4CAF50"),
     RECHAZADA("Rechazada", "#F44336"),
-    CANCELADA("Cancelada", "#9E9E9E")
+    CANCELADA("Cancelada", "#9E9E9E"),
+    PASADA("Pasada", "#9C27B0")
 }
 
 enum class RequestPriority(val displayName: String, val color: String) {

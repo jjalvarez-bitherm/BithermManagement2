@@ -48,6 +48,10 @@ interface AbsenceRecordDao {
     @Query("SELECT * FROM absence_records WHERE startDate <= :endDate AND endDate >= :startDate ORDER BY startDate ASC")
     fun getAbsencesForDateRange(startDate: Date, endDate: Date): Flow<List<AbsenceRecord>>
     
+    // Consulta por mes específico
+    @Query("SELECT * FROM absence_records WHERE (startDate >= :startOfMonth AND startDate < :endOfMonth) OR (endDate >= :startOfMonth AND endDate < :endOfMonth) OR (startDate <= :startOfMonth AND endDate >= :endOfMonth) ORDER BY startDate ASC")
+    suspend fun getAbsencesByMonth(startOfMonth: Date, endOfMonth: Date): List<AbsenceRecord>
+    
     // Consultas de sincronización
     @Query("SELECT * FROM absence_records WHERE isSynced = 0")
     suspend fun getUnsyncedAbsences(): List<AbsenceRecord>

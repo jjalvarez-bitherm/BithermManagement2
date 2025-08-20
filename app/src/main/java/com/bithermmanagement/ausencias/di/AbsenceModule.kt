@@ -1,9 +1,8 @@
 package com.bithermmanagement.ausencias.di
 
-import com.bithermmanagement.ausencias.dao.AbsenceRecordDao
-import com.bithermmanagement.ausencias.dao.AbsenceRequestDao
-import com.bithermmanagement.ausencias.dao.AbsenceLogDao
+import com.bithermmanagement.database.AppDatabase
 import com.bithermmanagement.ausencias.repository.AbsenceRepository
+import com.bithermmanagement.ausencias.services.GoogleSheetsTransferService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,10 +16,14 @@ object AbsenceModule {
     @Provides
     @Singleton
     fun provideAbsenceRepository(
-        absenceRecordDao: AbsenceRecordDao,
-        absenceRequestDao: AbsenceRequestDao,
-        absenceLogDao: AbsenceLogDao
+        database: AppDatabase,
+        googleSheetsTransferService: GoogleSheetsTransferService
     ): AbsenceRepository {
-        return AbsenceRepository(absenceRecordDao, absenceRequestDao, absenceLogDao)
+        return AbsenceRepository(
+            absenceRecordDao = database.absenceRecordDao(),
+            absenceRequestDao = database.absenceRequestDao(),
+            absenceLogDao = database.absenceLogDao(),
+            googleSheetsTransferService = googleSheetsTransferService
+        )
     }
 }

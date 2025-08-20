@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:fillViewport="true"
+    android:background="@drawable/bitherm_gradient">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,380 +12,214 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Título -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nueva Solicitud de Ausencia"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Empleado -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp">
+            android:hint="Empleado"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxStrokeColor="@color/gray_700"
+            app:hintTextColor="@color/gray_700">
 
-            <LinearLayout
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextEmployeeName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:enabled="false"
+                android:text="Cargando..."
+                android:textColor="@color/black" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Nueva Solicitud de Ausencia"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:layout_marginBottom="8dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-                <TextView
-                    android:id="@+id/textViewCurrentDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="15/12/2024"
-                    android:textSize="14sp"
-                    android:textColor="@color/gray_600" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Información del empleado -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Fecha de Solicitud -->
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp">
+            android:hint="Fecha de Solicitud"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            app:boxStrokeColor="@color/gray_700"
+            app:hintTextColor="@color/gray_700">
 
-            <LinearLayout
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextRequestDate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:enabled="false"
+                android:textColor="@color/black" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Información del Empleado"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:layout_marginBottom="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Nombre del empleado -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Nombre completo"
-                    app:startIconDrawable="@drawable/ic_person">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextEmployeeName"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPersonName"
-                        android:maxLines="1" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Email del empleado -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:hint="Email"
-                    app:startIconDrawable="@drawable/ic_email">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextEmployeeEmail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress"
-                        android:maxLines="1" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- Rol del empleado -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Rol/Cargo"
-                    app:startIconDrawable="@drawable/ic_work">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextEmployeeRole"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="text"
-                        android:maxLines="1" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Detalles de la ausencia -->
-        <com.google.android.material.card.MaterialCardView
+        <!-- Tipo de Ausencia -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/tilAbsenceType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="2dp">
+            android:hint="Tipo de Ausencia"
+            style="@style/CustomTextInputLayout.ExposedDropdownMenu"
+            app:hintTextColor="@color/black"
+            app:expandedHintEnabled="true">
 
-            <LinearLayout
+            <AutoCompleteTextView
+                android:id="@+id/spinnerAbsenceType"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:textColor="@color/black"
+                android:background="@null"
+                android:gravity="center_vertical"
+                android:inputType="none"
+                android:focusable="false"
+                android:clickable="true"
+                android:completionThreshold="1"
+                android:dropDownWidth="match_parent"
+                android:dropDownHorizontalOffset="0dp"
+                android:dropDownVerticalOffset="0dp" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Fechas y Días Laborables en línea -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <!-- Fecha de Inicio -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilStartDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:hint="Fecha de Inicio"
+                style="@style/CustomTextInputLayout"
+                app:hintTextColor="@color/black"
+                app:expandedHintEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextStartDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:textColor="@color/black"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:inputType="none"
+                    android:hint=""
+                    android:gravity="center_vertical" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Días Laborables en el centro -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilWorkingDays"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:hint="Días"
+                style="@style/CustomTextInputLayout"
+                app:hintTextColor="@color/black"
+                app:expandedHintEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextWorkingDays"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:enabled="false"
+                    android:text="0"
+                    android:textColor="@color/black"
+                    android:gravity="center" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Fecha de Fin -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilEndDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:hint="Fecha de Fin"
+                style="@style/CustomTextInputLayout"
+                app:hintTextColor="@color/black"
+                app:expandedHintEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextEndDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:textColor="@color/black"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:inputType="none"
+                    android:hint=""
+                    android:gravity="center_vertical" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <!-- Motivo de Solicitud -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:hint="Motivo de Solicitud"
+            style="@style/CustomTextInputLayout"
+            app:hintTextColor="@color/black"
+            app:expandedHintEnabled="true">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/editTextDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:minHeight="56dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:textColor="@color/black"
+                android:minLines="2"
+                android:maxLines="4" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Detalles de la Ausencia"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black"
-                    android:layout_marginBottom="16dp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Tipo de ausencia -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tipo:"
-                        android:textSize="14sp"
-                        android:textColor="@color/gray_600"
-                        android:layout_marginEnd="16dp" />
-
-                    <Spinner
-                        android:id="@+id/spinnerAbsenceType"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                </LinearLayout>
-
-                <!-- Fechas -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginBottom="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Período de ausencia:"
-                        android:textSize="14sp"
-                        android:textColor="@color/gray_600"
-                        android:layout_marginBottom="8dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <!-- Fecha de inicio -->
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="8dp"
-                            android:hint="Fecha inicio"
-                            app:startIconDrawable="@drawable/ic_calendar"
-                            app:endIconMode="custom"
-                            app:endIconDrawable="@drawable/ic_calendar_today">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/editTextStartDate"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true" />
-
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <!-- Fecha de fin -->
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:hint="Fecha fin"
-                            app:startIconDrawable="@drawable/ic_calendar"
-                            app:endIconMode="custom"
-                            app:endIconDrawable="@drawable/ic_calendar_today">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/editTextEndDate"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true" />
-
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                    </LinearLayout>
-
-                    <!-- Error de fechas -->
-                    <TextView
-                        android:id="@+id/textViewDateError"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Error en las fechas"
-                        android:textSize="12sp"
-                        android:textColor="@color/red_600"
-                        android:layout_marginTop="4dp"
-                        android:visibility="gone"
-                        tools:visibility="visible" />
-
-                    <!-- Total de días -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Total días:"
-                            android:textSize="14sp"
-                            android:textColor="@color/gray_600"
-                            android:layout_marginEnd="8dp" />
-
-                        <TextView
-                            android:id="@+id/textViewTotalDays"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0 días"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/black"
-                            android:visibility="gone"
-                            tools:visibility="visible" />
-
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/buttonCalculateDays"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Calcular"
-                            app:icon="@drawable/ic_calculate"
-                            app:iconGravity="textStart"
-                            style="@style/Widget.Material3.Button.TextButton" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-                <!-- Prioridad -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Prioridad:"
-                        android:textSize="14sp"
-                        android:textColor="@color/gray_600"
-                        android:layout_marginEnd="16dp" />
-
-                    <Spinner
-                        android:id="@+id/spinnerPriority"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                </LinearLayout>
-
-                <!-- Descripción -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Descripción de la ausencia"
-                    app:startIconDrawable="@drawable/ic_description"
-                    app:counterEnabled="true"
-                    app:counterMaxLength="500">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/editTextDescription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textMultiLine"
-                        android:minLines="3"
-                        android:maxLines="5"
-                        android:gravity="top" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Botones de acción -->
+        <!-- Botones -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="end">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/buttonClear"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="Limpiar"
-                app:icon="@drawable/ic_clear"
-                app:iconGravity="textStart"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            <com.google.android.material.button.MaterialButton
+            <Button
                 android:id="@+id/buttonCancel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:text="Cancelar"
-                app:icon="@drawable/ic_cancel"
-                app:iconGravity="textStart"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:textColor="@color/white" />
 
-            <com.google.android.material.button.MaterialButton
+            <Button
                 android:id="@+id/buttonSubmit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Enviar Solicitud"
-                app:icon="@drawable/ic_send"
-                app:iconGravity="textStart"
-                style="@style/Widget.Material3.Button" />
+                android:backgroundTint="@color/blue_600" />
 
         </LinearLayout>
-
-        <!-- Progress Bar -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="16dp"
-            android:visibility="gone" />
 
     </LinearLayout>
 

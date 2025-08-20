@@ -2,8 +2,10 @@ package com.bithermmanagement.ausencias.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.util.Log
 import com.bithermmanagement.ausencias.models.*
 import com.bithermmanagement.ausencias.repository.AbsenceRepository
+import com.bithermmanagement.ausencias.services.GoogleSheetsTransferService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AbsenceViewModel @Inject constructor(
-    private val absenceRepository: AbsenceRepository
+    private val absenceRepository: AbsenceRepository,
+    private val googleSheetsTransferService: GoogleSheetsTransferService
 ) : ViewModel() {
     
     // ===== ESTADO DE LA UI =====
@@ -197,6 +200,13 @@ class AbsenceViewModel @Inject constructor(
                 loadPendingRequests()
                 loadStatistics()
                 
+                // Recargar ausencias del calendario para el mes actual
+                val calendar = Calendar.getInstance()
+                calendar.time = startDate
+                val year = calendar.get(Calendar.YEAR)
+                val month = calendar.get(Calendar.MONTH)
+                loadAbsencesByMonth(year, month)
+                
                 _uiState.value = _uiState.value.copy(
                     lastCreatedRequestId = requestId,
                     showSuccessMessage = true
@@ -324,6 +334,304 @@ class AbsenceViewModel @Inject constructor(
     
     fun setSelectedPriority(priority: RequestPriority?) {
         _selectedPriority.value = priority
+    }
+    
+    // Métodos para filtros múltiples
+    fun setStatusFilter(statuses: List<RequestStatus>) {
+        // Implementar filtro múltiple de estados
+    }
+    
+    fun setTypeFilter(types: List<AbsenceType>) {
+        // Implementar filtro múltiple de tipos
+    }
+    
+    fun setPriorityFilter(priorities: List<RequestPriority>) {
+        // Implementar filtro múltiple de prioridades
+    }
+    
+    fun clearAllFilters() {
+        _selectedStatus.value = null
+        _selectedType.value = null
+        _selectedPriority.value = null
+    }
+    
+    // Métodos para cargar datos
+    fun loadAbsenceRequests() {
+        loadPendingRequests()
+    }
+    
+    fun loadAbsencesByMonth(year: Int, month: Int) {
+        viewModelScope.launch {
+            try {
+                // SIEMPRE cargar desde AUSENCIAS-LOG (datos correctos) en lugar de base de datos local
+                _isLoading.value = true
+                Log.d("AbsenceViewModel", "Cargando ausencias desde AUSENCIAS-LOG para $month/$year")
+                
+                val monthAbsences = loadAbsencesFromGoogleSheets(year, month)
+                _absences.value = monthAbsences
+                
+                // Cargar estadísticas para el mes
+                loadStatisticsForMonth(year, month)
+                
+                _isLoading.value = false
+                Log.d("AbsenceViewModel", "Datos cargados desde AUSENCIAS-LOG: ${monthAbsences.size} registros")
+            } catch (e: Exception) {
+                Log.e("AbsenceViewModel", "Error cargando desde AUSENCIAS-LOG, usando fallback local", e)
+                // Solo como fallback si falla Google Sheets, usar base de datos local
+                try {
+                    val localAbsences = absenceRepository.getAbsencesByMonth(year, month)
+                    _absences.value = localAbsences
+                    loadStatisticsForMonth(year, month)
+                    Log.d("AbsenceViewModel", "Fallback: datos cargados desde base de datos local: ${localAbsences.size} registros")
+                } catch (localError: Exception) {
+                    _errorMessage.value = "Error al cargar ausencias del mes: ${localError.message}"
+                }
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    suspend fun loadAllAbsencesFromLogs(): List<AbsenceRecord> {
+        try {
+            Log.d("AbsenceViewModel", "Cargando todas las ausencias desde AUSENCIAS-LOGS")
+            
+            // Usar el servicio para leer todos los datos de AUSENCIAS-LOGS (sin filtro de mes)
+            val allAbsences = googleSheetsTransferService.readAllAbsencesFromLogs()
+            
+            Log.d("AbsenceViewModel", "Todas las ausencias cargadas: ${allAbsences.size} registros")
+            
+            return allAbsences
+        } catch (e: Exception) {
+            Log.e("AbsenceViewModel", "Error cargando todas las ausencias desde Google Sheets: ${e.message}", e)
+            // Si falla, retornar lista vacía
+            return emptyList()
+        }
+    }
+    
+    suspend fun loadHolidaysForMonth(year: Int, month: Int): Map<String, String> {
+        try {
+            Log.d("AbsenceViewModel", "Cargando festivos para $month/$year desde JSON local")
+            
+            // Usar el servicio para leer festivos del JSON local
+            val holidays = googleSheetsTransferService.readHolidaysFromJson(year, month)
+            
+            Log.d("AbsenceViewModel", "Festivos cargados para $month/$year: ${holidays.size}")
+            
+            return holidays
+        } catch (e: Exception) {
+            Log.e("AbsenceViewModel", "Error cargando festivos desde JSON: ${e.message}", e)
+            // Si falla, retornar mapa vacío
+            return emptyMap()
+        }
+    }
+    
+    private suspend fun loadAbsencesFromGoogleSheets(year: Int, month: Int): List<AbsenceRecord> {
+        try {
+            Log.d("AbsenceViewModel", "Cargando ausencias desde AUSENCIAS-LOGS para $month/$year")
+            
+            // Usar el servicio para leer datos de AUSENCIAS-LOGS
+            val absenceRecords = googleSheetsTransferService.readAbsencesFromLogs(year, month)
+            
+            Log.d("AbsenceViewModel", "Ausencias cargadas: ${absenceRecords.size} registros")
+            
+            return absenceRecords
+        } catch (e: Exception) {
+            Log.e("AbsenceViewModel", "Error cargando ausencias desde Google Sheets: ${e.message}", e)
+            // Si falla, intentar cargar desde base de datos local como fallback
+            return absenceRepository.getAbsencesByMonth(year, month)
+        }
+    }
+    
+    private fun loadStatisticsForMonth(year: Int, month: Int) {
+        viewModelScope.launch {
+            try {
+                val monthAbsences = _absences.value
+                
+                val stats = mutableMapOf<String, Int>()
+                stats["enfermedad"] = monthAbsences.count { it.absenceType == AbsenceType.ENFERMEDAD }
+                stats["permiso"] = monthAbsences.count { it.absenceType == AbsenceType.PERMISO }
+                stats["vacaciones_disfrutadas"] = monthAbsences.count { 
+                    it.absenceType == AbsenceType.VACACIONES && it.status == AbsenceStatus.APROBADA 
+                }
+                stats["vacaciones_pendientes"] = monthAbsences.count { 
+                    it.absenceType == AbsenceType.VACACIONES && it.status == AbsenceStatus.PENDIENTE 
+                }
+                stats["solicitudes"] = monthAbsences.count { it.status == AbsenceStatus.PENDIENTE }
+                
+                _statistics.value = stats
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al cargar estadísticas: ${e.message}"
+            }
+        }
+    }
+    
+    fun syncWithGoogleSheets() {
+        viewModelScope.launch {
+            try {
+                Log.d("AbsenceViewModel", "Iniciando sincronización con Google Sheets")
+                _isLoading.value = true
+                _errorMessage.value = null
+                
+                // Ejecutar la transferencia real de datos
+                Log.d("AbsenceViewModel", "Llamando a transferDataFromGoogleSheets")
+                transferDataFromGoogleSheets()
+                
+                Log.d("AbsenceViewModel", "Transferencia completada exitosamente")
+                _isLoading.value = false
+                
+            } catch (e: Exception) {
+                Log.e("AbsenceViewModel", "Error en sincronización: ${e.message}", e)
+                _errorMessage.value = "Error en sincronización: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun forceSyncAllAbsences() {
+        viewModelScope.launch {
+            try {
+                Log.d("AbsenceViewModel", "Iniciando sincronización FORZADA de todas las ausencias")
+                _isLoading.value = true
+                _errorMessage.value = null
+                
+                // Ejecutar la transferencia forzada de datos
+                Log.d("AbsenceViewModel", "Llamando a forceTransferAllAbsences")
+                val absenceRecords = googleSheetsTransferService.forceTransferAllAbsences()
+                
+                Log.d("AbsenceViewModel", "Transferencia forzada completada, ${absenceRecords.size} registros")
+                
+                // Guardar en base de datos local
+                Log.d("AbsenceViewModel", "Guardando en base de datos local")
+                saveToLocalDatabase(absenceRecords)
+                
+                Log.d("AbsenceViewModel", "Proceso forzado completado exitosamente")
+                _isLoading.value = false
+                
+            } catch (e: Exception) {
+                Log.e("AbsenceViewModel", "Error en sincronización forzada: ${e.message}", e)
+                _errorMessage.value = "Error en sincronización forzada: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    private suspend fun transferDataFromGoogleSheets() {
+        try {
+            Log.d("AbsenceViewModel", "Iniciando transferencia de datos desde Google Sheets")
+            
+            // Usar el servicio real para transferir datos
+            Log.d("AbsenceViewModel", "Llamando al servicio de transferencia")
+            val absenceRecords = googleSheetsTransferService.transferDataFromCuadroToLogs()
+            
+            Log.d("AbsenceViewModel", "Transferencia completada, ${absenceRecords.size} registros obtenidos")
+            
+            // Guardar en base de datos local
+            Log.d("AbsenceViewModel", "Guardando en base de datos local")
+            saveToLocalDatabase(absenceRecords)
+            
+            Log.d("AbsenceViewModel", "Proceso completado exitosamente")
+            
+        } catch (e: Exception) {
+            Log.e("AbsenceViewModel", "Error en transferencia: ${e.message}", e)
+            throw Exception("Error en transferencia: ${e.message}")
+        }
+    }
+    
+    private suspend fun saveToLocalDatabase(records: List<AbsenceRecord>) {
+        Log.d("AbsenceViewModel", "Guardando ${records.size} registros en base de datos local")
+        
+        // Guardar en base de datos local
+        records.forEachIndexed { index, record ->
+            try {
+                absenceRepository.insertAbsence(record)
+                if (index < 3) { // Log solo los primeros 3 para no saturar
+                    Log.d("AbsenceViewModel", "Registro ${index + 1} guardado: ${record.employeeName} - ${record.absenceType.displayName}")
+                }
+            } catch (e: Exception) {
+                Log.e("AbsenceViewModel", "Error guardando registro ${index + 1}: ${e.message}")
+                throw e
+            }
+        }
+        
+        Log.d("AbsenceViewModel", "Todos los registros guardados exitosamente")
+    }
+    
+    fun editAbsenceRequest(request: AbsenceRequest) {
+        // Implementar edición
+    }
+    
+    fun approveAbsenceRequest(request: AbsenceRequest) {
+        approveRequest(request.id, "admin", "Administrador")
+    }
+    
+    fun rejectAbsenceRequest(request: AbsenceRequest) {
+        rejectRequest(request.id, "admin", "Administrador", "Rechazado por administrador")
+    }
+    
+    fun cancelAbsenceRequest(request: AbsenceRequest) {
+        cancelRequest(request.id, "admin", "Administrador", "Cancelado por administrador")
+    }
+    
+    fun createAbsenceRequest(request: AbsenceRequest) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                
+                val requestId = absenceRepository.createAbsenceRequest(
+                    employeeId = request.employeeId,
+                    employeeName = request.employeeName,
+                    employeeEmail = request.employeeEmail,
+                    employeeRole = request.employeeRole,
+                    startDate = request.startDate,
+                    endDate = request.endDate,
+                    absenceType = request.absenceType,
+                    description = request.description,
+                    priority = request.priority
+                )
+                
+                // Actualizar estado
+                _uiState.value = _uiState.value.copy(
+                    lastCreatedRequestId = requestId,
+                    showSuccessMessage = true,
+                    successMessage = "Solicitud creada correctamente"
+                )
+                
+                _isLoading.value = false
+                
+                // Ocultar mensaje de éxito después de un tiempo
+                kotlinx.coroutines.delay(3000)
+                _uiState.value = _uiState.value.copy(showSuccessMessage = false)
+                
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al crear solicitud: ${e.message}"
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    fun calculateWorkingDays(startDate: Date, endDate: Date, onResult: (Int) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val workingDays = googleSheetsTransferService.calculateWorkingDays(startDate, endDate)
+                onResult(workingDays)
+            } catch (e: Exception) {
+                // En caso de error, calcular días naturales
+                val calendar = Calendar.getInstance()
+                calendar.time = startDate
+                var days = 0
+                val endCalendar = Calendar.getInstance()
+                endCalendar.time = endDate
+                
+                while (!calendar.after(endCalendar)) {
+                    if (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY && 
+                        calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
+                        days++
+                    }
+                    calendar.add(Calendar.DAY_OF_YEAR, 1)
+                }
+                onResult(days)
+            }
+        }
     }
     
     private fun applyFilters(date: Date, status: RequestStatus?, type: AbsenceType?, priority: RequestPriority?) {

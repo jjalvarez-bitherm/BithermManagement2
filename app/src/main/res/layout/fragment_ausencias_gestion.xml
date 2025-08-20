@@ -6,437 +6,176 @@
     android:layout_height="match_parent"
     android:background="@color/white">
 
-    <!-- Header con estadísticas -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Header con título -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp">
+        android:orientation="vertical"
+        android:background="@color/purple_600"
+        android:padding="16dp">
 
-        <LinearLayout
+        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:text="Gestión de Solicitudes"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Gestión de Ausencias"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="16dp" />
+    </LinearLayout>
 
-            <!-- Estadísticas rápidas -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
-
-                    <TextView
-                        android:id="@+id/textViewPendingCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textSize="24sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/yellow_600" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Pendientes"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_600" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Total: "
-                        android:textSize="16sp"
-                        android:textColor="@color/gray_600" />
-
-                    <TextView
-                        android:id="@+id/textViewTotalCount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Botones de acción -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonSync"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="8dp"
-                    android:text="Sincronizar"
-                    app:icon="@drawable/ic_sync"
-                    app:iconGravity="textStart"
-                    style="@style/Widget.Material3.Button.OutlinedButton" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonClearFilters"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Limpiar Filtros"
-                    app:icon="@drawable/ic_clear"
-                    app:iconGravity="textStart"
-                    style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Filtros -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Pestañas de filtrado -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp">
+        android:orientation="horizontal"
+        android:background="@color/gray_800"
+        android:padding="0dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tabPendientes"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_weight="1"
+            android:text="PENDIENTES"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@color/gray_800"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Filtros"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/black"
-                android:layout_marginBottom="12dp" />
+        <TextView
+            android:id="@+id/tabAprobadas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="APROBADAS"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@color/gray_800"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
 
-            <!-- Filtros por estado -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Estado:"
-                android:textSize="14sp"
-                android:textColor="@color/gray_600"
-                android:layout_marginBottom="8dp" />
+        <TextView
+            android:id="@+id/tabRechazadas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="RECHAZADAS"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@color/gray_800"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:singleSelection="true">
+        <TextView
+            android:id="@+id/tabCanceladas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CANCELADAS"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@color/gray_800"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipPendiente"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pendiente"
-                    app:chipBackgroundColor="@color/yellow_100"
-                    app:chipStrokeColor="@color/yellow_500"
-                    app:chipStrokeWidth="1dp" />
+        <TextView
+            android:id="@+id/tabPasadas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PASADAS"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="@color/gray_800"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipEnRevision"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="En Revisión"
-                    app:chipBackgroundColor="@color/blue_100"
-                    app:chipStrokeColor="@color/blue_500"
-                    app:chipStrokeWidth="1dp" />
+    </LinearLayout>
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipAprobada"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Aprobada"
-                    app:chipBackgroundColor="@color/green_100"
-                    app:chipStrokeColor="@color/green_500"
-                    app:chipStrokeWidth="1dp" />
+    <!-- Indicador de pestaña seleccionada -->
+    <View
+        android:id="@+id/indicatorTab"
+        android:layout_width="0dp"
+        android:layout_height="4dp"
+        android:background="@color/white"
+        android:layout_marginStart="0dp" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRechazada"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Rechazada"
-                    app:chipBackgroundColor="@color/red_100"
-                    app:chipStrokeColor="@color/red_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipCancelada"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cancelada"
-                    app:chipBackgroundColor="@color/gray_100"
-                    app:chipStrokeColor="@color/gray_500"
-                    app:chipStrokeWidth="1dp" />
-
-            </com.google.android.material.chip.ChipGroup>
-
-            <!-- Filtros por tipo -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tipo:"
-                android:textSize="14sp"
-                android:textColor="@color/gray_600"
-                android:layout_marginBottom="8dp" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupType"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:singleSelection="true">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipVacaciones"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Vacaciones"
-                    app:chipBackgroundColor="@color/green_100"
-                    app:chipStrokeColor="@color/green_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipPermiso"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Permiso"
-                    app:chipBackgroundColor="@color/blue_100"
-                    app:chipStrokeColor="@color/blue_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipEnfermedad"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Enfermedad"
-                    app:chipBackgroundColor="@color/orange_100"
-                    app:chipStrokeColor="@color/orange_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipAsuntosPersonales"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Asuntos Personales"
-                    app:chipBackgroundColor="@color/purple_100"
-                    app:chipStrokeColor="@color/purple_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipFormacion"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Formación"
-                    app:chipBackgroundColor="@color/teal_100"
-                    app:chipStrokeColor="@color/teal_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipOtros"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Otros"
-                    app:chipBackgroundColor="@color/brown_100"
-                    app:chipStrokeColor="@color/brown_500"
-                    app:chipStrokeWidth="1dp" />
-
-            </com.google.android.material.chip.ChipGroup>
-
-            <!-- Filtros por prioridad -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Prioridad:"
-                android:textSize="14sp"
-                android:textColor="@color/gray_600"
-                android:layout_marginBottom="8dp" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupPriority"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:singleSelection="true">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipBaja"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Baja"
-                    app:chipBackgroundColor="@color/green_100"
-                    app:chipStrokeColor="@color/green_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipNormal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Normal"
-                    app:chipBackgroundColor="@color/blue_100"
-                    app:chipStrokeColor="@color/blue_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipAlta"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Alta"
-                    app:chipBackgroundColor="@color/orange_100"
-                    app:chipStrokeColor="@color/orange_500"
-                    app:chipStrokeWidth="1dp" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipUrgente"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Urgente"
-                    app:chipBackgroundColor="@color/red_100"
-                    app:chipStrokeColor="@color/red_500"
-                    app:chipStrokeWidth="1dp" />
-
-            </com.google.android.material.chip.ChipGroup>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Lista de solicitudes -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Área de contenido principal -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_margin="16dp"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="2dp">
+        android:orientation="vertical"
+        android:background="@color/green_100"
+        android:padding="16dp">
 
+        <!-- Lista de solicitudes -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewRequests"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="vertical"
+            tools:listitem="@layout/item_absence_request" />
+
+        <!-- Estado vacío -->
         <LinearLayout
+            android:id="@+id/emptyStateContainer"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="visible">
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_calendar"
+                android:alpha="0.5"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:text="No hay solicitudes"
+                android:textSize="18sp"
+                android:textColor="@color/gray_600"
+                android:layout_marginBottom="8dp" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Solicitudes de Ausencia"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black" />
-
-                <com.google.android.material.badge.BadgeDrawable
-                    android:id="@+id/badgePending"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:visibility="gone"
-                    tools:visibility="visible"
-                    tools:text="5" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/buttonExport"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Exportar"
-                    app:icon="@drawable/ic_download"
-                    app:iconGravity="textStart"
-                    style="@style/Widget.Material3.Button.TextButton" />
-
-            </LinearLayout>
-
-            <!-- RecyclerView para las solicitudes -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewRequests"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:scrollbars="vertical"
-                tools:listitem="@layout/item_absence_request" />
-
-            <!-- Estado vacío -->
-            <LinearLayout
-                android:id="@+id/emptyStateContainer"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <ImageView
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:src="@drawable/ic_calendar"
-                    android:alpha="0.5"
-                    android:layout_marginBottom="16dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="No hay solicitudes"
-                    android:textSize="18sp"
-                    android:textColor="@color/gray_600"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="No se encontraron solicitudes con los filtros aplicados"
-                    android:textSize="14sp"
-                    android:textColor="@color/gray_500"
-                    android:gravity="center" />
-
-            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No se encontraron solicitudes con los filtros aplicados"
+                android:textSize="14sp"
+                android:textColor="@color/gray_500"
+                android:gravity="center" />
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
     <!-- Progress Bar -->
     <ProgressBar
@@ -455,6 +194,7 @@
         android:layout_margin="24dp"
         android:src="@drawable/ic_add"
         app:fabSize="normal"
+        app:backgroundTint="@color/teal_500"
         app:tint="@color/white" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

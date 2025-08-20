@@ -23,7 +23,6 @@ import javax.inject.Inject
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import android.util.Log
 
 @AndroidEntryPoint
 class FragmentNuevaAusencia : Fragment() {
@@ -70,7 +69,6 @@ class FragmentNuevaAusencia : Fragment() {
         setupAbsenceTypeSpinner()
         setupDatePickers()
         setupClickListeners()
-        setupObservers()
         
         android.util.Log.d("FragmentNuevaAusencia", "=== onViewCreated COMPLETADO ===")
     }
@@ -271,18 +269,6 @@ class FragmentNuevaAusencia : Fragment() {
             submitAbsenceRequest()
         }
     }
-    
-    private fun setupObservers() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.errorMessage.collect { error ->
-                error?.let {
-                    Toast.makeText(requireContext(), "Error: $it", Toast.LENGTH_LONG).show()
-                    viewModel.clearError()
-                    buttonSubmit.isEnabled = true
-                }
-            }
-        }
-    }
 
     private fun showDatePicker(onDateSelected: (Date) -> Unit) {
         val calendar = Calendar.getInstance()
@@ -341,25 +327,12 @@ class FragmentNuevaAusencia : Fragment() {
 
         // Evitar cerrar inmediatamente: esperar confirmación desde el ViewModel para no cancelar la corrutina
         buttonSubmit.isEnabled = false
-        
         viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // Esperar a que el ViewModel reporte un ID creado o un error
-                viewModel.uiState.first { state -> 
-                    state.lastCreatedRequestId > 0L 
-                }
-                
-                val currentState = viewModel.uiState.value
-                if (currentState.lastCreatedRequestId > 0L) {
-                    Toast.makeText(requireContext(), "Solicitud enviada correctamente", Toast.LENGTH_SHORT).show()
-                    buttonSubmit.isEnabled = true
-                    requireActivity().onBackPressed()
-                }
-            } catch (e: Exception) {
-                Log.e("FragmentNuevaAusencia", "Error en submitAbsenceRequest: ${e.message}", e)
-                Toast.makeText(requireContext(), "Error al enviar solicitud: ${e.message}", Toast.LENGTH_LONG).show()
-                buttonSubmit.isEnabled = true
-            }
+            // Esperar a que el ViewModel reporte un ID creado
+            viewModel.uiState.first { it.lastCreatedRequestId > 0L }
+            Toast.makeText(requireContext(), "Solicitud enviada correctamente", Toast.LENGTH_SHORT).show()
+            buttonSubmit.isEnabled = true
+            requireActivity().onBackPressed()
         }
     }
 

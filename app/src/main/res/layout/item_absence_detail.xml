@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="60dp">
+
+    <!-- Tipo de ausencia -->
+    <TextView
+        android:id="@+id/textViewAbsenceType"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Vacaciones"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        tools:text="Vacaciones" />
+
+    <!-- Fecha de inicio -->
+    <TextView
+        android:id="@+id/textViewStartDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="1 abr"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        tools:text="1 abr" />
+
+    <!-- Fecha de fin -->
+    <TextView
+        android:id="@+id/textViewEndDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="5 abr"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:gravity="center_vertical"
+        tools:text="5 abr" />
+
+    <!-- Descripción -->
+    <TextView
+        android:id="@+id/textViewDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.5"
+        android:text="Vacaciones Semana Santa"
+        android:textSize="14sp"
+        android:textColor="@color/gray_600"
+        android:gravity="center_vertical"
+        android:maxLines="2"
+        android:ellipsize="end"
+        tools:text="Vacaciones Semana Santa" />
+
+</LinearLayout>

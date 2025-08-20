@@ -41,4 +41,36 @@
         <item name="android:textColor">@android:color/black</item>
         <item name="android:textCursorDrawable">@null</item>
     </style>
+
+    <!-- Estilo personalizado para hints negros -->
+    <style name="CustomTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="hintTextColor">@color/black</item>
+        <item name="boxStrokeColor">@color/black</item>
+        <item name="boxBackgroundColor">@color/white_80_opacity</item>
+        <item name="android:textColorHint">@color/black</item>
+        <item name="hintTextAppearance">@style/TextAppearance.MaterialComponents.Caption</item>
+        <item name="hintEnabled">true</item>
+        <item name="hintAnimationEnabled">false</item>
+    </style>
+
+    <style name="CustomTextInputLayout.ExposedDropdownMenu" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="hintTextColor">@color/black</item>
+        <item name="boxStrokeColor">@color/black</item>
+        <item name="boxBackgroundColor">@color/white_80_opacity</item>
+        <item name="android:textColorHint">@color/black</item>
+        <item name="hintTextAppearance">@style/TextAppearance.MaterialComponents.Caption</item>
+        <item name="hintEnabled">true</item>
+        <item name="hintAnimationEnabled">false</item>
+    </style>
+
+    <!-- Estilo para hints siempre visibles -->
+    <style name="AlwaysVisibleHintTextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="hintTextColor">@color/black</item>
+        <item name="boxStrokeColor">@color/black</item>
+        <item name="boxBackgroundColor">@color/white_80_opacity</item>
+        <item name="android:textColorHint">@color/black</item>
+        <item name="hintEnabled">true</item>
+        <item name="hintAnimationEnabled">false</item>
+        <item name="expandedHintEnabled">true</item>
+    </style>
 </resources> 

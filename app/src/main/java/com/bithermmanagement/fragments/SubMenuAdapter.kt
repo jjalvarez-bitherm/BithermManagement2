@@ -70,6 +70,10 @@ class SubMenuAdapter(private val subMenus: List<SubMenuEntity>) : RecyclerView.A
             "fragmentUsuariosFichaje" -> com.bithermmanagement.fragments.fragmentUsuariosFichaje()
             "fragmentInspeccionActual" -> com.bithermmanagement.ui.items.FragmentInspeccionActual()
             "fragmentInspeccionBusqueda" -> FragmentInspeccionBusqueda()
+            // Fragments del sistema de ausencias
+            "fragmentAusenciasCuadrante" -> com.bithermmanagement.ausencias.fragments.FragmentAusenciasCuadrante()
+            "fragmentAusenciasGestion" -> com.bithermmanagement.ausencias.fragments.FragmentAusenciasGestion()
+            "fragmentNuevaAusencia" -> com.bithermmanagement.ausencias.fragments.FragmentNuevaAusencia()
             else -> {
                 try {
                     val fragmentClass = Class.forName("com.bithermmanagement.fragments.${item.item}")

@@ -33,8 +33,6 @@ import com.bithermmanagement.database.entities.UserEntity
 import com.bithermmanagement.data.UserManager
 import android.util.Log
 import android.widget.Button
-import android.app.Dialog
-import android.widget.LinearLayout
 import javax.inject.Inject
 import com.bithermmanagement.ui.dialogs.MultiSelectFilterDialog
 
@@ -54,8 +52,7 @@ class FragmentAusenciasCuadrante : Fragment() {
     private lateinit var textViewCurrentMonth: TextView
     private lateinit var buttonPreviousMonth: ImageButton
     private lateinit var buttonNextMonth: ImageButton
-    private lateinit var buttonUserFilter: ImageButton
-    private lateinit var buttonRefreshData: ImageButton
+    private lateinit var buttonUserFilter: Button
     private lateinit var fabNewAbsence: FloatingActionButton
     
     private var selectedUserIds: MutableSet<String> = mutableSetOf()
@@ -94,7 +91,6 @@ class FragmentAusenciasCuadrante : Fragment() {
         buttonPreviousMonth = view.findViewById(R.id.buttonPreviousMonth)
         buttonNextMonth = view.findViewById(R.id.buttonNextMonth)
         buttonUserFilter = view.findViewById(R.id.buttonUserFilter)
-        buttonRefreshData = view.findViewById(R.id.buttonRefreshData)
         fabNewAbsence = view.findViewById(R.id.fabNewAbsence)
     }
 
@@ -162,10 +158,6 @@ class FragmentAusenciasCuadrante : Fragment() {
             loadCalendarData()
         }
         
-        buttonRefreshData.setOnClickListener {
-            refreshDataFromLogs()
-        }
-        
         buttonUserFilter.setOnClickListener {
             if (userManager.hasAdminPrivileges()) {
                 showUserFilterDialog()
@@ -200,13 +192,6 @@ class FragmentAusenciasCuadrante : Fragment() {
                     }
                     true
                 }
-                R.id.action_force_sync -> {
-                    val hasAdminPrivileges = userManager.hasAdminPrivileges()
-                    if (hasAdminPrivileges) {
-                        forceSyncAllAbsences()
-                    }
-                    true
-                }
                 R.id.action_nueva_solicitud_ausencia -> {
                     // Navegar al fragment de nueva solicitud unificado
                     navigateToNewAbsence(AbsenceType.VACACIONES)
@@ -226,18 +211,6 @@ class FragmentAusenciasCuadrante : Fragment() {
             .setMessage("¿Desea leer los datos de AUSENCIAS-CUADRO y transferirlos a AUSENCIAS-LOGS?")
             .setPositiveButton("Sí") { _, _ ->
                 performDataTransfer()
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-    
-    private fun forceSyncAllAbsences() {
-        // Mostrar diálogo de confirmación
-        AlertDialog.Builder(requireContext())
-            .setTitle("Forzar sincronización completa")
-            .setMessage("¿Desea forzar la sincronización de TODAS las ausencias (incluyendo las que ya tienen punto)?\n\nEsto procesará todas las ausencias del CUADRO y las marcará con punto.")
-            .setPositiveButton("Sí, forzar") { _, _ ->
-                performForceSync()
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -331,73 +304,6 @@ class FragmentAusenciasCuadrante : Fragment() {
         }
     }
     
-    private fun performForceSync() {
-        // Mostrar diálogo de progreso
-        val progressDialog = AlertDialog.Builder(requireContext())
-            .setTitle("Sincronización forzada en progreso")
-            .setMessage("Procesando TODAS las ausencias del CUADRO...")
-            .setCancelable(false)
-            .create()
-        
-        progressDialog.show()
-        
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // Llamar al método de sincronización forzada del ViewModel
-                viewModel.forceSyncAllAbsences()
-                
-                // Esperar a que termine la sincronización
-                val isLoading = viewModel.isLoading.first { !it }
-                Log.d("FragmentAusenciasCuadrante", "Sincronización forzada completada, isLoading = $isLoading")
-                
-                progressDialog.dismiss()
-                
-                // Verificar si hubo error
-                val error = viewModel.errorMessage.value
-                if (error != null) {
-                    Log.d("FragmentAusenciasCuadrante", "Mostrando diálogo de error en sincronización forzada")
-                    val errorDialog = AlertDialog.Builder(requireContext())
-                        .setTitle("Error en la sincronización forzada")
-                        .setMessage(error)
-                        .setPositiveButton("OK") { dialog, _ ->
-                            viewModel.clearError()
-                            dialog.dismiss()
-                        }
-                        .create()
-                    
-                    errorDialog.show()
-                } else {
-                    // Éxito
-                    Log.d("FragmentAusenciasCuadrante", "Mostrando diálogo de éxito en sincronización forzada")
-                    val successDialog = AlertDialog.Builder(requireContext())
-                        .setTitle("Sincronización forzada completada")
-                        .setMessage("TODAS las ausencias han sido procesadas y marcadas con punto en el CUADRO.")
-                        .setPositiveButton("OK") { dialog, _ ->
-                            dialog.dismiss()
-                        }
-                        .create()
-                    
-                    successDialog.show()
-                    
-                    // Recargar datos del calendario
-                    loadCalendarData()
-                }
-            } catch (e: Exception) {
-                progressDialog.dismiss()
-                Log.d("FragmentAusenciasCuadrante", "Mostrando diálogo de error general en sincronización forzada")
-                val generalErrorDialog = AlertDialog.Builder(requireContext())
-                    .setTitle("Error")
-                    .setMessage("Error en sincronización forzada: ${e.message}")
-                    .setPositiveButton("OK") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                    .create()
-                
-                generalErrorDialog.show()
-            }
-        }
-    }
-    
     private fun navigateToNewAbsence(absenceType: AbsenceType) {
         // Crear y mostrar el fragmento de nueva ausencia (formulario unificado)
         val fragment = FragmentNuevaAusencia()
@@ -425,28 +331,6 @@ class FragmentAusenciasCuadrante : Fragment() {
             try {
                 Log.d("FragmentAusenciasCuadrante", "Cargando ausencias para el mes actual")
                 
-                // Verificar si es la primera vez que se carga (después del login)
-                val isFirstLoad = checkIfFirstLoadAfterLogin()
-                
-                if (isFirstLoad) {
-                    Log.d("FragmentAusenciasCuadrante", "Primera carga después del login - descargando datos de Google Sheets")
-                    // Descargar datos de Google Sheets solo la primera vez
-                    viewModel.syncWithGoogleSheets()
-                    
-                    // Esperar a que termine la sincronización
-                    val isLoading = viewModel.isLoading.first { !it }
-                    Log.d("FragmentAusenciasCuadrante", "Sincronización completada, isLoading = $isLoading")
-                    
-                    // Verificar si hubo error en la sincronización
-                    val error = viewModel.errorMessage.value
-                    if (error != null) {
-                        Log.w("FragmentAusenciasCuadrante", "Error en sincronización inicial: $error")
-                        viewModel.clearError()
-                    }
-                } else {
-                    Log.d("FragmentAusenciasCuadrante", "No es primera carga - usando datos locales")
-                }
-                
                 // Cargar ausencias del mes actual
                 val year = currentMonth.get(Calendar.YEAR)
                 val month = currentMonth.get(Calendar.MONTH)
@@ -468,24 +352,6 @@ class FragmentAusenciasCuadrante : Fragment() {
                 progressBar.visibility = View.GONE
             }
         }
-    }
-    
-    // Función para verificar si es la primera carga después del login
-    private fun checkIfFirstLoadAfterLogin(): Boolean {
-        val sharedPrefs = requireContext().getSharedPreferences("absence_prefs", 0)
-        val lastLoginTime = sharedPrefs.getLong("last_login_time", 0L)
-        val currentTime = System.currentTimeMillis()
-        
-        // Si no hay tiempo de login guardado o han pasado más de 5 minutos, considerar primera carga
-        val isFirstLoad = lastLoginTime == 0L || (currentTime - lastLoginTime) > 5 * 60 * 1000
-        
-        if (isFirstLoad) {
-            // Guardar el tiempo actual como tiempo de login
-            sharedPrefs.edit().putLong("last_login_time", currentTime).apply()
-            Log.d("FragmentAusenciasCuadrante", "Marcando como primera carga después del login")
-        }
-        
-        return isFirstLoad
     }
     
     private fun updateCalendar(absences: List<AbsenceRecord>) {
@@ -518,10 +384,13 @@ class FragmentAusenciasCuadrante : Fragment() {
             buttonUserFilter.visibility = View.VISIBLE
             buttonUserFilter.isEnabled = false
             
-            // Obtener usuario actual y configurar filtro
+            // Obtener usuario actual y mostrar su nombre en el botón
             val currentUser = getCurrentUser()
             if (currentUser != null) {
+                buttonUserFilter.text = currentUser.app
                 selectedUserIds = mutableSetOf(currentUser.app)
+            } else {
+                buttonUserFilter.text = "Mi usuario"
             }
         }
         
@@ -530,7 +399,7 @@ class FragmentAusenciasCuadrante : Fragment() {
             // Para admins: mostrar ausencias de usuarios seleccionados o todas si no hay filtro
             if (selectedUserIds.isNotEmpty()) {
                 absences.filter { absence -> 
-                    selectedUserIds.contains(absence.employeeId) 
+                    selectedUserIds.contains(canonicalEmployeeId(absence.employeeId, absence.employeeName)) 
                 }
             } else {
                 absences
@@ -540,7 +409,7 @@ class FragmentAusenciasCuadrante : Fragment() {
             val currentUser = getCurrentUser()
             if (currentUser != null) {
                 absences.filter { absence -> 
-                    absence.employeeId == currentUser.app 
+                    canonicalEmployeeId(absence.employeeId, absence.employeeName) == currentUser.app 
                 }
             } else {
                 emptyList()
@@ -549,9 +418,9 @@ class FragmentAusenciasCuadrante : Fragment() {
         
         Log.d("FragmentAusenciasCuadrante", "Ausencias filtradas: ${filteredAbsences.size}")
         
-        // Eliminar duplicados para los cards
+        // Eliminar duplicados usando ID canónico para los cards (igual que en puntos y popup)
         val dedupedAbsences = filteredAbsences.distinctBy { 
-            "${it.employeeId}-${it.absenceType}-${it.startDate.time}-${it.endDate.time}"
+            "${canonicalEmployeeId(it.employeeId, it.employeeName)}-${it.absenceType}-${it.startDate.time}-${it.endDate.time}"
         }
         
         Log.d("FragmentAusenciasCuadrante", "Ausencias desduplicadas para cards: ${dedupedAbsences.size}")
@@ -577,17 +446,17 @@ class FragmentAusenciasCuadrante : Fragment() {
         Log.d("FragmentAusenciasCuadrante", "Procesando ${absences.size} ausencias para extraer usuarios")
         
         val uniqueUsers = absences
-            .groupBy { it.employeeId }
-            .map { (employeeId, absences) ->
+            .groupBy { canonicalEmployeeId(it.employeeId, it.employeeName) }
+            .map { (canonicalId, absences) ->
                 val firstAbsence = absences.first()
-                Log.d("FragmentAusenciasCuadrante", "Creando usuario: $employeeId - ${firstAbsence.employeeName}")
+                Log.d("FragmentAusenciasCuadrante", "Creando usuario: $canonicalId - ${firstAbsence.employeeName}")
                 UserEntity(
-                    cod = employeeId,
+                    cod = canonicalId,
                     nombre = firstAbsence.employeeName.split(" ").firstOrNull() ?: "",
                     apellidos = firstAbsence.employeeName.split(" ").drop(1).joinToString(" "),
                     dni = "",
                     fechaNacimiento = null,
-                    app = employeeId, // Usar employeeId como app
+                    app = canonicalId, // Usar ID canónico como app
                     password = "",
                     rol = "USER",
                     swWeb = "S",
@@ -732,7 +601,7 @@ class FragmentAusenciasCuadrante : Fragment() {
     }
 
     private fun showAbsencesPopup(day: AbsenceCalendarAdapter.CalendarDay) {
-        Log.d("FragmentAusenciasCuadrante", "=== MOSTRANDO POPUP MEJORADO PARA DÍA ${day.dayNumber} ===")
+        Log.d("FragmentAusenciasCuadrante", "=== MOSTRANDO POPUP SIMPLIFICADO PARA DÍA ${day.dayNumber} ===")
         Log.d("FragmentAusenciasCuadrante", "Ausencias en el día: ${day.absences.size}")
         
         // Log detallado de todas las ausencias del día con hash para rastrear origen
@@ -743,151 +612,85 @@ class FragmentAusenciasCuadrante : Fragment() {
         
         if (day.absences.isEmpty()) {
             // Si no hay ausencias, mostrar mensaje simple
-            showSimpleAbsencesDialog(day, "No hay ausencias registradas para este día.")
+            AlertDialog.Builder(requireContext())
+                .setTitle("Ausencias del día: ${day.dayNumber} de ${getMonthName(day.date)}")
+                .setMessage("No hay ausencias registradas para este día.")
+                .setPositiveButton("OK", null)
+                .show()
             return
         }
         
         // Desduplicar ausencias de forma simple para el popup
+        // Desduplicar usando un ID canónico de usuario para fusionar '0' y 'f.tome'
         val uniqueAbsences = day.absences.distinctBy { 
-            "${it.employeeId}-${it.absenceType}-${it.startDate.time}-${it.endDate.time}"
+            "${canonicalEmployeeId(it.employeeId, it.employeeName)}-${it.absenceType}-${it.startDate.time}-${it.endDate.time}"
         }
         
         Log.d("FragmentAusenciasCuadrante", "POPUP DÍA ${day.dayNumber}: ${day.absences.size} ausencias originales, ${uniqueAbsences.size} únicas después de distinctBy")
         
-        // Agrupar ausencias por tipo
-        val groupedAbsences = uniqueAbsences.groupBy { it.absenceType }
+        // Log detallado de las ausencias únicas
+        uniqueAbsences.forEachIndexed { index, absence ->
+            val hash = System.identityHashCode(absence)
+            Log.d("FragmentAusenciasCuadrante", "POPUP DÍA ${day.dayNumber} - Única $index [Hash: $hash]: employeeId='${absence.employeeId}', employeeName='${absence.employeeName}', tipo='${absence.absenceType}'")
+        }
         
-        // Mostrar diálogo personalizado con agrupación por tipo
-        showGroupedAbsencesDialog(day, groupedAbsences)
-        
-        Log.d("FragmentAusenciasCuadrante", "=== FIN POPUP MEJORADO ===")
-    }
-    
-    private fun showSimpleAbsencesDialog(day: AbsenceCalendarAdapter.CalendarDay, message: String) {
-        AlertDialog.Builder(requireContext())
-            .setTitle("Ausencias del día: ${day.dayNumber} de ${getMonthName(day.date)}")
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .show()
-    }
-    
-    private fun showGroupedAbsencesDialog(day: AbsenceCalendarAdapter.CalendarDay, groupedAbsences: Map<AbsenceType, List<AbsenceRecord>>) {
-        // Crear diálogo personalizado
-        val dialog = Dialog(requireContext())
-        dialog.setContentView(R.layout.dialog_absences_grouped)
-        dialog.setCancelable(true)
-        
-        // Ajustar ancho del diálogo al 90% del ancho de pantalla
-        val displayMetrics = requireContext().resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val dialogWidth = (screenWidth * 0.9).toInt()
-        dialog.window?.setLayout(dialogWidth, android.view.WindowManager.LayoutParams.WRAP_CONTENT)
-        
-        // Configurar título
-        val titleTextView = dialog.findViewById<TextView>(R.id.textViewTitle)
-        titleTextView.text = "Ausencias del día: ${day.dayNumber} de ${getMonthName(day.date)}"
-        
-        // Configurar contenedor de ausencias
-        val containerAbsences = dialog.findViewById<LinearLayout>(R.id.containerAbsences)
-        containerAbsences.removeAllViews()
-        
-        // Agregar ausencias agrupadas por tipo
-        val absenceTypes = groupedAbsences.keys.toList()
-        absenceTypes.forEachIndexed { index, absenceType ->
-            val absences = groupedAbsences[absenceType] ?: return@forEachIndexed
-            
-            // Solo mostrar tipos que tengan ausencias
-            if (absences.isNotEmpty()) {
-                // Crear header del tipo de ausencia
-                val typeHeader = TextView(requireContext()).apply {
-                    text = getAbsenceTypeDisplayName(absenceType)
-                    textSize = 16f
-                    setTextColor(requireContext().getColor(R.color.bitherm_blue))
-                    setTypeface(null, android.graphics.Typeface.BOLD)
-                    setPadding(0, 16, 0, 8)
-                }
-                containerAbsences.addView(typeHeader)
+        // Construir mensaje con información de ausencias
+        val message = buildString {
+            uniqueAbsences.forEachIndexed { index, absence ->
+                val dateFormat = SimpleDateFormat("dd MMM", Locale("es", "ES"))
+                val startDate = dateFormat.format(absence.startDate)
+                val endDate = dateFormat.format(absence.endDate)
                 
-                // Agregar cada ausencia del tipo
-                absences.forEach { absence ->
-                    val absenceItem = createAbsenceItemView(absence)
-                    containerAbsences.addView(absenceItem)
+                val dateRange = if (absence.startDate == absence.endDate) {
+                    startDate
+                } else {
+                    "$startDate - $endDate"
                 }
                 
-                // Agregar separador entre tipos (excepto después del último)
-                if (index < absenceTypes.size - 1) {
-                    val separator = View(requireContext()).apply {
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            1
-                        )
-                        setBackgroundColor(requireContext().getColor(android.R.color.darker_gray))
-                        setPadding(0, 16, 0, 16)
-                    }
-                    containerAbsences.addView(separator)
+                val absenceType = when (absence.absenceType) {
+                    AbsenceType.VACACIONES -> "Vacaciones"
+                    AbsenceType.ENFERMEDAD -> "Enfermedad"
+                    AbsenceType.PERMISO -> "Permiso"
+                    AbsenceType.ASUNTOS_PERSONALES -> "Asuntos Personales"
+                    AbsenceType.FORMACION -> "Formación"
+                    else -> "Otros"
                 }
+                
+                // Mostrar employeeId canónico como nombre
+                val displayName = canonicalEmployeeId(absence.employeeId, absence.employeeName)
+                
+                val hash = System.identityHashCode(absence)
+                Log.d("FragmentAusenciasCuadrante", "POPUP DÍA ${day.dayNumber} - Mostrando item $index [Hash: $hash]: '$displayName - $absenceType' ($dateRange)")
+                
+                appendLine("• $displayName - $absenceType")
+                appendLine("  $dateRange")
+                appendLine()
             }
         }
         
-        // Configurar botón OK
-        val buttonOK = dialog.findViewById<Button>(R.id.buttonOK)
-        buttonOK.setOnClickListener {
-            dialog.dismiss()
-        }
-        
-        // Mostrar diálogo
-        dialog.show()
-    }
-    
-    private fun getAbsenceTypeDisplayName(absenceType: AbsenceType): String {
-        return when (absenceType) {
-            AbsenceType.VACACIONES -> "Vacaciones"
-            AbsenceType.ENFERMEDAD -> "Baja por enfermedad"
-            AbsenceType.PERMISO -> "Permiso Retribuido"
-            AbsenceType.ASUNTOS_PERSONALES -> "Permiso No Retribuido"
-            AbsenceType.FORMACION -> "Formación"
-            else -> "Otros"
-        }
-    }
-    
-    private fun createAbsenceItemView(absence: AbsenceRecord): View {
-        val container = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(32, 8, 16, 8)
-        }
-        
-        // Nombre del empleado
-        val employeeName = TextView(requireContext()).apply {
-            text = absence.employeeName
-            textSize = 14f
-            setTextColor(requireContext().getColor(android.R.color.black))
-            setTypeface(null, android.graphics.Typeface.BOLD)
-        }
-        container.addView(employeeName)
-        
-        // Período de ausencia
-        val dateFormat = SimpleDateFormat("dd MMM", Locale("es", "ES"))
-        val startDate = dateFormat.format(absence.startDate)
-        val endDate = dateFormat.format(absence.endDate)
-        
-        val dateRange = if (absence.startDate == absence.endDate) {
-            startDate
-            } else {
-            "$startDate - $endDate"
-        }
-        
-        val periodText = TextView(requireContext()).apply {
-            text = dateRange
-            textSize = 12f
-            setTextColor(requireContext().getColor(android.R.color.darker_gray))
-            setPadding(0, 4, 0, 0)
-        }
-        container.addView(periodText)
-        
-        return container
+        AlertDialog.Builder(requireContext())
+            .setTitle("Ausencias del día: ${day.dayNumber} de ${getMonthName(day.date)}")
+            .setMessage(message.trim())
+            .setPositiveButton("OK", null)
+            .show()
+            
+        Log.d("FragmentAusenciasCuadrante", "=== FIN POPUP SIMPLIFICADO ===")
     }
 
-
+    private fun canonicalEmployeeId(employeeId: String, employeeName: String): String {
+        val isNumericId = employeeId.matches(Regex("\\d+"))
+        val looksLikeAppId = employeeName.matches(Regex("[a-zA-Z]+\\.[a-zA-Z]+"))
+        val looksLikeValidAppId = employeeName.matches(Regex("[a-zA-Z]+[a-zA-Z0-9]*"))
+        
+        return when {
+            // Caso 1: employeeId es numérico y employeeName tiene formato "a.b" (como "f.tome")
+            isNumericId && looksLikeAppId -> employeeName
+            // Caso 2: employeeId es numérico y employeeName es un app ID válido (como "jjalvarez")
+            isNumericId && looksLikeValidAppId && employeeName.length > 2 -> employeeName
+            // Caso 3: employeeId ya es un app ID válido
+            else -> employeeId
+        }
+    }
     
     private fun getMonthName(date: Date): String {
         val calendar = Calendar.getInstance()
@@ -915,47 +718,5 @@ class FragmentAusenciasCuadrante : Fragment() {
                 adapter.updateHolidays(emptyMap())
             }
         }
-    }
-    
-    /**
-     * Función para actualizar datos desde AUSENCIAS-LOG y recargar el calendario
-     * Se ejecuta cuando el usuario presiona el botón de actualizar
-     */
-    private fun refreshDataFromLogs() {
-        Log.d("FragmentAusenciasCuadrante", "=== INICIANDO ACTUALIZACIÓN MANUAL DESDE AUSENCIAS-LOG ===")
-        
-        // Mostrar loading
-        progressBar.visibility = View.VISIBLE
-        
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // Cargar datos desde AUSENCIAS-LOG usando el ViewModel
-                val year = currentMonth.get(Calendar.YEAR)
-                val month = currentMonth.get(Calendar.MONTH)
-                
-                Log.d("FragmentAusenciasCuadrante", "Actualizando datos para $month/$year desde AUSENCIAS-LOG")
-                
-                // Forzar recarga desde Google Sheets (AUSENCIAS-LOG)
-                viewModel.loadAbsencesByMonth(year, month)
-                
-                // Mostrar mensaje de confirmación
-                Log.d("FragmentAusenciasCuadrante", "Datos actualizados exitosamente desde AUSENCIAS-LOG")
-                
-            } catch (e: Exception) {
-                Log.e("FragmentAusenciasCuadrante", "Error actualizando datos desde AUSENCIAS-LOG: ${e.message}", e)
-                
-                // Mostrar error al usuario
-                AlertDialog.Builder(requireContext())
-                    .setTitle("Error de Actualización")
-                    .setMessage("No se pudieron actualizar los datos: ${e.message}")
-                    .setPositiveButton("OK", null)
-                    .show()
-            } finally {
-                // Ocultar loading
-                progressBar.visibility = View.GONE
-            }
-        }
-        
-        Log.d("FragmentAusenciasCuadrante", "=== FIN ACTUALIZACIÓN MANUAL ===")
     }
 }

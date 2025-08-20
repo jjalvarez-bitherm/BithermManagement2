@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:paddingStart="0dp">
+
+        <!-- Header con tipo de ausencia y estado -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+
+            <!-- Indicador de tipo -->
+            <View
+                android:id="@+id/indicatorType"
+                android:layout_width="4dp"
+                android:layout_height="0dp"
+                android:background="@color/absence_vacaciones"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Tipo de ausencia -->
+            <TextView
+                android:id="@+id/textViewAbsenceType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="(V)"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:layout_marginEnd="6dp" />
+
+            <!-- Empleado en la misma línea que el tipo -->
+            <TextView
+                android:id="@+id/textViewEmployee"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="JOSÉ JOAQUÍN ÁLVAREZ PÁEZ"
+                android:textSize="14sp"
+                android:textColor="@color/gray_700"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Estado -->
+            <TextView
+                android:id="@+id/textViewStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✔ Aprobada"
+                android:textSize="14sp"
+                android:textColor="@color/green_600"
+                android:background="@drawable/bg_status_approved"
+                android:padding="4dp"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+        <!-- Empleado (eliminado: ahora va en el header) -->
+
+        <!-- Fechas -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="4dp">
+
+            <!-- Espacio para alinear con el indicador de tipo (4dp + 8dp = 12dp) -->
+            <View
+                android:layout_width="12dp"
+                android:layout_height="1dp"
+                android:background="@android:color/transparent" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_calendar"
+                android:tint="@color/gray_600"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/textViewDates"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="1 abr - 5 abr"
+                android:textSize="14sp"
+                android:textColor="@color/gray_600" />
+
+        </LinearLayout>
+
+        <!-- Descripción -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <!-- Espacio para alinear con el indicador de tipo (4dp + 8dp = 12dp) -->
+            <View
+                android:layout_width="12dp"
+                android:layout_height="1dp"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/textViewDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Vacaciones Semana Santa"
+                android:textSize="13sp"
+                android:textColor="@color/gray_500"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

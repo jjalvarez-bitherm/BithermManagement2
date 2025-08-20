@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- Opción solo para admins -->
+    <item
+        android:id="@+id/action_leer_datos"
+        android:title="Leer datos (Admin)"
+        android:icon="@drawable/ic_download"
+        app:showAsAction="never" />
+
+    <!-- Opciones para todos los usuarios -->
+    <item
+        android:id="@+id/action_nueva_solicitud_permiso"
+        android:title="Nueva solicitud de permiso"
+        android:icon="@drawable/ic_description"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_nueva_solicitud_vacaciones"
+        android:title="Nueva solicitud de vacaciones"
+        android:icon="@drawable/ic_calendar"
+        app:showAsAction="never" />
+
+</menu>

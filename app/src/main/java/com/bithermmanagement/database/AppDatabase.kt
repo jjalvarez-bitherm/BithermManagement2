@@ -511,22 +511,106 @@ abstract class AppDatabase : RoomDatabase() {
 
         val MIGRATION_21_22 = object : Migration(21, 22) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                // Esta migración crea las nuevas tablas para el sistema de ausencias
-                // Room las creará automáticamente, pero podemos añadir índices si es necesario
+                // Esta migración crea las tablas de ausencias si no existen y luego los índices
                 try {
-                    // Crear índices para mejorar el rendimiento de las consultas de ausencias
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_employee_id ON absence_records(employeeId)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_start_date ON absence_records(startDate)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_status ON absence_records(status)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_type ON absence_records(absenceType)")
+                    // Verificar si la tabla absence_records existe
+                    val cursor = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='absence_records'")
+                    val hasAbsenceRecords = cursor.count > 0
+                    cursor.close()
                     
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_employee_id ON absence_requests(employeeId)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_status ON absence_requests(status)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_priority ON absence_requests(priority)")
+                    if (!hasAbsenceRecords) {
+                        // Crear tabla absence_records
+                        database.execSQL("""
+                            CREATE TABLE absence_records (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                employeeId TEXT NOT NULL,
+                                employeeName TEXT NOT NULL,
+                                employeeEmail TEXT NOT NULL,
+                                startDate INTEGER NOT NULL,
+                                endDate INTEGER NOT NULL,
+                                totalDays INTEGER NOT NULL,
+                                absenceType TEXT NOT NULL,
+                                status TEXT NOT NULL,
+                                description TEXT,
+                                approvedBy TEXT,
+                                approvedDate INTEGER,
+                                rejectionReason TEXT,
+                                createdAt INTEGER NOT NULL,
+                                updatedAt INTEGER NOT NULL,
+                                googleSheetsId TEXT,
+                                isSynced INTEGER NOT NULL,
+                                lastSyncAttempt INTEGER
+                            )
+                        """)
+                    }
                     
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_absence_id ON absence_logs(absenceId)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_timestamp ON absence_logs(timestamp)")
-                    database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_action ON absence_logs(action)")
+                    // Verificar si la tabla absence_requests existe
+                    val cursor2 = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='absence_requests'")
+                    val hasAbsenceRequests = cursor2.count > 0
+                    cursor2.close()
+                    
+                    if (!hasAbsenceRequests) {
+                        // Crear tabla absence_requests
+                        database.execSQL("""
+                            CREATE TABLE absence_requests (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                employeeId TEXT NOT NULL,
+                                employeeName TEXT NOT NULL,
+                                employeeEmail TEXT NOT NULL,
+                                startDate INTEGER NOT NULL,
+                                endDate INTEGER NOT NULL,
+                                totalDays INTEGER NOT NULL,
+                                absenceType TEXT NOT NULL,
+                                priority TEXT NOT NULL,
+                                description TEXT,
+                                status TEXT NOT NULL,
+                                createdAt INTEGER NOT NULL,
+                                updatedAt INTEGER NOT NULL,
+                                googleSheetsId TEXT,
+                                isSynced INTEGER NOT NULL,
+                                lastSyncAttempt INTEGER
+                            )
+                        """)
+                    }
+                    
+                    // Verificar si la tabla absence_logs existe
+                    val cursor3 = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='absence_logs'")
+                    val hasAbsenceLogs = cursor3.count > 0
+                    cursor3.close()
+                    
+                    if (!hasAbsenceLogs) {
+                        // Crear tabla absence_logs
+                        database.execSQL("""
+                            CREATE TABLE absence_logs (
+                                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                                absenceId TEXT NOT NULL,
+                                action TEXT NOT NULL,
+                                timestamp INTEGER NOT NULL,
+                                userId TEXT NOT NULL,
+                                userName TEXT NOT NULL,
+                                details TEXT,
+                                googleSheetsId TEXT
+                            )
+                        """)
+                    }
+                    
+                    // Ahora crear los índices
+                    try {
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_employee_id ON absence_records(employeeId)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_start_date ON absence_records(startDate)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_status ON absence_records(status)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_records_type ON absence_records(absenceType)")
+                        
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_employee_id ON absence_requests(employeeId)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_status ON absence_requests(status)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_requests_priority ON absence_requests(priority)")
+                        
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_absence_id ON absence_logs(absenceId)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_timestamp ON absence_logs(timestamp)")
+                        database.execSQL("CREATE INDEX IF NOT EXISTS idx_absence_logs_action ON absence_logs(action)")
+                    } catch (e: Exception) {
+                        // Si hay algún error con los índices, continuar
+                    }
                 } catch (e: Exception) {
                     // Si hay algún error, continuar
                 }
@@ -540,7 +624,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "bitherm_database"
                 )
-                .addMigrations(MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_14_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22)
+                .fallbackToDestructiveMigration() // Esto eliminará la base de datos si hay problemas de migración
                 .build()
                 INSTANCE = instance
                 instance

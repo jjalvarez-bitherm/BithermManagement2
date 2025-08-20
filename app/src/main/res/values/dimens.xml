@@ -11,4 +11,8 @@
     <dimen name="nav_drawer_width_collapsed">72dp</dimen>
     <dimen name="nav_drawer_width">280dp</dimen>
     <dimen name="dot_margin">8dp</dimen>
+    
+    <!-- Dimensiones para indicadores de ausencias -->
+    <dimen name="absence_indicator_size">6dp</dimen>
+    <dimen name="absence_indicator_margin">1dp</dimen>
 </resources>

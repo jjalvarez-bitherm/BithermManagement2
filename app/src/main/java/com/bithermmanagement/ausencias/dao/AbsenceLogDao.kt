@@ -31,7 +31,7 @@ interface AbsenceLogDao {
     fun getLogsByUser(userId: String): Flow<List<AbsenceLog>>
     
     @Query("SELECT * FROM absence_logs WHERE performedByRole = :role ORDER BY timestamp DESC")
-    fun getLogsByRole(role: String): Flow<List<AbsenceLog>
+    fun getLogsByRole(role: String): Flow<List<AbsenceLog>>
     
     // Consultas por fechas
     @Query("SELECT * FROM absence_logs WHERE timestamp >= :startDate AND timestamp <= :endDate ORDER BY timestamp DESC")
