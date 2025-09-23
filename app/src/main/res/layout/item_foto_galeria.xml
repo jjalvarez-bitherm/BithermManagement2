@@ -2,16 +2,17 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="180dp"
     android:layout_height="180dp"
-    android:layout_margin="4dp"
-    android:background="@drawable/bg_card_gallery">
+    android:layout_margin="4dp">
 
-    <!-- Imagen de la foto -->
+    <!-- Imagen de la foto con fondo redondeado -->
     <ImageView
         android:id="@+id/imgFoto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_photo_placeholder" />
+        android:src="@drawable/ic_photo_placeholder"
+        android:background="@drawable/bg_card_gallery"
+        android:clipToOutline="true" />
 
     <!-- Overlay con controles (solo visible en fotos existentes) -->
     <LinearLayout
@@ -20,7 +21,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="#80000000"
-        android:visibility="gone">
+        android:visibility="gone"
+        android:elevation="4dp">
 
         <!-- Controles superiores -->
         <LinearLayout
@@ -74,7 +76,8 @@
         android:orientation="vertical"
         android:gravity="center"
         android:background="@drawable/bg_card_gallery"
-        android:visibility="gone">
+        android:visibility="gone"
+        android:elevation="2dp">
 
         <ImageView
             android:layout_width="48dp"

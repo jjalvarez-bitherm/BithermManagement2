@@ -16,6 +16,8 @@ import java.io.FileInputStream
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.bithermmanagement.database.AppDatabase
+import com.bithermmanagement.database.entities.Equipo
 
 @Singleton
 class GoogleDriveHelper @Inject constructor(private val context: Context) {
@@ -28,7 +30,15 @@ class GoogleDriveHelper @Inject constructor(private val context: Context) {
 
     private fun getDriveService(): Drive? {
         return try {
-            // Usar credenciales de servicio para Drive
+            // Intentar usar OAuth primero
+            val oAuthService = getOAuthDriveService()
+            if (oAuthService != null) {
+                Log.d(TAG, "Usando OAuth para Drive service")
+                return oAuthService
+            }
+            
+            // Fallback a Service Account
+            Log.d(TAG, "Fallback a Service Account para Drive service")
             val inputStream = context.assets.open("credentials_default.json")
             val credentials = GoogleCredentials.fromStream(inputStream)
                 .createScoped(listOf(DriveScopes.DRIVE_FILE))
@@ -45,18 +55,59 @@ class GoogleDriveHelper @Inject constructor(private val context: Context) {
             null
         }
     }
+    
+    private fun getOAuthDriveService(): Drive? {
+        return try {
+            // Obtener GoogleAuthAdapter existente
+            val authAdapter = com.bithermmanagement.data.GoogleAuthAdapter(
+                context = context,
+                useOAuth = true,
+                oAuthEmail = "jjalvarez.bitherm@gmail.com",
+                credentialsStream = null
+            )
+            
+            val credentials = authAdapter.createCredentials()
+            Drive.Builder(
+                NetHttpTransport(),
+                GsonFactory(),
+                credentials
+            )
+                .setApplicationName("BithermManagement")
+                .build()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al crear OAuth Drive service: ${e.message}")
+            null
+        }
+    }
 
-    suspend fun uploadPhoto(localFilePath: String, itemId: String): String? = withContext(Dispatchers.IO) {
+    suspend fun uploadPhoto(localFilePath: String, itemId: String, tipoFoto: String = "EQUIPO"): String? = withContext(Dispatchers.IO) {
         try {
             val driveService = getDriveService() ?: return@withContext null
             
-            // Crear o obtener la carpeta de inspección
-            val folderId = getOrCreateFolder(driveService, FOLDER_NAME)
+            // Obtener información del equipo desde la base de datos
+            val equipoInfo = getEquipoInfo(itemId)
+            if (equipoInfo == null) {
+                Log.e(TAG, "No se pudo obtener información del equipo: $itemId")
+                return@withContext null
+            }
+            
+            // Crear estructura de carpetas: UNIDAD/AREA/EQUIPO
+            val carpetaEquipo = createFolderStructure(driveService, equipoInfo.unidad, equipoInfo.area, itemId)
+            if (carpetaEquipo == null) {
+                Log.e(TAG, "No se pudo crear la estructura de carpetas para: $itemId")
+                return@withContext null
+            }
+            
+            // Generar nombre del archivo: TAG_tipofoto_fecha.jpg
+            val fecha = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val nombreArchivo = "${itemId}_${tipoFoto}_${fecha}.jpg"
+            
+            Log.d(TAG, "Subiendo foto: $nombreArchivo a carpeta: $carpetaEquipo")
             
             // Crear el archivo en Drive
             val fileMetadata = File().apply {
-                name = "INSPECTION_${itemId}_${System.currentTimeMillis()}.jpg"
-                parents = listOf(folderId)
+                name = nombreArchivo
+                parents = listOf(carpetaEquipo)
                 mimeType = MIME_TYPE_IMAGE
             }
 
@@ -138,4 +189,97 @@ class GoogleDriveHelper @Inject constructor(private val context: Context) {
             null
         }
     }
+    
+    /**
+     * Obtiene la información del equipo desde la base de datos
+     */
+    private suspend fun getEquipoInfo(equipoId: String): EquipoInfo? {
+        return try {
+            val db = AppDatabase.getDatabase(context)
+            val equipo = db.inspeccionDao().getEquipoPorId(equipoId)
+            if (equipo != null) {
+                EquipoInfo(
+                    id = equipo.id,
+                    unidad = equipo.unidad ?: "SIN_UNIDAD",
+                    area = equipo.area ?: "SIN_AREA"
+                )
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error obteniendo información del equipo: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Crea la estructura de carpetas: AREA/UNIDAD/EQUIPO
+     */
+    private suspend fun createFolderStructure(driveService: Drive, unidad: String, area: String, equipoId: String): String? {
+        return try {
+            val baseFolderId = "13gCt4wtoL3SjVMioMgU6tu1KY6A8BXj_"
+            
+            // Crear carpeta AREA
+            val carpetaArea = getOrCreateFolder(driveService, area, baseFolderId)
+            Log.d(TAG, "Carpeta AREA: $area -> $carpetaArea")
+            
+            // Crear carpeta UNIDAD dentro de AREA
+            val carpetaUnidad = getOrCreateFolder(driveService, unidad, carpetaArea)
+            Log.d(TAG, "Carpeta UNIDAD: $unidad -> $carpetaUnidad")
+            
+            // Crear carpeta EQUIPO dentro de UNIDAD
+            val carpetaEquipo = getOrCreateFolder(driveService, equipoId, carpetaUnidad)
+            Log.d(TAG, "Carpeta EQUIPO: $equipoId -> $carpetaEquipo")
+            
+            carpetaEquipo
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creando estructura de carpetas: ${e.message}")
+            null
+        }
+    }
+    
+    /**
+     * Obtiene o crea una carpeta dentro de una carpeta padre
+     */
+    private suspend fun getOrCreateFolder(driveService: Drive, folderName: String, parentFolderId: String): String {
+        return try {
+            // Buscar si la carpeta ya existe
+            val result = driveService.files().list()
+                .setQ("name='$folderName' and mimeType='application/vnd.google-apps.folder' and '$parentFolderId' in parents and trashed=false")
+                .setSpaces("drive")
+                .setFields("files(id, name)")
+                .execute()
+
+            if (result.files.isNotEmpty()) {
+                // La carpeta ya existe, retornar su ID
+                result.files[0].id
+            } else {
+                // Crear nueva carpeta
+                val folderMetadata = File().apply {
+                    name = folderName
+                    mimeType = "application/vnd.google-apps.folder"
+                    parents = listOf(parentFolderId)
+                }
+                
+                val folder = driveService.files().create(folderMetadata)
+                    .setFields("id")
+                    .execute()
+                
+                Log.d(TAG, "Carpeta creada: $folderName -> ${folder.id}")
+                folder.id
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error al obtener/crear carpeta '$folderName': ${e.message}")
+            throw e
+        }
+    }
+    
+    /**
+     * Data class para información del equipo
+     */
+    data class EquipoInfo(
+        val id: String,
+        val unidad: String,
+        val area: String
+    )
 } 

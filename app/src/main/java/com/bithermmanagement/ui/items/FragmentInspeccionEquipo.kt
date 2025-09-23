@@ -30,7 +30,6 @@ import com.bithermmanagement.database.dao.InspeccionDao
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.bithermmanagement.database.entities.Equipo
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationRequest
@@ -80,6 +79,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     lateinit var inspeccionDao: InspeccionDao
 
     private var equipos = mutableListOf<Equipo>()
+    private var equipo: Equipo? = null
     private var coloresEstados: Map<String, Int> = emptyMap()
     private var indexActual: Int = 0
     private var equipoSeleccionadoId: String? = null
@@ -99,6 +99,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private lateinit var spinnerInstalacion: Spinner
     private lateinit var spinnerAislamiento: Spinner
     private lateinit var spinnerEstado: Spinner
+    private lateinit var spinnerPeriodicidad: Spinner
     private lateinit var spinnerMarca: Spinner
     private lateinit var spinnerModelo: Spinner
     private lateinit var spinnerTipo: Spinner
@@ -228,6 +229,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         spinnerInstalacion = view.findViewById(R.id.spinnerInstalacion)
         spinnerAislamiento = view.findViewById(R.id.spinnerAislamiento)
         spinnerEstado = view.findViewById(R.id.spinnerEstado)
+        spinnerPeriodicidad = view.findViewById(R.id.spinnerPeriodicidad)
         
         // Spinners de CARACTERÍSTICAS TÉCNICAS
         spinnerMarca = view.findViewById(R.id.spinnerMarca)
@@ -246,6 +248,16 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         etLinea = view.findViewById(R.id.etLinea)
         etObservaciones = view.findViewById(R.id.etObservaciones)
         etIncidencias = view.findViewById(R.id.etIncidencias)
+        
+        // Forzar color blanco en campos de observaciones
+        etObservaciones.setTextColor(android.graphics.Color.WHITE)
+        etIncidencias.setTextColor(android.graphics.Color.WHITE)
+        etObservaciones.setHintTextColor(android.graphics.Color.parseColor("#BBBBBB"))
+        etIncidencias.setHintTextColor(android.graphics.Color.parseColor("#BBBBBB"))
+        
+        // Aplicar color de hint consistente a todos los campos
+        etUbicacion.setHintTextColor(android.graphics.Color.parseColor("#BBBBBB"))
+        etLinea.setHintTextColor(android.graphics.Color.parseColor("#BBBBBB"))
         
         // TextViews
         tvGpsCoord = view.findViewById(R.id.tvGpsCoord)
@@ -288,13 +300,13 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         try {
             // Configurar spinners de DATOS GENERALES
             val areas = inspeccionDao.getAreasUnicas().ifEmpty { listOf("PQ", "PT", "PS", "PU", "PV", "PW", "PX", "PY", "PZ") }
-            val areaAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, areas)
-            areaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val areaAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, areas)
+            areaAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerArea.adapter = areaAdapter
             
             val unidades = inspeccionDao.getUnidadesUnicas().ifEmpty { listOf("U1", "U2", "U3", "U4", "U5") }
-            val unidadAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, unidades)
-            unidadAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val unidadAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, unidades)
+            unidadAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerUnidad.adapter = unidadAdapter
             
             val estados = inspeccionDao.getEstadosUnicos().ifEmpty { 
@@ -329,12 +341,24 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             val estadoAdapter = EstadoSpinnerAdapter(requireContext(), estadosOrdenados)
             spinnerEstado.adapter = estadoAdapter
             
+            // Configurar spinner de PERIODICIDAD
+            val periodicidades = listOf("(mon) Diario", "(mon) Semanal", "Mensual", "Bimensual", "Trimestral", "Anual", "Estacional")
+            val periodicidadAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, periodicidades)
+            periodicidadAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
+            spinnerPeriodicidad.adapter = periodicidadAdapter
+            
+            // Establecer "Mensual" como valor por defecto
+            val defaultIndex = periodicidades.indexOf("Mensual")
+            if (defaultIndex >= 0) {
+                spinnerPeriodicidad.setSelection(defaultIndex)
+            }
+            
             // RECREAR DE CERO: Spinner de INSTALACIÓN
             Log.d("SpinnerDebug", "=== RECREANDO SPINNER INSTALACIÓN ===")
             val instalaciones = valoresInstalacionPorDefecto
             Log.d("SpinnerDebug", "Valores instalación: $instalaciones")
-            val instalacionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, instalaciones)
-            instalacionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val instalacionAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, instalaciones)
+            instalacionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerInstalacion.adapter = instalacionAdapter
             Log.d("SpinnerDebug", "Adapter instalación configurado con ${instalaciones.size} elementos")
             
@@ -342,8 +366,8 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             Log.d("SpinnerDebug", "=== RECREANDO SPINNER AISLAMIENTO ===")
             val aislamientos = valoresAislamientoPorDefecto
             Log.d("SpinnerDebug", "Valores aislamiento: $aislamientos")
-            val aislamientoAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, aislamientos)
-            aislamientoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val aislamientoAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, aislamientos)
+            aislamientoAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerAislamiento.adapter = aislamientoAdapter
             Log.d("SpinnerDebug", "Adapter aislamiento configurado con ${aislamientos.size} elementos")
             
@@ -352,53 +376,53 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             
             // Configurar spinners de CARACTERÍSTICAS TÉCNICAS
             val marcas = inspeccionDao.getMarcasUnicas().ifEmpty { listOf("SPIRAX SARCO", "ARMSTRONG", "GESTRA", "OTROS") }
-            val marcaAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, marcas)
-            marcaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val marcaAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, marcas)
+            marcaAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerMarca.adapter = marcaAdapter
             
             val modelos = inspeccionDao.getModelosUnicos().ifEmpty { listOf("Modelo 1", "Modelo 2", "Modelo 3") }
-            val modeloAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, modelos)
-            modeloAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val modeloAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, modelos)
+            modeloAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerModelo.adapter = modeloAdapter
             
             val tipos = inspeccionDao.getTiposUnicos().ifEmpty { listOf("Tipo 1", "Tipo 2", "Tipo 3") }
-            val tipoAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, tipos)
-            tipoAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val tipoAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, tipos)
+            tipoAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerTipo.adapter = tipoAdapter
             
             val diametros = inspeccionDao.getDiametrosUnicos().ifEmpty { listOf("DN15", "DN20", "DN25", "DN32", "DN40", "DN50") }
-            val diametroAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, diametros)
-            diametroAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val diametroAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, diametros)
+            diametroAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerDiametro.adapter = diametroAdapter
             
             val conexiones = inspeccionDao.getConexionesUnicas().ifEmpty { listOf("Rosca", "Brida", "Soldadura") }
-            val conexionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, conexiones)
-            conexionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val conexionAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, conexiones)
+            conexionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerConexion.adapter = conexionAdapter
             
             val presionesEntrada = inspeccionDao.getPresionesEntradaUnicas().ifEmpty { listOf("1 bar", "2 bar", "3 bar", "4 bar", "5 bar") }
-            val presEntradaAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, presionesEntrada)
-            presEntradaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val presEntradaAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, presionesEntrada)
+            presEntradaAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerPIN.adapter = presEntradaAdapter
             
             val presionesSalida = inspeccionDao.getPresionesSalidaUnicas().ifEmpty { listOf("0.1 bar", "0.2 bar", "0.3 bar", "0.4 bar", "0.5 bar") }
-            val presSalidaAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, presionesSalida)
-            presSalidaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val presSalidaAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, presionesSalida)
+            presSalidaAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerPOUT.adapter = presSalidaAdapter
             
             val descargas = inspeccionDao.getDescargasUnicas().ifEmpty { listOf("Continua", "Intermittente", "Pulsante") }
-            val descargaAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, descargas)
-            descargaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val descargaAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, descargas)
+            descargaAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerDescarga.adapter = descargaAdapter
             
             val aplicaciones = inspeccionDao.getAplicacionesUnicas().ifEmpty { listOf("Calefacción", "Proceso", "Vapor") }
-            val aplicacionAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, aplicaciones)
-            aplicacionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val aplicacionAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, aplicaciones)
+            aplicacionAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerAplicacion.adapter = aplicacionAdapter
             
             val servicios = inspeccionDao.getServiciosUnicos().ifEmpty { listOf("Vapor", "Agua", "Aire") }
-            val servicioAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, servicios)
-            servicioAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            val servicioAdapter = ArrayAdapter(requireContext(), R.layout.spinner_item_white_text, servicios)
+            servicioAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerServicio.adapter = servicioAdapter
             
             Log.d("FragmentInspeccionEquipo", "Spinners configurados correctamente")
@@ -482,42 +506,43 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         if (equipos.isEmpty() || index !in equipos.indices) return
         
         indexActual = index
-        val equipo = equipos[index]
+        equipo = equipos[index] // Asignar a la variable de instancia
         Log.d("MOSTRAR_EQUIPO", "Mostrando equipo: $equipo")
         Log.d("MOSTRAR_EQUIPO", "Índice: $index, Total equipos: ${equipos.size}")
-        Log.d("MOSTRAR_EQUIPO", "ID del equipo: ${equipo.id}")
-        Log.d("MOSTRAR_EQUIPO", "Área: ${equipo.area}, Unidad: ${equipo.unidad}")
+        Log.d("MOSTRAR_EQUIPO", "ID del equipo: ${equipo?.id}")
+        Log.d("MOSTRAR_EQUIPO", "Área: ${equipo?.area}, Unidad: ${equipo?.unidad}")
         
         // Llenar campos principales
         // Mostrar ID del equipo en el TAG fijo (parte superior no scrollable)
-        tvIdEquipoFixed.text = equipo.id ?: ""
+        tvIdEquipoFixed.text = equipo?.id ?: ""
         tvIdEquipoFixed.setTypeface(null, android.graphics.Typeface.BOLD)
         
         // El tvIdEquipo dentro del scroll se mantiene oculto
         tvIdEquipo.visibility = View.GONE
         
         // Llenar spinners de DATOS GENERALES
-        spinnerArea.setSelection(getSpinnerIndex(spinnerArea, equipo.area ?: ""))
-        spinnerUnidad.setSelection(getSpinnerIndex(spinnerUnidad, equipo.unidad ?: ""))
-        spinnerInstalacion.setSelection(getSpinnerIndex(spinnerInstalacion, equipo.instalacion ?: ""))
-        spinnerAislamiento.setSelection(getSpinnerIndex(spinnerAislamiento, equipo.aislamiento ?: ""))
-        spinnerEstado.setSelection(getSpinnerIndex(spinnerEstado, equipo.estado ?: ""))
+        spinnerArea.setSelection(getSpinnerIndex(spinnerArea, equipo?.area ?: ""))
+        spinnerUnidad.setSelection(getSpinnerIndex(spinnerUnidad, equipo?.unidad ?: ""))
+        spinnerInstalacion.setSelection(getSpinnerIndex(spinnerInstalacion, equipo?.instalacion ?: ""))
+        spinnerAislamiento.setSelection(getSpinnerIndex(spinnerAislamiento, equipo?.aislamiento ?: ""))
+        spinnerEstado.setSelection(getSpinnerIndex(spinnerEstado, equipo?.estado ?: ""))
+        spinnerPeriodicidad.setSelection(getSpinnerIndex(spinnerPeriodicidad, equipo?.periodicidad ?: ""))
         
         // Aplicar color dependiente del estado
-        aplicarColorEstado(equipo.estado ?: "")
+        aplicarColorEstado(equipo?.estado ?: "")
         
         // Actualizar valores anteriores para detectar cambios
-        areaAnterior = equipo.area ?: ""
-        marcaAnterior = equipo.marca ?: ""
-        modeloAnterior = equipo.modelo ?: ""
-        presionEntradaAnterior = equipo.presEntrada ?: ""
+        areaAnterior = equipo?.area ?: ""
+        marcaAnterior = equipo?.marca ?: ""
+        modeloAnterior = equipo?.modelo ?: ""
+        presionEntradaAnterior = equipo?.presEntrada ?: ""
         
         // Llenar EditTexts de DATOS GENERALES
-        etUbicacion.setText(equipo.ubicacion ?: "")
-        etLinea.setText(equipo.linea ?: "")
+        etUbicacion.setText(equipo?.ubicacion ?: "")
+        etLinea.setText(equipo?.linea ?: "")
         
         // Mostrar coordenadas GPS existentes (formato de 6 decimales)
-        equipo.gpsCoord?.let { gpsCoord ->
+        equipo?.gpsCoord?.let { gpsCoord ->
             if (gpsCoord.isNotEmpty()) {
                 try {
                     val coords = gpsCoord.split(",")
@@ -539,7 +564,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         }
         
         // Mostrar precisión GPS
-        equipo.gpsAcc?.let { gpsAcc ->
+        equipo?.gpsAcc?.let { gpsAcc ->
             if (gpsAcc.isNotEmpty()) {
                 tvGpsAcc.text = "Precisión: ${gpsAcc}m"
             } else {
@@ -550,36 +575,40 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         }
         
         // Llenar campos de CARACTERÍSTICAS TÉCNICAS
-        spinnerMarca.setSelection(getSpinnerIndex(spinnerMarca, equipo.marca ?: ""))
-        spinnerModelo.setSelection(getSpinnerIndex(spinnerModelo, equipo.modelo ?: ""))
-        spinnerTipo.setSelection(getSpinnerIndex(spinnerTipo, equipo.tipo ?: ""))
-        spinnerDiametro.setSelection(getSpinnerIndex(spinnerDiametro, equipo.diametro ?: ""))
-        spinnerConexion.setSelection(getSpinnerIndex(spinnerConexion, equipo.conexion ?: ""))
-        spinnerPIN.setSelection(getSpinnerIndex(spinnerPIN, equipo.presEntrada ?: ""))
-        spinnerPOUT.setSelection(getSpinnerIndex(spinnerPOUT, equipo.presSalida ?: ""))
-        spinnerDescarga.setSelection(getSpinnerIndex(spinnerDescarga, equipo.descarga ?: ""))
-        spinnerAplicacion.setSelection(getSpinnerIndex(spinnerAplicacion, equipo.aplicacion ?: ""))
-        spinnerServicio.setSelection(getSpinnerIndex(spinnerServicio, equipo.servicio ?: ""))
+        spinnerMarca.setSelection(getSpinnerIndex(spinnerMarca, equipo?.marca ?: ""))
+        spinnerModelo.setSelection(getSpinnerIndex(spinnerModelo, equipo?.modelo ?: ""))
+        spinnerTipo.setSelection(getSpinnerIndex(spinnerTipo, equipo?.tipo ?: ""))
+        spinnerDiametro.setSelection(getSpinnerIndex(spinnerDiametro, equipo?.diametro ?: ""))
+        spinnerConexion.setSelection(getSpinnerIndex(spinnerConexion, equipo?.conexion ?: ""))
+        spinnerPIN.setSelection(getSpinnerIndex(spinnerPIN, equipo?.presEntrada ?: ""))
+        spinnerPOUT.setSelection(getSpinnerIndex(spinnerPOUT, equipo?.presSalida ?: ""))
+        spinnerDescarga.setSelection(getSpinnerIndex(spinnerDescarga, equipo?.descarga ?: ""))
+        spinnerAplicacion.setSelection(getSpinnerIndex(spinnerAplicacion, equipo?.aplicacion ?: ""))
+        spinnerServicio.setSelection(getSpinnerIndex(spinnerServicio, equipo?.servicio ?: ""))
         
         // Llenar campos de OBSERVACIONES
-        etObservaciones.setText(equipo.nota ?: "")
-        etIncidencias.setText(equipo.incidencias ?: "")
+        etObservaciones.setText(equipo?.nota ?: "")
+        etIncidencias.setText(equipo?.incidencias ?: "")
+        
+        // Forzar color blanco después de llenar los campos
+        etObservaciones.setTextColor(android.graphics.Color.WHITE)
+        etIncidencias.setTextColor(android.graphics.Color.WHITE)
         
         // Llenar TextView de características técnicas (formato: marca - modelo (diametro - conexion))
-        val marca = equipo.marca ?: "-"
-        val modelo = equipo.modelo ?: "-"
-        val diametro = equipo.diametro ?: "-"
-        val conexion = equipo.conexion ?: "-"
+        val marca = equipo?.marca ?: "-"
+        val modelo = equipo?.modelo ?: "-"
+        val diametro = equipo?.diametro ?: "-"
+        val conexion = equipo?.conexion ?: "-"
         textView.text = "$marca - $modelo ($diametro - $conexion)"
         
         // Llenar TextView de información del inspector (formato: fecha - inspector (detector))
-        val inspector = equipo.identidadInspector ?: "-"
-        val fecha = equipo.fechaInspeccion ?: "-"
-        val detector = equipo.detectorUtilizado ?: "-"
+        val inspector = equipo?.identidadInspector ?: "-"
+        val fecha = equipo?.fechaInspeccion ?: "-"
+        val detector = equipo?.detectorUtilizado ?: "-"
         tvInspectorFecha.text = "$fecha - $inspector ($detector)"
         
         // Actualizar mini galería
-        equipo.id?.let { equipoId ->
+        equipo?.id?.let { equipoId ->
             miniGaleriaFragment.setEquipoId(equipoId)
             Log.d("MOSTRAR_EQUIPO", "Mini galería actualizada para equipo: $equipoId")
         }
@@ -677,8 +706,252 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     }
 
     private fun guardarYAvanzar() {
-        // TODO: Guardar cambios del equipo actual
-        mostrarEquipo(indexActual + 1)
+        Log.d("FragmentInspeccionEquipo", "=== INICIO GUARDAR Y AVANZAR ===")
+        
+        equipo?.let { equipoActual ->
+            // Obtener datos actuales del usuario logueado
+            val fechaActual = obtenerFechaActual()
+            val inspectorActual = obtenerInspectorActual()
+            val detectorActual = obtenerDetectorActual()
+            
+            Log.d("FragmentInspeccionEquipo", "Datos del usuario actual:")
+            Log.d("FragmentInspeccionEquipo", "  - Fecha: $fechaActual")
+            Log.d("FragmentInspeccionEquipo", "  - Inspector: $inspectorActual")
+            Log.d("FragmentInspeccionEquipo", "  - Detector: $detectorActual")
+            
+            // Obtener coordenadas GPS actuales al momento de guardar
+            val lastLocation = com.bithermmanagement.ui.MainMenuActivity.GpsProvider.lastLocation
+            val coordenadasGPS = if (lastLocation != null) {
+                "${lastLocation.latitude}, ${lastLocation.longitude}"
+            } else {
+                equipoActual.gpsCoord ?: ""
+            }
+            
+            val precisionGPS = if (lastLocation != null) {
+                "${"%.1f".format(lastLocation.accuracy)}m"
+            } else {
+                equipoActual.gpsAcc ?: ""
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "GPS actual:")
+            Log.d("FragmentInspeccionEquipo", "  - Coordenadas: $coordenadasGPS")
+            Log.d("FragmentInspeccionEquipo", "  - Precisión: $precisionGPS")
+            
+            // Obtener datos de los campos
+            val estado = spinnerEstado.selectedItem?.toString() ?: ""
+            val ubicacion = etUbicacion.text.toString()
+            val nota = etObservaciones.text.toString()
+            val incidencias = etIncidencias.text.toString()
+            val linea = etLinea.text.toString()
+            
+            Log.d("FragmentInspeccionEquipo", "Datos de los campos:")
+            Log.d("FragmentInspeccionEquipo", "  - Estado: $estado")
+            Log.d("FragmentInspeccionEquipo", "  - Ubicación: $ubicacion")
+            Log.d("FragmentInspeccionEquipo", "  - Nota: $nota")
+            Log.d("FragmentInspeccionEquipo", "  - Incidencias: $incidencias")
+            Log.d("FragmentInspeccionEquipo", "  - Línea: $linea")
+            
+            // Verificar si se modificaron campos manuales (no automáticos)
+            val camposModificados = mutableListOf<String>()
+            
+            // CAMPOS AUTOMÁTICOS (NO cuentan como modificados):
+            // - fechaInspeccion (se actualiza automáticamente)
+            // - identidadInspector (se actualiza automáticamente)
+            // - detectorUtilizado (se actualiza automáticamente)
+            
+            // CAMPOS MANUALES (SÍ cuentan como modificados):
+            // - estado (se modifica manualmente en el spinner, pero si no se cambia se guarda el preseleccionado)
+            if (estado != equipoActual.estado) camposModificados.add("estado")
+            if (ubicacion != (equipoActual.ubicacion ?: "")) camposModificados.add("ubicacion")
+            if (nota != (equipoActual.nota ?: "")) camposModificados.add("nota")
+            if (incidencias != (equipoActual.incidencias ?: "")) camposModificados.add("incidencias")
+            if (linea != (equipoActual.linea ?: "")) camposModificados.add("linea")
+            
+            // GPS: Solo considerar cambio si hay diferencia significativa (más de 10 metros)
+            val gpsOriginal = equipoActual.gpsCoord ?: ""
+            if (gpsOriginal.isNotEmpty() && coordenadasGPS.isNotEmpty()) {
+                try {
+                    val coordsOriginal = gpsOriginal.split(", ")
+                    val coordsActual = coordenadasGPS.split(", ")
+                    if (coordsOriginal.size == 2 && coordsActual.size == 2) {
+                        val latOriginal = coordsOriginal[0].toDouble()
+                        val lonOriginal = coordsOriginal[1].toDouble()
+                        val latActual = coordsActual[0].toDouble()
+                        val lonActual = coordsActual[1].toDouble()
+                        
+                        // Calcular distancia aproximada (simplificado)
+                        val distancia = Math.sqrt(
+                            Math.pow(latActual - latOriginal, 2.0) + 
+                            Math.pow(lonActual - lonOriginal, 2.0)
+                        ) * 111000 // Aproximación a metros
+                        
+                        if (distancia > 10) { // Más de 10 metros de diferencia
+                            camposModificados.add("gpsCoord")
+                        }
+                    } else {
+                        // Si no se pueden parsear, considerar como cambio
+                        if (coordenadasGPS != gpsOriginal) camposModificados.add("gpsCoord")
+                    }
+                } catch (e: Exception) {
+                    // Si hay error en el cálculo, usar comparación simple
+                    if (coordenadasGPS != gpsOriginal) camposModificados.add("gpsCoord")
+                }
+            } else if (gpsOriginal.isNotEmpty() && coordenadasGPS != gpsOriginal) {
+                // Solo considerar cambio si el original no estaba vacío
+                camposModificados.add("gpsCoord")
+            }
+            // Si gpsOriginal está vacío y coordenadasGPS tiene valor, NO es un cambio (es normal)
+            
+            // Precisión GPS: Solo considerar cambio si hay diferencia significativa
+            val precisionOriginal = equipoActual.gpsAcc ?: ""
+            if (precisionOriginal.isNotEmpty() && precisionGPS.isNotEmpty()) {
+                try {
+                    val precisionOriginalNum = precisionOriginal.replace("m", "").replace(",", ".").toDouble()
+                    val precisionActualNum = precisionGPS.replace("m", "").replace(",", ".").toDouble()
+                    if (Math.abs(precisionActualNum - precisionOriginalNum) > 5) { // Más de 5 metros de diferencia
+                        camposModificados.add("gpsAcc")
+                    }
+                } catch (e: Exception) {
+                    if (precisionGPS != precisionOriginal) camposModificados.add("gpsAcc")
+                }
+            } else if (precisionOriginal.isNotEmpty() && precisionGPS != precisionOriginal) {
+                // Solo considerar cambio si el original no estaba vacío
+                camposModificados.add("gpsAcc")
+            }
+            // Si precisionOriginal está vacío y precisionGPS tiene valor, NO es un cambio (es normal)
+            
+            // Verificar si se modificó la periodicidad
+            val periodicidadActual = spinnerPeriodicidad.selectedItem?.toString() ?: ""
+            if (periodicidadActual != (equipoActual.periodicidad ?: "")) camposModificados.add("periodicidad")
+            
+            Log.d("FragmentInspeccionEquipo", "=== ANÁLISIS DE CAMPOS ===")
+            Log.d("FragmentInspeccionEquipo", "Estado actual: '$estado' vs original: '${equipoActual.estado}'")
+            Log.d("FragmentInspeccionEquipo", "Ubicación actual: '$ubicacion' vs original: '${equipoActual.ubicacion}'")
+            Log.d("FragmentInspeccionEquipo", "Nota actual: '$nota' vs original: '${equipoActual.nota}'")
+            Log.d("FragmentInspeccionEquipo", "Incidencias actual: '$incidencias' vs original: '${equipoActual.incidencias}'")
+            Log.d("FragmentInspeccionEquipo", "Línea actual: '$linea' vs original: '${equipoActual.linea}'")
+            Log.d("FragmentInspeccionEquipo", "GPS Coord actual: '$coordenadasGPS' vs original: '${equipoActual.gpsCoord}'")
+            Log.d("FragmentInspeccionEquipo", "GPS Acc actual: '$precisionGPS' vs original: '${equipoActual.gpsAcc}'")
+            Log.d("FragmentInspeccionEquipo", "Periodicidad actual: '$periodicidadActual' vs original: '${equipoActual.periodicidad}'")
+            Log.d("FragmentInspeccionEquipo", "Campos modificados: ${camposModificados.joinToString(", ")}")
+            
+            // Determinar si es solo inspección o modificación
+            val soloInspeccion = camposModificados.isEmpty()
+            val modificadoLocal = !soloInspeccion
+            
+            Log.d("FragmentInspeccionEquipo", "Solo inspección: $soloInspeccion, Modificado local: $modificadoLocal")
+            Log.d("FragmentInspeccionEquipo", "=== FIN ANÁLISIS ===")
+            
+            // Crear equipo actualizado con los nuevos datos
+            val equipoActualizado = equipoActual.copy(
+                fechaInspeccion = fechaActual,
+                identidadInspector = inspectorActual,
+                detectorUtilizado = detectorActual,
+                estado = estado,
+                ubicacion = ubicacion,
+                nota = nota,
+                incidencias = incidencias,
+                linea = linea,
+                gpsCoord = coordenadasGPS,
+                gpsAcc = precisionGPS,
+                periodicidad = periodicidadActual,
+                modificadoLocal = modificadoLocal
+            )
+            
+            Log.d("FragmentInspeccionEquipo", "Equipo actualizado creado:")
+            Log.d("FragmentInspeccionEquipo", "  - ID: ${equipoActualizado.id}")
+            Log.d("FragmentInspeccionEquipo", "  - Fecha inspección: ${equipoActualizado.fechaInspeccion}")
+            Log.d("FragmentInspeccionEquipo", "  - Inspector: ${equipoActualizado.identidadInspector}")
+            Log.d("FragmentInspeccionEquipo", "  - Detector: ${equipoActualizado.detectorUtilizado}")
+            
+            // Guardar en la base de datos
+            lifecycleScope.launch {
+                try {
+                    inspeccionDao.actualizarEquipo(equipoActualizado)
+                    Log.d("FragmentInspeccionEquipo", "✅ Equipo actualizado exitosamente en BD: ${equipoActualizado.id}")
+                    
+                    // Actualizar el equipo local
+                    equipo = equipoActualizado
+                    equipos[indexActual] = equipoActualizado
+                    
+                    // Actualizar la información del inspector en la UI
+                    actualizarInformacionInspector()
+                    
+                    Log.d("FragmentInspeccionEquipo", "✅ Datos guardados correctamente, navegando al siguiente...")
+                    
+                    // Navegar al siguiente purgador
+                    mostrarEquipo(indexActual + 1)
+                    
+                } catch (e: Exception) {
+                    Log.e("FragmentInspeccionEquipo", "❌ Error guardando equipo: ${e.message}", e)
+                    // Mostrar error al usuario
+                    mostrarError("Error al guardar: ${e.message}")
+                }
+            }
+        } ?: run {
+            Log.e("FragmentInspeccionEquipo", "❌ Equipo es null, no se puede guardar")
+            mostrarError("No hay equipo seleccionado para guardar")
+        }
+        
+        Log.d("FragmentInspeccionEquipo", "=== FIN GUARDAR Y AVANZAR ===")
+    }
+
+    private fun obtenerFechaActual(): String {
+        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+        return sdf.format(java.util.Date())
+    }
+
+    private fun obtenerInspectorActual(): String {
+        // Obtener del SharedPreferences
+        val prefs = requireContext().getSharedPreferences("bitherm_prefs", android.content.Context.MODE_PRIVATE)
+        val swWeb = prefs.getString("sw_web", "SW WEB") ?: "SW WEB"
+        Log.d("FragmentInspeccionEquipo", "Inspector actual obtenido: $swWeb")
+        return swWeb
+    }
+
+    private fun obtenerDetectorActual(): String {
+        // Obtener del SharedPreferences
+        val prefs = requireContext().getSharedPreferences("bitherm_prefs", android.content.Context.MODE_PRIVATE)
+        val equipoAsignado = prefs.getString("equipo_asignado", "Detector") ?: "Detector"
+        Log.d("FragmentInspeccionEquipo", "Detector actual obtenido: $equipoAsignado")
+        return equipoAsignado
+    }
+
+    private fun mostrarError(mensaje: String) {
+        android.app.AlertDialog.Builder(requireContext())
+            .setTitle("Error")
+            .setMessage(mensaje)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun actualizarInformacionInspector() {
+        equipo?.let { equipo ->
+            val fechaEstado = equipo.fechaInspeccion ?: ""
+            val inspector = equipo.identidadInspector ?: ""
+            val detector = equipo.detectorUtilizado ?: ""
+            
+            Log.d("FragmentInspeccionEquipo", "=== DEBUG DATOS INSPECTOR ===")
+            Log.d("FragmentInspeccionEquipo", "fechaInspeccion: '$fechaEstado'")
+            Log.d("FragmentInspeccionEquipo", "identidadInspector: '$inspector'")
+            Log.d("FragmentInspeccionEquipo", "detectorUtilizado: '$detector'")
+            Log.d("FragmentInspeccionEquipo", "Equipo ID: ${equipo.id}")
+            
+            val textoInspector = if (fechaEstado.isNotEmpty() && inspector.isNotEmpty()) {
+                "$fechaEstado - $inspector ($detector)"
+            } else {
+                "Sin datos de inspección anterior"
+            }
+            
+            // Actualizar solo el campo que existe
+            tvInspectorFecha.text = textoInspector
+            
+            Log.d("FragmentInspeccionEquipo", "Texto final inspector: '$textoInspector'")
+            Log.d("FragmentInspeccionEquipo", "=== FIN DEBUG ===")
+        } ?: run {
+            Log.e("FragmentInspeccionEquipo", "Equipo es null, no se puede actualizar información")
+            tvInspectorFecha.text = "Sin datos de inspección anterior"
+        }
     }
 
     private fun setupCollapsibleCards() {

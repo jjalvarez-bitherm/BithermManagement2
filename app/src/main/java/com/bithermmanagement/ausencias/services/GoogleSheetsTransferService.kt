@@ -1751,4 +1751,47 @@ class GoogleSheetsTransferService @Inject constructor(
         // Por ahora solo excluimos fines de semana
         return false
     }
+    
+    /**
+     * Lee usuarios desde una hoja específica de Google Sheets
+     * @param spreadsheetId ID del spreadsheet
+     * @param sheetName Nombre de la hoja
+     * @return Lista de filas con datos de usuarios
+     */
+    suspend fun readUsersFromSheet(spreadsheetId: String, sheetName: String): List<List<Any>> = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Leyendo usuarios desde hoja: $sheetName en spreadsheet: $spreadsheetId")
+            
+            val range = "$sheetName" // Leer toda la hoja para buscar columnas por nombre
+            Log.d(TAG, "Rango solicitado: $range")
+            
+            val response = sheetsService.spreadsheets().values()
+                .get(spreadsheetId, range)
+                .execute()
+            
+            Log.d(TAG, "Respuesta recibida de Google Sheets API")
+            
+            val values = response.getValues()
+            if (values == null || values.isEmpty()) {
+                Log.w(TAG, "No se encontraron datos en la hoja $sheetName")
+                return@withContext emptyList()
+            }
+            
+            Log.d(TAG, "Datos brutos de Google Sheets: $values")
+            Log.d(TAG, "Datos leídos de $sheetName: ${values.size} filas")
+            
+            // Convertir a List<List<Any>> y filtrar filas vacías
+            val result = values.map { row ->
+                row.map { value -> value ?: "" }
+            }.filter { row -> row.any { it.toString().isNotEmpty() } }
+            
+            Log.d(TAG, "Datos procesados: $result")
+            return@withContext result
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error leyendo usuarios desde Google Sheets: ${e.message}", e)
+            Log.e(TAG, "Stack trace completo:", e)
+            return@withContext emptyList()
+        }
+    }
 }

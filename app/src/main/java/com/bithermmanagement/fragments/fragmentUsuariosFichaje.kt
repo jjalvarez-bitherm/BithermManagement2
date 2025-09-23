@@ -638,6 +638,15 @@ class fragmentUsuariosFichaje : Fragment() {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(requireContext(), "Fichaje de $tipo registrado", Toast.LENGTH_SHORT).show()
                     Log.d("FICHAJE", "Fichaje de $tipo registrado correctamente")
+                    
+                    // Actualizar estado online del chat
+                    val onlineManager = com.bithermmanagement.chat.services.FichajeBasedOnlineManager(requireContext())
+                    if (tipo == "ENTRADA") {
+                        onlineManager.registerFichajeEntrada(usuarioLogin)
+                    } else {
+                        onlineManager.registerFichajeSalida(usuarioLogin)
+                    }
+                    
                     if (tipo == "ENTRADA") {
                         Handler(Looper.getMainLooper()).postDelayed({
                             viewLifecycleOwner.lifecycleScope.launch {

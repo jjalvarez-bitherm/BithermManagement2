@@ -52,12 +52,12 @@
             android:id="@+id/icon_gps"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_mylocation"
+            android:src="@android:drawable/ic_menu_preferences"
             app:tint="@android:color/white"
             android:layout_marginStart="8dp"
             android:clickable="true"
             android:focusable="true"
-            android:contentDescription="GPS" />
+            android:contentDescription="Configuración" />
 
         <ImageButton
             android:id="@+id/btn_logout"

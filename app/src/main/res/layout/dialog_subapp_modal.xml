@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- Header con nombre de subAPP y botón X -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="0.07"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp"
+        android:background="@color/bitherm_green">
+
+        <!-- Nombre de la subAPP -->
+        <TextView
+            android:id="@+id/textViewSubAppName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Nombre SubAPP"
+            android:textColor="@android:color/white"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:gravity="start" />
+
+        <!-- Botón X rojo para cerrar -->
+        <ImageButton
+            android:id="@+id/buttonClose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_close_thick"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FF0000"
+            android:contentDescription="Cerrar" />
+
+    </LinearLayout>
+
+    <!-- Contenido de la subAPP -->
+    <FrameLayout
+        android:id="@+id/containerSubAppContent"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@android:color/white" />
+
+</LinearLayout>
+

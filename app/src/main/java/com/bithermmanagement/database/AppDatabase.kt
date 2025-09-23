@@ -30,6 +30,8 @@ import com.bithermmanagement.ausencias.dao.AbsenceLogDao
 import com.bithermmanagement.ausencias.models.AbsenceRecord
 import com.bithermmanagement.ausencias.models.AbsenceRequest
 import com.bithermmanagement.ausencias.models.AbsenceLog
+import com.bithermmanagement.database.entities.FotoEquipoEntity
+import com.bithermmanagement.database.dao.FotoEquipoDao
 
 @Database(
     entities = [
@@ -42,9 +44,10 @@ import com.bithermmanagement.ausencias.models.AbsenceLog
         FichajeEntity::class,
         AbsenceRecord::class,
         AbsenceRequest::class,
-        AbsenceLog::class
+        AbsenceLog::class,
+        FotoEquipoEntity::class
     ],
-    version = 22,
+    version = 23,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, Converters::class)
@@ -60,6 +63,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun absenceRecordDao(): AbsenceRecordDao
     abstract fun absenceRequestDao(): AbsenceRequestDao
     abstract fun absenceLogDao(): AbsenceLogDao
+    abstract fun fotoEquipoDao(): FotoEquipoDao
 
     companion object {
         @Volatile

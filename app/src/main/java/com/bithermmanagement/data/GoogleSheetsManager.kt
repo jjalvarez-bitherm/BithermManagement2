@@ -11,6 +11,7 @@ import com.google.api.services.sheets.v4.SheetsScopes
 import com.google.api.services.sheets.v4.model.ValueRange
 import com.bithermmanagement.database.AppDatabase
 import com.bithermmanagement.database.entities.UserEntity
+import com.bithermmanagement.database.entities.Equipo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -473,6 +474,194 @@ class GoogleSheetsManager(
         } catch (e: Exception) {
             Log.e(TAG, "Error al obtener todos los usuarios", e)
             return@withContext Pair(emptyList(), emptyList())
+        }
+    }
+
+    /**
+     * Sincroniza equipos modificados desde la base de datos local a Google Sheets
+     */
+    suspend fun sincronizarEquiposModificados(equipos: List<Equipo>): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "=== INICIO SINCRONIZACIÓN DE EQUIPOS MODIFICADOS A GOOGLE SHEETS ===")
+            Log.d(TAG, "Equipos a sincronizar: ${equipos.size}")
+            
+            if (equipos.isEmpty()) {
+                Log.d(TAG, "No hay equipos para sincronizar")
+                return@withContext true
+            }
+            
+            // Leer cabeceras de la hoja de equipos
+            Log.d(TAG, "Leyendo cabeceras de EQUIPOS!A1:Z1...")
+            val headerResponse = sheetsService.spreadsheets().values()
+                .get(spreadsheetId, "EQUIPOS!A1:Z1")
+                .execute()
+            val headerRow = headerResponse.getValues()?.firstOrNull() ?: emptyList<Any>()
+            Log.d(TAG, "Cabeceras encontradas: ${headerRow.joinToString(", ")}")
+            
+            if (headerRow.isEmpty()) {
+                Log.e(TAG, "No se encontraron cabeceras en la hoja EQUIPOS")
+                return@withContext false
+            }
+            
+            // Crear mapeo de columnas
+            val columnMapping = createColumnMapping(headerRow)
+            Log.d(TAG, "Mapeo de columnas creado: $columnMapping")
+            
+            // Procesar cada equipo modificado
+            var equiposActualizados = 0
+            var equiposConError = 0
+            
+            for (equipo in equipos) {
+                try {
+                    Log.d(TAG, "Procesando equipo: ${equipo.id}")
+                    
+                    // Buscar la fila del equipo en Google Sheets
+                    val filaEquipo = buscarFilaEquipo(equipo.id)
+                    
+                    if (filaEquipo != null) {
+                        // Actualizar fila existente
+                        val actualizado = actualizarFilaEquipo(equipo, filaEquipo, columnMapping)
+                        if (actualizado) {
+                            equiposActualizados++
+                            Log.d(TAG, "Equipo ${equipo.id} actualizado exitosamente")
+                        } else {
+                            equiposConError++
+                            Log.e(TAG, "Error al actualizar equipo ${equipo.id}")
+                        }
+                    } else {
+                        // Crear nueva fila (si es necesario)
+                        Log.w(TAG, "Equipo ${equipo.id} no encontrado en Google Sheets, saltando...")
+                        equiposConError++
+                    }
+                    
+                } catch (e: Exception) {
+                    equiposConError++
+                    Log.e(TAG, "Error procesando equipo ${equipo.id}: ${e.message}", e)
+                }
+            }
+            
+            Log.d(TAG, "=== SINCRONIZACIÓN COMPLETADA ===")
+            Log.d(TAG, "Equipos actualizados: $equiposActualizados")
+            Log.d(TAG, "Equipos con error: $equiposConError")
+            
+            equiposConError == 0
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error en sincronización de equipos modificados: ${e.message}", e)
+            false
+        }
+    }
+    
+    /**
+     * Crea el mapeo de columnas basado en las cabeceras de Google Sheets
+     */
+    private fun createColumnMapping(headerRow: List<Any>): Map<String, Int> {
+        val mapping = mutableMapOf<String, Int>()
+        
+        headerRow.forEachIndexed { index, header ->
+            val headerStr = header.toString().trim()
+            mapping[headerStr] = index
+        }
+        
+        return mapping
+    }
+    
+    /**
+     * Busca la fila de un equipo en Google Sheets
+     */
+    private suspend fun buscarFilaEquipo(equipoId: String): Int? = withContext(Dispatchers.IO) {
+        try {
+            // Leer todas las filas de datos
+            val dataResponse = sheetsService.spreadsheets().values()
+                .get(spreadsheetId, "EQUIPOS!A2:Z")
+                .execute()
+            val dataRows = dataResponse.getValues() ?: return@withContext null
+            
+            // Buscar la fila con el ID del equipo
+            dataRows.forEachIndexed { index, row ->
+                if (row.isNotEmpty() && row[0].toString().trim() == equipoId) {
+                    return@withContext index + 2 // +2 porque empezamos desde la fila 2 (después de cabeceras)
+                }
+            }
+            
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error buscando fila del equipo $equipoId: ${e.message}", e)
+            null
+        }
+    }
+    
+    /**
+     * Actualiza una fila específica de un equipo en Google Sheets
+     */
+    private suspend fun actualizarFilaEquipo(
+        equipo: Equipo, 
+        fila: Int, 
+        columnMapping: Map<String, Int>
+    ): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Actualizando fila $fila para equipo ${equipo.id}")
+            
+            // Crear lista de valores a actualizar
+            val values = mutableListOf<Any>()
+            
+            // Mapear campos del equipo a columnas de Google Sheets
+            val camposActualizar = mapOf(
+                EquipoColumnMapping.ESTADO to equipo.estado,
+                EquipoColumnMapping.FECHA_ESTADO to equipo.fechaInspeccion,
+                EquipoColumnMapping.IDENTIDAD_INSPECTOR to equipo.identidadInspector,
+                EquipoColumnMapping.DETECTOR_UTILIZADO to equipo.detectorUtilizado,
+                EquipoColumnMapping.UBICACION to equipo.ubicacion,
+                EquipoColumnMapping.NOTA to equipo.nota,
+                EquipoColumnMapping.INCIDENCIAS to equipo.incidencias,
+                EquipoColumnMapping.GPS_COORD to equipo.gpsCoord,
+                EquipoColumnMapping.GPS_ACC to equipo.gpsAcc,
+                EquipoColumnMapping.FOTO to equipo.urlFotoEquipo,
+                EquipoColumnMapping.FOTO_UBIC to equipo.urlFotoUbicacion,
+                EquipoColumnMapping.FOTO_MF to equipo.urlFotoManifold,
+                EquipoColumnMapping.FOTO_EXTRA to equipo.urlFotosExtra,
+                EquipoColumnMapping.INSTALACION_TYPE to equipo.instalacion,
+                EquipoColumnMapping.INSTALACION_LINE to equipo.linea,
+                EquipoColumnMapping.INSTALACION_MF to equipo.instalacionMf,
+                EquipoColumnMapping.AISLAMIENTO to equipo.aislamiento,
+                EquipoColumnMapping.PERIODICIDAD to equipo.periodicidad,
+                EquipoColumnMapping.BY_PASS to if (equipo.byPass == true) "true" else "false"
+            )
+            
+            // Crear rango de actualización
+            val range = "EQUIPOS!A$fila:Z$fila"
+            val updateValues = mutableListOf<List<Any>>()
+            val rowValues = mutableListOf<Any>()
+            
+            // Llenar la fila con valores vacíos primero
+            repeat(26) { rowValues.add("") }
+            
+            // Actualizar solo los campos que tienen valores
+            camposActualizar.forEach { (campo, valor) ->
+                val colIndex = columnMapping[campo]
+                if (colIndex != null && valor != null && valor.isNotEmpty()) {
+                    if (colIndex < rowValues.size) {
+                        rowValues[colIndex] = valor
+                        Log.d(TAG, "Campo $campo (col $colIndex) = $valor")
+                    }
+                }
+            }
+            
+            updateValues.add(rowValues)
+            
+            // Ejecutar actualización
+            val body = ValueRange().setValues(updateValues)
+            val result = sheetsService.spreadsheets().values()
+                .update(spreadsheetId, range, body)
+                .setValueInputOption("RAW")
+                .execute()
+            
+            Log.d(TAG, "Fila $fila actualizada exitosamente")
+            true
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error actualizando fila $fila: ${e.message}", e)
+            false
         }
     }
 

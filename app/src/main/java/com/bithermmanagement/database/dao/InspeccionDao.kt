@@ -9,6 +9,9 @@ interface InspeccionDao {
     @Query("SELECT id, estado, area, unidad, instalacion, linea, aislamiento, marca, modelo, tipo, periodicidad, diametro, conexion, pres_entrada, pres_salida, descarga, aplicacion, servicio, ubicacion, fecha_inspeccion, nota, identidad_inspector, detector_utilizado, incidencias, gps_coord, url_foto_equipo, orden, modificado_local, instalacion_mf, gps_acc, extra, by_pass, url_foto_ubicacion, url_foto_manifold, url_fotos_extra FROM equipos")
     suspend fun getAllEquipos(): List<Equipo>
 
+    @Query("SELECT id, estado, area, unidad, instalacion, linea, aislamiento, marca, modelo, tipo, periodicidad, diametro, conexion, pres_entrada, pres_salida, descarga, aplicacion, servicio, ubicacion, fecha_inspeccion, nota, identidad_inspector, detector_utilizado, incidencias, gps_coord, url_foto_equipo, orden, modificado_local, instalacion_mf, gps_acc, extra, by_pass, url_foto_ubicacion, url_foto_manifold, url_fotos_extra FROM equipos WHERE id = :id")
+    suspend fun getEquipoPorId(id: String): Equipo?
+
     @Query("SELECT DISTINCT estado FROM equipos WHERE estado IS NOT NULL AND estado != ''")
     suspend fun getEstadosUnicos(): List<String>
 

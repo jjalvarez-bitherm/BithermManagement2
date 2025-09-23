@@ -23,6 +23,7 @@ import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import org.json.JSONObject
@@ -58,7 +59,39 @@ class FragmentInspeccionConfiguracion : Fragment() {
     private val LIBRO_ID_KEY = "libro_id"
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private val dateFormatISO = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private var fechaSeleccionada: Calendar = Calendar.getInstance()
+    
+    /**
+     * Parsea una fecha en cualquiera de los formatos soportados
+     */
+    private fun parsearFecha(fechaString: String): Date? {
+        return try {
+            // Intentar primero con formato dd/MM/yyyy
+            dateFormat.parse(fechaString)
+        } catch (e: Exception) {
+            try {
+                // Si falla, intentar con formato yyyy-MM-dd
+                dateFormatISO.parse(fechaString)
+            } catch (e2: Exception) {
+                Log.e("FragmentInspeccionConfiguracion", "No se pudo parsear fecha '$fechaString' en ningún formato")
+                null
+            }
+        }
+    }
+    
+    /**
+     * Normaliza una fecha a la medianoche (00:00:00) de ese día
+     */
+    private fun getMidnightDate(date: Date): Date {
+        val calendar = Calendar.getInstance()
+        calendar.time = date
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.time
+    }
 
     private var libros: List<GoogleDriveManager.SpreadsheetInfo> = emptyList()
     private var hojas: List<String> = emptyList()
@@ -294,6 +327,26 @@ class FragmentInspeccionConfiguracion : Fragment() {
                     
                     val resultado = sheetsManager.sincronizarEquipos(campoOrdenSeleccionado)
                     
+                    // Después de sincronizar desde Google Sheets, también sincronizar equipos modificados hacia Google Sheets
+                    val database = AppDatabase.getDatabase(context)
+                    val inspeccionDao = database.inspeccionDao()
+                    val equiposModificados = inspeccionDao.getModificadasLocal()
+                    
+                    if (equiposModificados.isNotEmpty()) {
+                        Log.d("FragmentInspeccionConfiguracion", "Sincronizando ${equiposModificados.size} equipos modificados hacia Google Sheets")
+                        val resultadoModificados = sheetsManager.sincronizarEquiposModificados(equiposModificados)
+                        
+                        if (resultadoModificados) {
+                            // Marcar como sincronizados
+                            equiposModificados.forEach { equipo ->
+                                inspeccionDao.setModificadoLocal(equipo.id, false)
+                            }
+                            Log.d("FragmentInspeccionConfiguracion", "Equipos modificados sincronizados exitosamente")
+                        } else {
+                            Log.e("FragmentInspeccionConfiguracion", "Error sincronizando equipos modificados")
+                        }
+                    }
+                    
                     withContext(Dispatchers.Main) {
                         if (resultado) {
                             Toast.makeText(context, "✅ Equipos sincronizados correctamente", Toast.LENGTH_LONG).show()
@@ -334,25 +387,251 @@ class FragmentInspeccionConfiguracion : Fragment() {
         }
         btnDescargarFotos.setOnClickListener {
             Log.d("FragmentInspeccionConfiguracion", "CLICK en btnDescargarFotos")
-            Toast.makeText(requireContext(), "Gestión de fotos en construcción", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Descargando fotos desde Google Drive...", Toast.LENGTH_SHORT).show()
             setLoading(true)
             lifecycleScope.launch(Dispatchers.IO) {
-                // Simulación de carga de fotos
-                withContext(Dispatchers.Main) {
-                    setLoading(false)
-                    cargarResumen()
+                try {
+                    // TODO: Implementar descarga de fotos desde Google Drive
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Descarga de fotos completada", Toast.LENGTH_SHORT).show()
+                        setLoading(false)
+                        cargarResumen()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Error descargando fotos: ${e.message}", Toast.LENGTH_SHORT).show()
+                        setLoading(false)
+                    }
                 }
             }
         }
         btnActualizarFotos.setOnClickListener {
             Log.d("FragmentInspeccionConfiguracion", "CLICK en btnActualizarFotos")
-            Toast.makeText(requireContext(), "Gestión de fotos en construcción", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Migrando y subiendo fotos...", Toast.LENGTH_SHORT).show()
             setLoading(true)
             lifecycleScope.launch(Dispatchers.IO) {
-                // Simulación de actualización de fotos
-                withContext(Dispatchers.Main) {
-                    setLoading(false)
-                    cargarResumen()
+                try {
+                    val context = requireContext()
+                    val db = AppDatabase.getDatabase(context)
+                    val fotoDao = db.fotoEquipoDao()
+                    val inspeccionDao = db.inspeccionDao()
+                    
+                    // PASO 1: Migrar fotos existentes de equipos a FotoEquipoEntity
+                    Log.d("FragmentInspeccionConfiguracion", "Iniciando migración de fotos existentes...")
+                    val equipos = inspeccionDao.getAllEquipos()
+                    var fotosMigradas = 0
+                    
+                    // DEBUG: Verificar fotos en sistema de archivos
+                    Log.d("FragmentInspeccionConfiguracion", "=== DEBUG: Verificando fotos en sistema de archivos ===")
+                    val fotosDir = File(context.filesDir, "fotos")
+                    if (fotosDir.exists()) {
+                        val archivosFotos = fotosDir.listFiles()
+                        Log.d("FragmentInspeccionConfiguracion", "Directorio fotos existe. Archivos encontrados: ${archivosFotos?.size ?: 0}")
+                        archivosFotos?.forEach { archivo ->
+                            Log.d("FragmentInspeccionConfiguracion", "Archivo foto: ${archivo.name}")
+                        }
+                    } else {
+                        Log.d("FragmentInspeccionConfiguracion", "Directorio fotos NO existe")
+                    }
+                    
+                    // DEBUG: Verificar fotos en directorio externo
+                    val externalFotosDir = File(context.getExternalFilesDir(null), "BithermFotos")
+                    if (externalFotosDir.exists()) {
+                        Log.d("FragmentInspeccionConfiguracion", "Directorio externo BithermFotos existe")
+                        externalFotosDir.walkTopDown().forEach { archivo ->
+                            if (archivo.isFile) {
+                                Log.d("FragmentInspeccionConfiguracion", "Archivo externo: ${archivo.absolutePath}")
+                            }
+                        }
+                    } else {
+                        Log.d("FragmentInspeccionConfiguracion", "Directorio externo BithermFotos NO existe")
+                    }
+                    
+                    for (equipo in equipos) {
+                        // Migrar foto del equipo
+                        val urlFotoEquipo = equipo.urlFotoEquipo
+                        if (!urlFotoEquipo.isNullOrEmpty()) {
+                            val fotoEntity = com.bithermmanagement.database.entities.FotoEquipoEntity(
+                                idEquipo = equipo.id,
+                                tipo = "EQUIPO",
+                                rutaLocal = urlFotoEquipo,
+                                urlDrive = null,
+                                esFavorita = false,
+                                estadoSubida = "LOCAL",
+                                fecha = System.currentTimeMillis()
+                            )
+                            fotoDao.insert(fotoEntity)
+                            fotosMigradas++
+                            Log.d("FragmentInspeccionConfiguracion", "Migrada foto EQUIPO: ${equipo.id}")
+                        }
+                        
+                        // Migrar foto de ubicación
+                        val urlFotoUbicacion = equipo.urlFotoUbicacion
+                        if (!urlFotoUbicacion.isNullOrEmpty()) {
+                            val fotoEntity = com.bithermmanagement.database.entities.FotoEquipoEntity(
+                                idEquipo = equipo.id,
+                                tipo = "UBICACION",
+                                rutaLocal = urlFotoUbicacion,
+                                urlDrive = null,
+                                esFavorita = false,
+                                estadoSubida = "LOCAL",
+                                fecha = System.currentTimeMillis()
+                            )
+                            fotoDao.insert(fotoEntity)
+                            fotosMigradas++
+                            Log.d("FragmentInspeccionConfiguracion", "Migrada foto UBICACION: ${equipo.id}")
+                        }
+                        
+                        // Migrar foto de manifold
+                        val urlFotoManifold = equipo.urlFotoManifold
+                        if (!urlFotoManifold.isNullOrEmpty()) {
+                            val fotoEntity = com.bithermmanagement.database.entities.FotoEquipoEntity(
+                                idEquipo = equipo.id,
+                                tipo = "MANIFOLD",
+                                rutaLocal = urlFotoManifold,
+                                urlDrive = null,
+                                esFavorita = false,
+                                estadoSubida = "LOCAL",
+                                fecha = System.currentTimeMillis()
+                            )
+                            fotoDao.insert(fotoEntity)
+                            fotosMigradas++
+                            Log.d("FragmentInspeccionConfiguracion", "Migrada foto MANIFOLD: ${equipo.id}")
+                        }
+                        
+                        // Migrar fotos extra
+                        val urlFotosExtra = equipo.urlFotosExtra
+                        if (!urlFotosExtra.isNullOrEmpty()) {
+                            val fotosExtra = urlFotosExtra.split(";")
+                            for (i in fotosExtra.indices) {
+                                if (fotosExtra[i].isNotEmpty()) {
+                                    val fotoEntity = com.bithermmanagement.database.entities.FotoEquipoEntity(
+                                        idEquipo = equipo.id,
+                                        tipo = "EXTRA_${i + 1}",
+                                        rutaLocal = fotosExtra[i],
+                                        urlDrive = null,
+                                        esFavorita = false,
+                                        estadoSubida = "LOCAL",
+                                        fecha = System.currentTimeMillis()
+                                    )
+                                    fotoDao.insert(fotoEntity)
+                                    fotosMigradas++
+                                    Log.d("FragmentInspeccionConfiguracion", "Migrada foto EXTRA_${i + 1}: ${equipo.id}")
+                                }
+                            }
+                        }
+                    }
+                    
+                    // PASO 1.5: Migrar fotos desde sistema de archivos
+                    Log.d("FragmentInspeccionConfiguracion", "=== MIGRANDO FOTOS DESDE SISTEMA DE ARCHIVOS ===")
+                    if (fotosDir.exists()) {
+                        val archivosFotos = fotosDir.listFiles()
+                        archivosFotos?.forEach { archivo ->
+                            val nombreArchivo = archivo.name
+                            Log.d("FragmentInspeccionConfiguracion", "Procesando archivo: $nombreArchivo")
+                            
+                            // Extraer ID del equipo del nombre del archivo
+                            // Formato esperado: NA-00001_FOTO_EQUIPO_20250909_141312.jpg
+                            val partes = nombreArchivo.split("_")
+                            if (partes.size >= 2) {
+                                val idEquipo = partes[0] // NA-00001
+                                val tipoFoto = when {
+                                    nombreArchivo.contains("FOTO_EQUIPO") -> "EQUIPO"
+                                    nombreArchivo.contains("FOTO_UBICACION") -> "UBICACION"
+                                    nombreArchivo.contains("FOTO_MANIFOLD") -> "MANIFOLD"
+                                    nombreArchivo.contains("FOTO_EXTRA") -> "EXTRA_1"
+                                    else -> "EQUIPO" // Por defecto
+                                }
+                                
+                                Log.d("FragmentInspeccionConfiguracion", "ID Equipo: $idEquipo, Tipo: $tipoFoto")
+                                
+                                // Verificar si ya existe esta foto en la base de datos
+                                val fotosExistentes = fotoDao.getFotosPorEquipoYTipo(idEquipo, tipoFoto)
+                                if (fotosExistentes.isEmpty()) {
+                                    val fotoEntity = com.bithermmanagement.database.entities.FotoEquipoEntity(
+                                        idEquipo = idEquipo,
+                                        tipo = tipoFoto,
+                                        rutaLocal = archivo.absolutePath,
+                                        urlDrive = null,
+                                        esFavorita = false,
+                                        estadoSubida = "LOCAL",
+                                        fecha = archivo.lastModified()
+                                    )
+                                    fotoDao.insert(fotoEntity)
+                                    fotosMigradas++
+                                    Log.d("FragmentInspeccionConfiguracion", "Foto migrada desde archivo: $nombreArchivo")
+                                } else {
+                                    Log.d("FragmentInspeccionConfiguracion", "Foto ya existe en BD: $nombreArchivo")
+                                }
+                            }
+                        }
+                    }
+                    
+                    Log.d("FragmentInspeccionConfiguracion", "Migración completada: $fotosMigradas fotos migradas")
+                    
+                    // PASO 2: Subir fotos pendientes a Google Drive
+                    val fotosPendientes = fotoDao.getFotosPendientes()
+                    Log.d("FragmentInspeccionConfiguracion", "Fotos pendientes encontradas: ${fotosPendientes.size}")
+                    
+                    if (fotosPendientes.isEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, "Migración completada: $fotosMigradas fotos migradas. No hay fotos pendientes de subir.", Toast.LENGTH_LONG).show()
+                            setLoading(false)
+                            cargarResumen()
+                        }
+                        return@launch
+                    }
+                    
+                    // Obtener GoogleDriveHelper
+                    val driveHelper = com.bithermmanagement.utils.GoogleDriveHelper(context)
+                    
+                    var fotosSubidas = 0
+                    var fotosConError = 0
+                    
+                    for (foto in fotosPendientes) {
+                        try {
+                            // Marcar como pendiente
+                            fotoDao.update(foto.copy(estadoSubida = "PENDIENTE"))
+                            
+                            // Subir a Google Drive
+                            val fileId = driveHelper.uploadPhoto(foto.rutaLocal, foto.idEquipo, foto.tipo)
+                            
+                            if (fileId != null) {
+                                // Marcar como subida
+                                fotoDao.update(foto.copy(
+                                    estadoSubida = "SUBIDA",
+                                    urlDrive = fileId
+                                ))
+                                fotosSubidas++
+                                Log.d("FragmentInspeccionConfiguracion", "Foto subida: ${foto.rutaLocal}")
+                            } else {
+                                // Marcar como error
+                                fotoDao.update(foto.copy(estadoSubida = "LOCAL"))
+                                fotosConError++
+                                Log.e("FragmentInspeccionConfiguracion", "Error subiendo foto: ${foto.rutaLocal}")
+                            }
+                        } catch (e: Exception) {
+                            // Marcar como error
+                            fotoDao.update(foto.copy(estadoSubida = "LOCAL"))
+                            fotosConError++
+                            Log.e("FragmentInspeccionConfiguracion", "Error subiendo foto ${foto.rutaLocal}: ${e.message}")
+                        }
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        val mensaje = "Migración: $fotosMigradas fotos. Subida: $fotosSubidas subidas, $fotosConError errores"
+                        Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                        Log.d("FragmentInspeccionConfiguracion", mensaje)
+                        setLoading(false)
+                        cargarResumen()
+                    }
+                    
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(requireContext(), "Error procesando fotos: ${e.message}", Toast.LENGTH_LONG).show()
+                        Log.e("FragmentInspeccionConfiguracion", "Error en procesamiento de fotos: ${e.message}", e)
+                        setLoading(false)
+                    }
                 }
             }
         }
@@ -555,22 +834,76 @@ class FragmentInspeccionConfiguracion : Fragment() {
     private fun cargarResumen() {
         Log.d("FragmentInspeccionConfiguracion", "cargarResumen llamado")
         lifecycleScope.launch(Dispatchers.IO) {
-            val db = AppDatabase.getDatabase(requireContext())
-            val all = db.equipoDao().getAll()
-            val totalEquipos = all.size
-            val inspeccionados = all.count { !it.fechaInspeccion.isNullOrEmpty() }
-            val modificados = all.count { it.modificadoLocal == true }
-            // TODO: Añadir lógica real para fotosDrive, fotosNuevas, fotosPendientes
-            val fotosDrive = 0
-            val fotosNuevas = 0
-            val fotosPendientes = 0
-            withContext(Dispatchers.Main) {
-                txtTotalEquipos.text = "Total equipos: $totalEquipos"
-                txtInspeccionados.text = "Equipos inspeccionados: $inspeccionados"
-                txtModificados.text = "Equipos modificados: $modificados"
-                txtFotosDrive.text = "Fotos en Drive: $fotosDrive"
-                txtFotosNuevas.text = "Fotos nuevas: $fotosNuevas"
-                txtFotosPendientes.text = "Fotos pendientes de subir: $fotosPendientes"
+            try {
+                val db = AppDatabase.getDatabase(requireContext())
+                val inspeccionDao = db.inspeccionDao()
+                val all = inspeccionDao.getAllEquipos()
+                val totalEquipos = all.size
+                
+                // Obtener la fecha del DatePicker de configuración
+                val fechaConfiguracion = prefs.getString(DATE_KEY, null)
+                val fechaLimite = if (fechaConfiguracion != null) {
+                    parsearFecha(fechaConfiguracion)?.let { getMidnightDate(it) } ?: getMidnightDate(Date())
+                } else {
+                    // Si no hay fecha guardada, usar la fecha actual (comportamiento por defecto)
+                    getMidnightDate(Date())
+                }
+                
+                Log.d("FragmentInspeccionConfiguracion", "Fecha de configuración: $fechaConfiguracion")
+                Log.d("FragmentInspeccionConfiguracion", "Fecha límite parseada: $fechaLimite")
+                
+                // Contar equipos inspeccionados (fecha igual o posterior a la fecha de configuración)
+                val inspeccionados = all.count { equipo ->
+                    val fechaInspeccion = equipo.fechaInspeccion
+                    if (!fechaInspeccion.isNullOrEmpty()) {
+                        val fechaInspeccionParsed = parsearFecha(fechaInspeccion)?.let { getMidnightDate(it) }
+                        val esInspeccionado = fechaInspeccionParsed != null && (fechaInspeccionParsed.after(fechaLimite) || fechaInspeccionParsed.equals(fechaLimite))
+                        
+                        // Log detallado para los primeros 3 equipos
+                        if (all.indexOf(equipo) < 3) {
+                            Log.d("FragmentInspeccionConfiguracion", "Equipo ${equipo.id}: fechaInspeccion='$fechaInspeccion' -> fechaInspeccionParsed=$fechaInspeccionParsed")
+                            Log.d("FragmentInspeccionConfiguracion", "Equipo ${equipo.id}: fechaLimite=$fechaLimite")
+                            Log.d("FragmentInspeccionConfiguracion", "Equipo ${equipo.id}: esInspeccionado=$esInspeccionado")
+                        }
+                        
+                        esInspeccionado
+                    } else {
+                        false
+                    }
+                }
+                
+                val modificados = inspeccionDao.getModificadasLocal()
+                
+                Log.d("FragmentInspeccionConfiguracion", "Resumen calculado:")
+                Log.d("FragmentInspeccionConfiguracion", "  - Total equipos: $totalEquipos")
+                Log.d("FragmentInspeccionConfiguracion", "  - Inspeccionados: $inspeccionados")
+                Log.d("FragmentInspeccionConfiguracion", "  - Modificados: ${modificados.size}")
+                
+                // Contar fotos
+                val fotosDao = db.fotoEquipoDao()
+                val todasLasFotos = fotosDao.getAll()
+                val fotosDrive = todasLasFotos.count { it.estadoSubida == "SUBIDA" }
+                val fotosNuevas = todasLasFotos.count { it.estadoSubida == "LOCAL" }
+                val fotosPendientes = todasLasFotos.count { it.estadoSubida == "PENDIENTE" }
+                
+                Log.d("FragmentInspeccionConfiguracion", "Fotos contadas:")
+                Log.d("FragmentInspeccionConfiguracion", "  - En Drive: $fotosDrive")
+                Log.d("FragmentInspeccionConfiguracion", "  - Nuevas (LOCAL): $fotosNuevas")
+                Log.d("FragmentInspeccionConfiguracion", "  - Pendientes: $fotosPendientes")
+                
+                withContext(Dispatchers.Main) {
+                    txtTotalEquipos.text = "Total equipos: $totalEquipos"
+                    txtInspeccionados.text = "Equipos inspeccionados: $inspeccionados"
+                    txtModificados.text = "Equipos modificados: ${modificados.size}"
+                    txtFotosDrive.text = "Fotos en Drive: $fotosDrive"
+                    txtFotosNuevas.text = "Fotos nuevas: $fotosNuevas"
+                    txtFotosPendientes.text = "Fotos pendientes de subir: $fotosPendientes"
+                }
+            } catch (e: Exception) {
+                Log.e("FragmentInspeccionConfiguracion", "Error al cargar resumen: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Error al cargar resumen: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

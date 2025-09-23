@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FF0000">
+
+    <!-- Header de la conversación -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="#00FF00"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/buttonBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_arrow_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF"
+            android:contentDescription="Volver" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp"
+            android:background="#0000FF">
+
+            <TextView
+                android:id="@+id/textViewChatName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nombre del Chat"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="#FFFF00" />
+
+            <TextView
+                android:id="@+id/textViewChatStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Última conexión"
+                android:textSize="12sp"
+                android:textColor="#CCCCCC"
+                android:background="#FF00FF" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/buttonMore"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_more_vert"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#FFFFFF"
+            android:contentDescription="Más opciones" />
+
+    </LinearLayout>
+
+    <!-- Área de mensajes -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#800080">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewMessages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:background="#008000" />
+
+    </FrameLayout>
+
+    <!-- Barra de entrada de mensaje -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="#FF8000"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/buttonEmoji"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_emoji"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#666666"
+            android:contentDescription="Emoji" />
+
+        <ImageButton
+            android:id="@+id/buttonAttach"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_attach_file"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#666666"
+            android:contentDescription="Adjuntar archivo" />
+
+        <ImageButton
+            android:id="@+id/buttonCamera"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_camera"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:tint="#666666"
+            android:contentDescription="Cámara" />
+
+        <EditText
+            android:id="@+id/editTextMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_message_input"
+            android:padding="12dp"
+            android:hint="Escribe un mensaje..."
+            android:textSize="16sp"
+            android:maxLines="4"
+            android:backgroundTint="#FFFFFF" />
+
+        <ImageButton
+            android:id="@+id/buttonSend"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_send"
+            android:background="@drawable/bg_send_button"
+            android:tint="#FFFFFF"
+            android:contentDescription="Enviar mensaje" />
+
+    </LinearLayout>
+
+</LinearLayout>

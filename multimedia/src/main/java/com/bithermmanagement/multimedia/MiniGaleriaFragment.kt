@@ -16,8 +16,10 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.launch
 import com.bithermmanagement.multimedia.R
 import com.bumptech.glide.Glide
 import java.io.File
@@ -457,6 +459,44 @@ class MiniGaleriaFragment : Fragment() {
     private fun actualizarBaseDeDatos(tipoFoto: String, rutaFoto: String) {
         // Notificar al fragmento padre sobre la actualización de la foto
         onFotoActualizadaListener?.onFotoActualizada(tipoFoto, rutaFoto)
+        
+        // Registrar la foto en la base de datos
+        lifecycleScope.launch {
+            try {
+                val context = requireContext()
+                // Usar reflexión para acceder a AppDatabase desde el módulo multimedia
+                val appDatabaseClass = Class.forName("com.bithermmanagement.database.AppDatabase")
+                val getDatabaseMethod = appDatabaseClass.getMethod("getDatabase", Context::class.java)
+                val db = getDatabaseMethod.invoke(null, context)
+                
+                val fotoDao = db.javaClass.getMethod("fotoEquipoDao").invoke(db)
+                
+                val fotoEntityClass = Class.forName("com.bithermmanagement.database.entities.FotoEquipoEntity")
+                val fotoEntity = fotoEntityClass.getConstructor(
+                    String::class.java, // idEquipo
+                    String::class.java, // tipo
+                    String::class.java, // rutaLocal
+                    String::class.java, // urlDrive
+                    Boolean::class.java, // esFavorita
+                    String::class.java, // estadoSubida
+                    Long::class.java    // fecha
+                ).newInstance(
+                    equipoId ?: "",
+                    tipoFoto,
+                    rutaFoto,
+                    null, // urlDrive
+                    false, // esFavorita
+                    "LOCAL", // estadoSubida
+                    System.currentTimeMillis() // fecha
+                )
+                
+                fotoDao.javaClass.getMethod("insert", fotoEntityClass).invoke(fotoDao, fotoEntity)
+                Log.d("MiniGaleriaFragment", "Foto registrada en BD: $tipoFoto - $rutaFoto")
+                
+            } catch (e: Exception) {
+                Log.e("MiniGaleriaFragment", "Error registrando foto en BD: ${e.message}")
+            }
+        }
         
         // Para fotos extra, también actualizar en el FotoManager
         if (tipoFoto.startsWith("EXTRA")) {

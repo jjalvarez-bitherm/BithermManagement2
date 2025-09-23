@@ -8,6 +8,8 @@ interface FotoEquipoDao {
     @Insert suspend fun insert(foto: FotoEquipoEntity): Long
     @Update suspend fun update(foto: FotoEquipoEntity)
     @Delete suspend fun delete(foto: FotoEquipoEntity)
+    @Query("SELECT * FROM fotos_equipo")
+    suspend fun getAll(): List<FotoEquipoEntity>
     @Query("SELECT * FROM fotos_equipo WHERE idEquipo = :idEquipo AND tipo = :tipo ORDER BY fecha")
     suspend fun getFotosPorEquipoYTipo(idEquipo: String, tipo: String): List<FotoEquipoEntity>
     @Query("SELECT * FROM fotos_equipo WHERE estadoSubida != 'SUBIDA'")
