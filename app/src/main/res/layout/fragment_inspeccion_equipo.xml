@@ -929,6 +929,242 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Card HISTORIAL -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@android:color/black"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <LinearLayout
+                        android:id="@+id/headerHistorial"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="HISTORIAL"
+                            android:textStyle="bold"
+                            android:textColor="@color/azul_bitherm"
+                            android:textSize="20sp"
+                            android:gravity="center_vertical" />
+                        <ImageView
+                            android:id="@+id/iconCollapseHistorial"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_expand_more" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutHistorial"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:padding="8dp"
+                        android:background="#222222"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp">
+                        
+                        <!-- Tabla de historial -->
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxHeight="400dp">
+                            <LinearLayout
+                                android:id="@+id/tablaHistorial"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+                                
+                                <!-- Header de la tabla -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:background="#333333"
+                                    android:padding="8dp"
+                                    android:layout_marginBottom="4dp">
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.2"
+                                        android:text="Fecha"
+                                        android:textColor="@android:color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:gravity="center" />
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.3"
+                                        android:text="Estado"
+                                        android:textColor="@android:color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:gravity="center" />
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.45"
+                                        android:text="Notas"
+                                        android:textColor="@android:color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:gravity="center" />
+                                </LinearLayout>
+                                
+                                <!-- Las filas del historial se añadirán dinámicamente -->
+                                
+                            </LinearLayout>
+                        </ScrollView>
+                        
+                        <!-- Botón Cargar más -->
+                        <Button
+                            android:id="@+id/btnCargarMasHistorial"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="16dp"
+                            android:text="Cargar más"
+                            android:textColor="@color/white"
+                            android:backgroundTint="@color/azul_bitherm"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Card REPARACIONES -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:backgroundTint="@android:color/black"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <LinearLayout
+                        android:id="@+id/headerReparaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:clickable="true"
+                        android:focusable="true">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="REPARACIONES"
+                            android:textStyle="bold"
+                            android:textColor="@color/azul_bitherm"
+                            android:textSize="20sp"
+                            android:gravity="center_vertical" />
+                        <ImageView
+                            android:id="@+id/iconCollapseReparaciones"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_expand_more" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutReparaciones"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:padding="8dp"
+                        android:background="#222222"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp">
+                        
+                        <!-- Tabla de reparaciones -->
+                        <ScrollView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxHeight="400dp">
+                            <LinearLayout
+                                android:id="@+id/tablaReparaciones"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+                                
+                                <!-- Header de la tabla -->
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:background="#333333"
+                                    android:padding="8dp"
+                                    android:layout_marginBottom="4dp">
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.2"
+                                        android:text="Fecha"
+                                        android:textColor="@android:color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:gravity="center" />
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.3"
+                                        android:text="Tipo"
+                                        android:textColor="@android:color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:gravity="center" />
+                                    <TextView
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="0.5"
+                                        android:text="Descripción"
+                                        android:textColor="@android:color/white"
+                                        android:textStyle="bold"
+                                        android:textSize="12sp"
+                                        android:gravity="center" />
+                                </LinearLayout>
+                                
+                                <!-- Las filas de reparaciones se añadirán dinámicamente -->
+                                
+                            </LinearLayout>
+                        </ScrollView>
+                        
+                        <!-- Botón Cargar más -->
+                        <Button
+                            android:id="@+id/btnCargarMasReparaciones"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="16dp"
+                            android:text="Cargar más"
+                            android:textColor="@color/white"
+                            android:backgroundTint="@color/azul_bitherm"
+                            android:visibility="gone" />
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <!-- Label de información inspección actual -->
             <TextView
                 android:id="@+id/labelInspeccionActual"

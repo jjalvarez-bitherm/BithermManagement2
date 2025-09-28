@@ -71,6 +71,70 @@
 
     </LinearLayout>
 
+    <!-- Switch Debug Escritura -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="✏️ Debug Escritura"
+            android:textSize="16sp"
+            android:textColor="@android:color/black" />
+
+        <Switch
+            android:id="@+id/switch_debug_escritura"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false" />
+
+    </LinearLayout>
+
+    <!-- Configuración de umbral de sincronización -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        android:id="@+id/layout_umbral_sync">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="📊 Umbral de sincronización:"
+            android:textSize="14sp"
+            android:textColor="@android:color/black" />
+
+        <EditText
+            android:id="@+id/et_umbral_sync"
+            android:layout_width="80dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="10"
+            android:textSize="14sp"
+            android:textAlignment="center"
+            android:background="@drawable/bg_edittext_dark"
+            android:textColor="@android:color/black"
+            android:hint="10" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" equipos"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:layout_marginStart="4dp" />
+
+    </LinearLayout>
+
     <!-- Botón Sincronizar -->
     <Button
         android:id="@+id/btn_sincronizar"
@@ -79,6 +143,17 @@
         android:text="SINCRONIZAR"
         android:textColor="@android:color/white"
         android:backgroundTint="@color/azul_bitherm"
+        android:layout_marginTop="8dp"
+        android:enabled="false" />
+
+    <!-- Botón Limpiar Colores Debug -->
+    <Button
+        android:id="@+id/btn_limpiar_colores"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🧹 LIMPIAR COLORES DEBUG"
+        android:textColor="@android:color/white"
+        android:backgroundTint="@color/md_theme_errorContainer"
         android:layout_marginTop="8dp"
         android:enabled="false" />
 

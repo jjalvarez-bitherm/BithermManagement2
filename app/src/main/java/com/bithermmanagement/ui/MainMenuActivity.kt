@@ -284,19 +284,45 @@ class MainMenuActivity : DebugBaseActivity() {
             debugObserver.updateDebugMode()
         }
         
+        // Obtener estado actual de sincronización
+        val prefs = getSharedPreferences("bitherm_prefs", MODE_PRIVATE)
+        
         // Configurar switch de sincronización
         val switchSincronizacion = dialogView.findViewById<Switch>(R.id.switch_sincronizacion)
         val btnSincronizar = dialogView.findViewById<Button>(R.id.btn_sincronizar)
+        val btnLimpiarColores = dialogView.findViewById<Button>(R.id.btn_limpiar_colores)
+        val layoutUmbralSync = dialogView.findViewById<LinearLayout>(R.id.layout_umbral_sync)
+        val etUmbralSync = dialogView.findViewById<EditText>(R.id.et_umbral_sync)
         
-        // Obtener estado actual de sincronización
-        val prefs = getSharedPreferences("bitherm_prefs", MODE_PRIVATE)
+        // Configurar switch de debug de escritura
+        val switchDebugEscritura = dialogView.findViewById<Switch>(R.id.switch_debug_escritura)
+        val debugEscrituraEnabled = prefs.getBoolean("debug_escritura_enabled", false)
+        switchDebugEscritura.isChecked = debugEscrituraEnabled
+        
+        switchDebugEscritura.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean("debug_escritura_enabled", isChecked).apply()
+            btnLimpiarColores.isEnabled = isChecked
+            val message = if (isChecked) {
+                "✏️ Debug de escritura ACTIVADO - Las celdas modificadas se colorearán"
+            } else {
+                "✏️ Debug de escritura DESACTIVADO"
+            }
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        }
         val sincronizacionOnline = prefs.getBoolean("sincronizacion_online", false)
+        val umbralSync = prefs.getInt("umbral_sincronizacion", 10)
+        
         switchSincronizacion.isChecked = sincronizacionOnline
+        etUmbralSync.setText(umbralSync.toString())
+        
+        // Mostrar/ocultar configuración de umbral según el modo
+        layoutUmbralSync.visibility = if (sincronizacionOnline) View.VISIBLE else View.GONE
         
         // Configurar listener del switch de sincronización
         switchSincronizacion.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("sincronizacion_online", isChecked).apply()
             btnSincronizar.visibility = if (isChecked) View.GONE else View.VISIBLE
+            layoutUmbralSync.visibility = if (isChecked) View.VISIBLE else View.GONE
             
             val message = if (isChecked) {
                 "🔄 Sincronización ONLINE activada"
@@ -314,11 +340,48 @@ class MainMenuActivity : DebugBaseActivity() {
             Toast.makeText(this, "🔄 Sincronizando equipos modificados...", Toast.LENGTH_SHORT).show()
         }
         
+        // Configurar botón limpiar colores debug
+        btnLimpiarColores.isEnabled = debugEscrituraEnabled
+        btnLimpiarColores.setOnClickListener {
+            lifecycleScope.launch {
+                try {
+                    val sheetsManager = obtenerGoogleSheetsManager()
+                    if (sheetsManager != null) {
+                        // Obtener el ID del spreadsheet actual (puedes cambiarlo según tu configuración)
+                        val spreadsheetId = "1ATAixbvK1vVGWIxujQj0g7syscgYEnHF0FI3MXibCow" // ID de ejemplo
+                        val resultado = sheetsManager.limpiarColoresDebug(spreadsheetId)
+                        
+                        if (resultado) {
+                            Toast.makeText(this@MainMenuActivity, "🧹 Colores de debug limpiados exitosamente", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainMenuActivity, "❌ Error limpiando colores de debug", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this@MainMenuActivity, "❌ Error: No se pudo conectar a Google Sheets", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this@MainMenuActivity, "❌ Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        
         // Crear y mostrar el diálogo
         AlertDialog.Builder(this)
             .setTitle("Configuración")
             .setView(dialogView)
             .setPositiveButton("OK") { dialog, _ ->
+                // Guardar el umbral de sincronización
+                try {
+                    val nuevoUmbral = etUmbralSync.text.toString().toInt()
+                    if (nuevoUmbral > 0) {
+                        prefs.edit().putInt("umbral_sincronizacion", nuevoUmbral).apply()
+                        Log.d("MainMenuActivity", "Umbral de sincronización actualizado a: $nuevoUmbral")
+                    } else {
+                        Toast.makeText(this, "⚠️ El umbral debe ser mayor que 0", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this, "⚠️ Valor inválido para el umbral", Toast.LENGTH_SHORT).show()
+                }
                 dialog.dismiss()
             }
             .setNegativeButton("Cancelar") { dialog, _ ->
@@ -407,6 +470,7 @@ class MainMenuActivity : DebugBaseActivity() {
             try {
                 val prefs = getSharedPreferences("bitherm_prefs", MODE_PRIVATE)
                 val sincronizacionOnline = prefs.getBoolean("sincronizacion_online", false)
+                val umbralSync = prefs.getInt("umbral_sincronizacion", 10)
                 
                 if (!sincronizacionOnline) {
                     Log.d("MainMenuActivity", "Sincronización automática deshabilitada (modo OFFLINE)")
@@ -417,11 +481,11 @@ class MainMenuActivity : DebugBaseActivity() {
                 val inspeccionDao = db.inspeccionDao()
                 val equiposModificados = inspeccionDao.getModificadasLocal()
                 
-                Log.d("MainMenuActivity", "Verificando sincronización automática: ${equiposModificados.size} equipos modificados")
+                Log.d("MainMenuActivity", "Verificando sincronización automática: ${equiposModificados.size} equipos modificados (umbral: $umbralSync)")
                 
-                // Sincronizar si hay 10 o más equipos modificados
-                if (equiposModificados.size >= 10) {
-                    Log.d("MainMenuActivity", "Iniciando sincronización automática (${equiposModificados.size} equipos)")
+                // Sincronizar si hay el umbral configurado o más equipos modificados
+                if (equiposModificados.size >= umbralSync) {
+                    Log.d("MainMenuActivity", "Iniciando sincronización automática (${equiposModificados.size} equipos, umbral: $umbralSync)")
                     sincronizarEquiposModificados()
                 }
                 

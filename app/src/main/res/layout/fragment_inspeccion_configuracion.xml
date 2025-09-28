@@ -39,39 +39,133 @@
                 android:autoSizeMaxTextSize="22sp"
                 android:autoSizeStepGranularity="1sp" />
 
-            <!-- Fila FECHA -->
+            <!-- PRIMERA LÍNEA: FECHA | NºINSP -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="8dp">
-                <TextView
+                <!-- FECHA -->
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="0.25"
-                    android:text="FECHA:"
-                    android:textColor="@android:color/white"
-                    android:gravity="end|center_vertical"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="3dp" />
-                <TextView
-                    android:id="@+id/txtFecha"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="FECHA:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <TextView
+                        android:id="@+id/txtFecha"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:textColor="@android:color/black"
+                        android:textSize="15sp"
+                        android:gravity="start|center_vertical"
+                        android:textStyle="normal"
+                        android:fontFamily="sans-serif"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Seleccionar fecha" />
+                </LinearLayout>
+                <!-- NºINSP -->
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="0.75"
-                    android:background="@drawable/bg_field"
-                    android:padding="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="15sp"
-                    android:gravity="start|center_vertical"
-                    android:textStyle="normal"
-                    android:fontFamily="sans-serif"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:text="Seleccionar fecha" />
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="NºINSP:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerNumeroInspeccion"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Fila LIBRO -->
+            <!-- SEGUNDA LÍNEA: LIBRO | HOJA -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <!-- LIBRO -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="LIBRO:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerLibro"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+                <!-- HOJA -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="HOJA:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerHoja"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ESPACIO VACÍO -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="16dp" />
+
+            <!-- TERCERA LÍNEA: DB -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -81,13 +175,13 @@
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="0.25"
-                    android:text="LIBRO:"
+                    android:text="DB:"
                     android:textColor="@android:color/white"
                     android:gravity="end|center_vertical"
                     android:textStyle="bold"
                     android:layout_marginEnd="3dp" />
                 <Spinner
-                    android:id="@+id/spinnerLibro"
+                    android:id="@+id/spinnerDb"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="0.75"
@@ -96,29 +190,61 @@
                     android:spinnerMode="dropdown" />
             </LinearLayout>
 
-            <!-- Fila HOJA -->
+            <!-- CUARTA LÍNEA: INSP | REP -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="18dp">
-                <TextView
+                <!-- INSP -->
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="0.25"
-                    android:text="HOJA:"
-                    android:textColor="@android:color/white"
-                    android:gravity="end|center_vertical"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="3dp" />
-                <Spinner
-                    android:id="@+id/spinnerHoja"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="INSP:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerInspecciones"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+                <!-- REP -->
+                <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="0.75"
-                    android:background="@drawable/bg_field"
-                    android:padding="10dp"
-                    android:spinnerMode="dropdown" />
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="REP:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerReparaciones"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- Título sección -->

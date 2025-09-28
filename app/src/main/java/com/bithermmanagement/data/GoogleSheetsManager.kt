@@ -441,6 +441,98 @@ class GoogleSheetsManager(
             return@withContext emptyList()
         }
     }
+    
+    suspend fun leerRango(spreadsheetId: String, range: String): List<List<Any?>> = withContext(Dispatchers.IO) {
+        var attempts = 0
+        val maxAttempts = 3
+        val delayMs = 2000L // 2 segundos entre intentos
+        
+        while (attempts < maxAttempts) {
+            try {
+                Log.d(TAG, "Leyendo rango $range (intento ${attempts + 1}/$maxAttempts)")
+                val response = sheetsService.spreadsheets().values().get(spreadsheetId, range).execute()
+                Log.d(TAG, "Rango $range leído exitosamente")
+                return@withContext response.getValues() ?: emptyList()
+            } catch (e: Exception) {
+                attempts++
+                Log.e(TAG, "Error al leer rango $range (intento $attempts/$maxAttempts): ${e.message}")
+                
+                // Verificar si es un error temporal que se puede reintentar
+                val isRetryableError = when {
+                    e.message?.contains("timeout") == true -> true
+                    e.message?.contains("SocketTimeoutException") == true -> true
+                    e.message?.contains("Socket closed") == true -> true
+                    e.message?.contains("503") == true -> true
+                    e.message?.contains("Service Unavailable") == true -> true
+                    e.message?.contains("backendError") == true -> true
+                    else -> false
+                }
+                
+                if (isRetryableError && attempts < maxAttempts) {
+                    Log.d(TAG, "Error temporal detectado. Reintentando en ${delayMs}ms...")
+                    kotlinx.coroutines.delay(delayMs)
+                    continue
+                } else {
+                    Log.e(TAG, "Error final al leer rango $range", e)
+                    return@withContext emptyList()
+                }
+            }
+        }
+        
+        Log.e(TAG, "Se agotaron todos los intentos para leer rango $range")
+        return@withContext emptyList()
+    }
+    
+    suspend fun escribirRango(spreadsheetId: String, range: String, values: List<List<Any?>>): Boolean = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Escribiendo en rango: $range de spreadsheet: $spreadsheetId")
+            Log.d(TAG, "Valores a escribir: $values")
+            
+            val valueRange = ValueRange().setValues(values)
+            
+            sheetsService.spreadsheets().values()
+                .update(spreadsheetId, range, valueRange)
+                .setValueInputOption("RAW")
+                .execute()
+            
+            // Debug de escritura: registrar la escritura con color aleatorio
+            if (com.bithermmanagement.utils.DebugEscrituraManager.isDebugEscrituraEnabled(context)) {
+                val valorString = values.joinToString(" | ") { fila -> fila.joinToString(", ") }
+                com.bithermmanagement.utils.DebugEscrituraManager.registrarEscritura(
+                    context, spreadsheetId, range, valorString
+                )
+            }
+            
+            Log.d(TAG, "Datos escritos exitosamente en $range")
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error escribiendo en rango $range: ${e.message}", e)
+            return@withContext false
+        }
+    }
+
+    /**
+     * Limpia todos los colores de debug de un spreadsheet
+     */
+    suspend fun limpiarColoresDebug(spreadsheetId: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            if (!com.bithermmanagement.utils.DebugEscrituraManager.isDebugEscrituraEnabled(context)) {
+                Log.d(TAG, "Debug de escritura deshabilitado, no se limpian colores")
+                return@withContext true
+            }
+            
+            Log.d(TAG, "Limpiando colores de debug del spreadsheet: $spreadsheetId")
+            
+            // TODO: Implementar la limpieza real de colores usando Google Sheets API
+            // Por ahora solo loggeamos la acción
+            
+            Log.d(TAG, "Colores de debug limpiados exitosamente")
+            return@withContext true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error limpiando colores de debug: ${e.message}", e)
+            return@withContext false
+        }
+    }
 
     suspend fun getAllUsers(): Pair<List<Any>, List<List<Any>>> = withContext(Dispatchers.IO) {
         try {

@@ -27,6 +27,9 @@ import com.bithermmanagement.multimedia.MiniGaleriaFragment
 import androidx.fragment.app.commit
 import android.util.Log
 import com.bithermmanagement.database.dao.InspeccionDao
+import com.bithermmanagement.data.GoogleSheetsManager
+import com.bithermmanagement.data.SettingsManager
+import com.bithermmanagement.data.GoogleAuthAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import com.bithermmanagement.database.entities.Equipo
@@ -86,7 +89,16 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private var estadosUnicos: List<String> = emptyList()
     
     // Control de estado de cards
-    private var cardAbiertoActual: String? = null // "datosGenerales", "observaciones", "caracteristicas"
+    private var cardAbiertoActual: String? = null // "datosGenerales", "observaciones", "caracteristicas", "historial"
+    
+    // Control de paginación del historial
+    private var historialCompleto = mutableListOf<HistorialInspeccion>()
+    private var historialMostrado = mutableListOf<HistorialInspeccion>()
+    private val LIMITE_INICIAL = 5
+    
+    // Control de paginación de reparaciones
+    private var reparacionesCompleto = mutableListOf<ReparacionEquipo>()
+    private var reparacionesMostrado = mutableListOf<ReparacionEquipo>()
     
     // Valores anteriores para detectar cambios en spinners dependientes
     private var areaAnterior: String = ""
@@ -96,6 +108,20 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     // Views
     private lateinit var spinnerArea: Spinner
     private lateinit var spinnerUnidad: Spinner
+    
+    // Views del card HISTORIAL
+    private lateinit var headerHistorial: LinearLayout
+    private lateinit var layoutHistorial: LinearLayout
+    private lateinit var iconCollapseHistorial: ImageView
+    private lateinit var tablaHistorial: LinearLayout
+    private lateinit var btnCargarMasHistorial: Button
+    
+    // Views del card REPARACIONES
+    private lateinit var headerReparaciones: LinearLayout
+    private lateinit var layoutReparaciones: LinearLayout
+    private lateinit var iconCollapseReparaciones: ImageView
+    private lateinit var tablaReparaciones: LinearLayout
+    private lateinit var btnCargarMasReparaciones: Button
     private lateinit var spinnerInstalacion: Spinner
     private lateinit var spinnerAislamiento: Spinner
     private lateinit var spinnerEstado: Spinner
@@ -180,10 +206,8 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         
         // Cargar datos y mostrar equipo seleccionado
         lifecycleScope.launch {
-            val db = AppDatabase.getDatabase(requireContext())
-            equipos.clear()
-            equipos.addAll(withContext(Dispatchers.IO) { db.equipoDao().getAllEquipos() })
-            estadosUnicos = equipos.mapNotNull { it.estado }.distinct().sorted()
+            // Cargar equipos desde la hoja FLOTA según la inspección seleccionada
+            cargarEquiposDesdeFLOTA()
             
             Log.d("FragmentInspeccionEquipo", "=== VERIFICACIÓN DE DATOS ===")
             Log.d("FragmentInspeccionEquipo", "Total equipos cargados: ${equipos.size}")
@@ -283,9 +307,19 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         layoutObservaciones = view.findViewById(R.id.layoutObservaciones)
         headerCaracteristicas = view.findViewById(R.id.headerCaracteristicas)
         layoutCaracteristicas = view.findViewById(R.id.layoutCaracteristicas)
+        headerHistorial = view.findViewById(R.id.headerHistorial)
+        layoutHistorial = view.findViewById(R.id.layoutHistorial)
+        tablaHistorial = view.findViewById(R.id.tablaHistorial)
+        btnCargarMasHistorial = view.findViewById(R.id.btnCargarMasHistorial)
+        headerReparaciones = view.findViewById(R.id.headerReparaciones)
+        layoutReparaciones = view.findViewById(R.id.layoutReparaciones)
+        iconCollapseReparaciones = view.findViewById(R.id.iconCollapseReparaciones)
+        tablaReparaciones = view.findViewById(R.id.tablaReparaciones)
+        btnCargarMasReparaciones = view.findViewById(R.id.btnCargarMasReparaciones)
         iconCollapseDatosGenerales = view.findViewById(R.id.iconCollapseDatosGenerales)
         iconCollapseObservaciones = view.findViewById(R.id.iconCollapseObservaciones)
         iconCollapseCaracteristicas = view.findViewById(R.id.iconCollapseCaracteristicas)
+        iconCollapseHistorial = view.findViewById(R.id.iconCollapseHistorial)
         
         // Mini galería
         miniGaleriaFragment = childFragmentManager.findFragmentById(R.id.miniGaleriaFragment) as MiniGaleriaFragment
@@ -877,6 +911,9 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                     // Actualizar la información del inspector en la UI
                     actualizarInformacionInspector()
                     
+                    // Guardar datos de inspección en Google Sheets
+                    guardarInspeccionEnGoogleSheets(equipoActualizado)
+                    
                     Log.d("FragmentInspeccionEquipo", "✅ Datos guardados correctamente, navegando al siguiente...")
                     
                     // Navegar al siguiente purgador
@@ -968,15 +1005,25 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             toggleCard("caracteristicas", layoutCaracteristicas, iconCollapseCaracteristicas)
         }
         
+        headerHistorial.setOnClickListener {
+            toggleCard("historial", layoutHistorial, iconCollapseHistorial)
+        }
+        
+        headerReparaciones.setOnClickListener {
+            toggleCard("reparaciones", layoutReparaciones, iconCollapseReparaciones)
+        }
+        
         // Inicializar estado de cards (todos cerrados por defecto)
         if (cardAbiertoActual == null) {
             // Si no hay card abierto, cerrar todos
             layoutDatosGenerales.visibility = View.GONE
             layoutObservaciones.visibility = View.GONE
             layoutCaracteristicas.visibility = View.GONE
+            layoutHistorial.visibility = View.GONE
             iconCollapseDatosGenerales.setImageResource(R.drawable.ic_expand_more)
             iconCollapseObservaciones.setImageResource(R.drawable.ic_expand_more)
             iconCollapseCaracteristicas.setImageResource(R.drawable.ic_expand_more)
+            iconCollapseHistorial.setImageResource(R.drawable.ic_expand_more)
         } else {
             // Restaurar el estado del card que estaba abierto
             restaurarEstadoCards()
@@ -995,15 +1042,22 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             layoutDatosGenerales.visibility = View.GONE
             layoutObservaciones.visibility = View.GONE
             layoutCaracteristicas.visibility = View.GONE
+            layoutHistorial.visibility = View.GONE
             iconCollapseDatosGenerales.setImageResource(R.drawable.ic_expand_more)
             iconCollapseObservaciones.setImageResource(R.drawable.ic_expand_more)
             iconCollapseCaracteristicas.setImageResource(R.drawable.ic_expand_more)
+            iconCollapseHistorial.setImageResource(R.drawable.ic_expand_more)
             
             // Abrir el card seleccionado
             layout.visibility = View.VISIBLE
             icon.setImageResource(R.drawable.ic_expand_less)
             cardAbiertoActual = cardId
             Log.d("CardsDebug", "Card '$cardId' abierto")
+            
+            // Si se abre el card de historial, cargar los datos
+            if (cardId == "historial") {
+                cargarHistorialEquipo()
+            }
         }
     }
     
@@ -1029,12 +1083,985 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 layoutDatosGenerales.visibility = View.GONE
                 layoutObservaciones.visibility = View.GONE
                 layoutCaracteristicas.visibility = View.VISIBLE
+                layoutHistorial.visibility = View.GONE
                 iconCollapseDatosGenerales.setImageResource(R.drawable.ic_expand_more)
                 iconCollapseObservaciones.setImageResource(R.drawable.ic_expand_more)
                 iconCollapseCaracteristicas.setImageResource(R.drawable.ic_expand_less)
+                iconCollapseHistorial.setImageResource(R.drawable.ic_expand_more)
+            }
+            "historial" -> {
+                layoutDatosGenerales.visibility = View.GONE
+                layoutObservaciones.visibility = View.GONE
+                layoutCaracteristicas.visibility = View.GONE
+                layoutHistorial.visibility = View.VISIBLE
+                iconCollapseDatosGenerales.setImageResource(R.drawable.ic_expand_more)
+                iconCollapseObservaciones.setImageResource(R.drawable.ic_expand_more)
+                iconCollapseCaracteristicas.setImageResource(R.drawable.ic_expand_more)
+                iconCollapseHistorial.setImageResource(R.drawable.ic_expand_less)
             }
         }
         Log.d("CardsDebug", "Estado de cards restaurado: $cardAbiertoActual")
+    }
+    
+    private fun cargarHistorialEquipo() {
+        Log.d("FragmentInspeccionEquipo", "Cargando historial del equipo")
+        
+        // Limpiar tabla existente (mantener solo el header)
+        val childCount = tablaHistorial.childCount
+        for (i in childCount - 1 downTo 1) { // Mantener el header (índice 0)
+            tablaHistorial.removeViewAt(i)
+        }
+        
+        // Obtener datos del historial desde la configuración
+        val prefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
+        val libroId = prefs.getString("db_inspecciones_libro_id", null)
+        val hoja = prefs.getString("db_inspecciones_hoja", "FLOTA")
+        
+        // Debug: Verificar todas las claves de configuración
+        Log.d("FragmentInspeccionEquipo", "=== DEBUG CONFIGURACIÓN ===")
+        Log.d("FragmentInspeccionEquipo", "Todas las claves en SharedPreferences:")
+        val allKeys = prefs.all.keys
+        for (key in allKeys) {
+            val value = prefs.getString(key, null)
+            Log.d("FragmentInspeccionEquipo", "  $key = $value")
+        }
+        
+        Log.d("FragmentInspeccionEquipo", "=== DIAGNÓSTICO HISTORIAL ===")
+        Log.d("FragmentInspeccionEquipo", "Libro ID: $libroId")
+        Log.d("FragmentInspeccionEquipo", "Hoja: $hoja")
+        Log.d("FragmentInspeccionEquipo", "Equipo ID: ${equipo?.id}")
+        
+        if (libroId == null) {
+            Log.e("FragmentInspeccionEquipo", "No hay libro DB inspecciones configurado")
+            // Mostrar mensaje de error en la tabla
+            mostrarMensajeError("Configura primero 'DB inspecciones' en la pantalla de configuración")
+            return
+        }
+        
+        // Cargar historial en background
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val sheetsManager = obtenerGoogleSheetsManager()
+                if (sheetsManager == null) {
+                    Log.e("FragmentInspeccionEquipo", "No se pudo crear GoogleSheetsManager")
+                    return@launch
+                }
+                
+                // Leer datos del equipo desde la hoja FLOTA
+                val historial = obtenerHistorialEquipo(sheetsManager, libroId, hoja ?: "FLOTA", equipo?.id ?: "")
+                
+                Log.d("FragmentInspeccionEquipo", "Historial obtenido: ${historial.size} registros")
+                
+                withContext(Dispatchers.Main) {
+                    if (historial.isEmpty()) {
+                        mostrarMensajeError("No se encontraron datos históricos para este equipo")
+                    } else {
+                        // Ordenar en orden inverso (más recientes primero) y guardar historial completo
+                        historialCompleto.clear()
+                        historialCompleto.addAll(historial.sortedByDescending { it.numero })
+                        
+                        // Mostrar solo los primeros 5
+                        mostrarHistorialPaginado()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FragmentInspeccionEquipo", "Error cargando historial: ${e.message}", e)
+            }
+        }
+    }
+    
+    private suspend fun obtenerHistorialEquipo(sheetsManager: GoogleSheetsManager, libroId: String, hoja: String, equipoId: String): List<HistorialInspeccion> {
+        return try {
+            // Leer toda la hoja para encontrar el equipo
+            val range = "$hoja!A:ZZ"
+            val values = sheetsManager.leerRango(libroId, range)
+            
+            if (values.isEmpty()) {
+                Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja")
+                return emptyList()
+            }
+            
+            // Buscar la fila del equipo
+            val filaEquipo = values.find { fila: List<Any?> ->
+                fila.isNotEmpty() && fila[1]?.toString()?.trim() == equipoId // Columna B (TAG)
+            }
+            
+            if (filaEquipo == null) {
+                Log.w("FragmentInspeccionEquipo", "No se encontró el equipo $equipoId en la hoja")
+                return emptyList()
+            }
+            
+            // Leer la fila 2 para obtener los números de inspección
+            val fila2 = values[1] // Fila 2 (índice 1)
+            val numerosInspeccion = mutableListOf<Int>()
+            
+            Log.d("FragmentInspeccionEquipo", "Fila 2 tiene ${fila2.size} columnas")
+            Log.d("FragmentInspeccionEquipo", "Primeras 10 columnas de fila 2: ${fila2.take(10)}")
+            
+            val numerosConIndices = mutableMapOf<Int, Int>() // número -> índice
+            
+            for (i in fila2.indices) {
+                val valor = fila2[i]?.toString()?.trim()
+                if (valor != null && valor.matches(Regex("\\d+"))) {
+                    val numero = valor.toIntOrNull()
+                    if (numero != null && numero >= 25 && numero <= 50) {
+                        numerosInspeccion.add(numero)
+                        numerosConIndices[numero] = i
+                        Log.d("FragmentInspeccionEquipo", "Número de inspección encontrado: $numero en columna $i")
+                    }
+                }
+            }
+            
+            // Crear historial basado en los números de inspección encontrados
+            val historial = mutableListOf<HistorialInspeccion>()
+            
+            for (numero in numerosInspeccion.sorted()) {
+                // Obtener el índice real del número de inspección en la fila 2
+                val indiceNumero = numerosConIndices[numero] ?: continue
+                
+                // La columna ESTADO está justo después del número de inspección
+                val columnaBase = indiceNumero + 1
+                
+                Log.d("FragmentInspeccionEquipo", "Procesando inspección $numero: índice=$indiceNumero, columnaBase=$columnaBase")
+                
+                if (columnaBase < filaEquipo.size) {
+                    var estado = filaEquipo.getOrNull(columnaBase)?.toString()?.trim() ?: ""
+                    var fecha = filaEquipo.getOrNull(columnaBase + 1)?.toString()?.trim() ?: ""
+                    var nota = filaEquipo.getOrNull(columnaBase + 2)?.toString()?.trim() ?: ""
+                    
+                    // Filtrar #REF! - convertir a vacío
+                    if (estado == "#REF!") estado = ""
+                    if (fecha == "#REF!") fecha = ""
+                    if (nota == "#REF!") nota = ""
+                    
+                    Log.d("FragmentInspeccionEquipo", "Inspección $numero: estado='$estado', fecha='$fecha', nota='$nota'")
+                    
+                    if (estado.isNotEmpty() || fecha.isNotEmpty() || nota.isNotEmpty()) {
+                        historial.add(HistorialInspeccion(numero, fecha, estado, nota))
+                    }
+                } else {
+                    Log.w("FragmentInspeccionEquipo", "Columna base $columnaBase fuera de rango para inspección $numero")
+                }
+            }
+            
+            historial
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionEquipo", "Error obteniendo historial: ${e.message}", e)
+            emptyList()
+        }
+    }
+    
+    private fun mostrarHistorialPaginado() {
+        // Limpiar tabla existente (mantener header)
+        val childCount = tablaHistorial.childCount
+        for (i in childCount - 1 downTo 1) { // Mantener el header (índice 0)
+            tablaHistorial.removeViewAt(i)
+        }
+        
+        // Mostrar solo los primeros elementos según el límite
+        historialMostrado.clear()
+        val limite = if (historialMostrado.isEmpty()) LIMITE_INICIAL else historialCompleto.size
+        historialMostrado.addAll(historialCompleto.take(limite))
+        
+        // Mostrar los elementos
+        mostrarHistorialEnTabla(historialMostrado)
+        
+        // Mostrar/ocultar botón "Cargar más"
+        if (historialCompleto.size > historialMostrado.size) {
+            btnCargarMasHistorial.visibility = View.VISIBLE
+        btnCargarMasHistorial.setOnClickListener {
+            cargarMasHistorial()
+        }
+        
+        btnCargarMasReparaciones.setOnClickListener {
+            cargarMasReparaciones()
+        }
+        } else {
+            btnCargarMasHistorial.visibility = View.GONE
+        }
+    }
+    
+    private fun cargarMasHistorial() {
+        // Mostrar todos los elementos
+        historialMostrado.clear()
+        historialMostrado.addAll(historialCompleto)
+        
+        // Actualizar la tabla
+        mostrarHistorialEnTabla(historialMostrado)
+        
+        // Ocultar botón
+        btnCargarMasHistorial.visibility = View.GONE
+    }
+    
+    private fun cargarReparacionesEquipo() {
+        Log.d("FragmentInspeccionEquipo", "Cargando reparaciones del equipo")
+        
+        // Limpiar tabla existente (mantener header)
+        val childCount = tablaReparaciones.childCount
+        for (i in 1 until childCount) { // Empezar desde 1 para mantener el header
+            tablaReparaciones.removeViewAt(1)
+        }
+        
+        // Obtener configuración de DB inspecciones
+        val prefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
+        val libroId = prefs.getString("db_libro_id", null)
+        val hoja = prefs.getString("db_inspecciones_hoja", "FLOTA")
+        
+        Log.d("FragmentInspeccionEquipo", "=== DIAGNÓSTICO REPARACIONES ===")
+        Log.d("FragmentInspeccionEquipo", "Libro ID: $libroId")
+        Log.d("FragmentInspeccionEquipo", "Hoja: $hoja")
+        Log.d("FragmentInspeccionEquipo", "Equipo ID: ${equipo?.id}")
+        
+        if (libroId == null) {
+            mostrarMensajeErrorReparaciones("Configura primero 'DB inspecciones' en la pantalla de configuración")
+            return
+        }
+        
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val sheetsManager = obtenerGoogleSheetsManager()
+                if (sheetsManager != null) {
+                    val reparaciones = obtenerReparacionesEquipo(sheetsManager, libroId, hoja ?: "FLOTA", equipo?.id ?: "")
+                    
+                    withContext(Dispatchers.Main) {
+                        if (reparaciones.isEmpty()) {
+                            mostrarMensajeErrorReparaciones("No se encontraron reparaciones para este equipo")
+                        } else {
+                            // Ordenar por fecha descendente (más recientes primero)
+                            reparacionesCompleto.clear()
+                            reparacionesCompleto.addAll(reparaciones.sortedByDescending { it.fecha })
+                            
+                            // Mostrar paginado
+                            mostrarReparacionesPaginado()
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        mostrarMensajeErrorReparaciones("Error de configuración de Google Sheets")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("FragmentInspeccionEquipo", "Error cargando reparaciones: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    mostrarMensajeErrorReparaciones("Error cargando reparaciones: ${e.message}")
+                }
+            }
+        }
+    }
+    
+    private suspend fun obtenerReparacionesEquipo(
+        sheetsManager: GoogleSheetsManager,
+        libroId: String,
+        hoja: String,
+        equipoId: String
+    ): List<ReparacionEquipo> {
+        Log.d("FragmentInspeccionEquipo", "Obteniendo reparaciones para equipo: $equipoId")
+        
+        try {
+            // Leer toda la hoja FLOTA
+            val data = sheetsManager.leerRango(libroId, "$hoja!A:ZZ")
+            
+            if (data.isEmpty()) {
+                Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja $hoja")
+                return emptyList()
+            }
+            
+            // Buscar la fila del equipo por ID (columna B)
+            val filaEquipo = data.find { fila: List<Any?> ->
+                fila.size > 1 && fila[1]?.toString()?.trim() == equipoId.trim()
+            }
+            
+            if (filaEquipo == null) {
+                Log.w("FragmentInspeccionEquipo", "No se encontró el equipo $equipoId en la hoja")
+                return emptyList()
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "Equipo encontrado en fila ${data.indexOf(filaEquipo) + 1}")
+            
+            // Buscar columnas de reparaciones (asumiendo que están después de las columnas de inspecciones)
+            // Las reparaciones podrían estar en columnas como REPARACIONES_FECHA, REPARACIONES_TIPO, etc.
+            val headerRow = data[0]
+            val reparaciones = mutableListOf<ReparacionEquipo>()
+            
+            // Buscar columnas que contengan "REPARACION" en el nombre
+            val columnasReparacion = headerRow.mapIndexedNotNull { index, header ->
+                if (header?.toString()?.contains("REPARACION", ignoreCase = true) == true) {
+                    index to header.toString()
+                } else null
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "Columnas de reparación encontradas: $columnasReparacion")
+            
+            // Procesar cada grupo de reparaciones
+            columnasReparacion.forEach { (indice, nombreColumna) ->
+                val valor = filaEquipo.getOrNull(indice)?.toString()?.trim()
+                if (!valor.isNullOrEmpty() && valor != "#REF!") {
+                    // Extraer información de la reparación
+                    val partes = valor.split("|") // Asumiendo formato: fecha|tipo|descripcion
+                    if (partes.size >= 3) {
+                        reparaciones.add(
+                            ReparacionEquipo(
+                                id = "rep_${indice}",
+                                fecha = partes[0],
+                                tipo = partes[1],
+                                descripcion = partes[2]
+                            )
+                        )
+                    }
+                }
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "Reparaciones encontradas: ${reparaciones.size}")
+            return reparaciones
+            
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionEquipo", "Error obteniendo reparaciones: ${e.message}", e)
+            return emptyList()
+        }
+    }
+    
+    private fun mostrarReparacionesPaginado() {
+        // Limpiar tabla (mantener header)
+        val childCount = tablaReparaciones.childCount
+        for (i in 1 until childCount) {
+            tablaReparaciones.removeViewAt(1)
+        }
+        
+        // Mostrar solo los primeros elementos
+        reparacionesMostrado.clear()
+        val limiteInicial = 5
+        val elementosAMostrar = minOf(limiteInicial, reparacionesCompleto.size)
+        reparacionesMostrado.addAll(reparacionesCompleto.take(elementosAMostrar))
+        
+        // Mostrar en tabla
+        mostrarReparacionesEnTabla(reparacionesMostrado)
+        
+        // Mostrar/ocultar botón "Cargar más"
+        if (reparacionesCompleto.size > reparacionesMostrado.size) {
+            btnCargarMasReparaciones.visibility = View.VISIBLE
+        } else {
+            btnCargarMasReparaciones.visibility = View.GONE
+        }
+    }
+    
+    private fun mostrarReparacionesEnTabla(reparaciones: List<ReparacionEquipo>) {
+        reparaciones.forEach { reparacion ->
+            val fila = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(16, 12, 16, 12)
+                setBackgroundColor(resources.getColor(android.R.color.transparent, null))
+            }
+            
+            // Fecha
+            val tvFecha = TextView(requireContext()).apply {
+                text = formatearFecha(reparacion.fecha)
+                setTextColor(resources.getColor(android.R.color.white, null))
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.2f)
+                setPadding(8, 0, 8, 0)
+            }
+            
+            // Tipo
+            val tvTipo = TextView(requireContext()).apply {
+                text = reparacion.tipo
+                setTextColor(resources.getColor(android.R.color.white, null))
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.3f)
+                setPadding(8, 0, 8, 0)
+            }
+            
+            // Descripción
+            val tvDescripcion = TextView(requireContext()).apply {
+                text = reparacion.descripcion
+                setTextColor(resources.getColor(android.R.color.white, null))
+                textSize = 12f
+                gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.5f)
+                setPadding(8, 0, 8, 0)
+            }
+            
+            fila.addView(tvFecha)
+            fila.addView(tvTipo)
+            fila.addView(tvDescripcion)
+            
+            // Divisor horizontal
+            val divisor = View(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    1
+                ).apply {
+                    setMargins(16, 4, 16, 4)
+                }
+                setBackgroundColor(resources.getColor(android.R.color.darker_gray, null))
+            }
+            
+            tablaReparaciones.addView(fila)
+            tablaReparaciones.addView(divisor)
+        }
+    }
+    
+    private fun cargarMasReparaciones() {
+        // Mostrar todos los elementos
+        reparacionesMostrado.clear()
+        reparacionesMostrado.addAll(reparacionesCompleto)
+        
+        // Actualizar la tabla
+        mostrarReparacionesEnTabla(reparacionesMostrado)
+        
+        // Ocultar el botón
+        btnCargarMasReparaciones.visibility = View.GONE
+    }
+    
+    private fun mostrarMensajeErrorReparaciones(mensaje: String) {
+        val filaError = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 16, 16, 16)
+        }
+        
+        val tvError = TextView(requireContext()).apply {
+            text = mensaje
+            setTextColor(resources.getColor(android.R.color.white, null))
+            textSize = 14f
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        
+        filaError.addView(tvError)
+        tablaReparaciones.addView(filaError)
+    }
+    
+    private suspend fun guardarInspeccionEnGoogleSheets(equipo: Equipo) {
+        try {
+            val sharedPrefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
+            val libroId = sharedPrefs.getString("db_libro_id", null)
+            val hoja = sharedPrefs.getString("db_inspecciones_hoja", "FLOTA")
+            val numeroInspeccion = sharedPrefs.getString("numero_inspeccion", "25")
+            
+            if (libroId == null) {
+                Log.w("FragmentInspeccionEquipo", "No hay libro DB inspecciones configurado para guardar")
+                return
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "Guardando inspección en Google Sheets:")
+            Log.d("FragmentInspeccionEquipo", "  - Libro ID: $libroId")
+            Log.d("FragmentInspeccionEquipo", "  - Hoja: $hoja")
+            Log.d("FragmentInspeccionEquipo", "  - Número inspección: $numeroInspeccion")
+            Log.d("FragmentInspeccionEquipo", "  - Equipo ID: ${equipo.id}")
+            
+            val sheetsManager = obtenerGoogleSheetsManager()
+            if (sheetsManager == null) {
+                Log.e("FragmentInspeccionEquipo", "No se pudo crear GoogleSheetsManager para guardar")
+                return
+            }
+            
+            // Leer toda la hoja para encontrar la fila del equipo
+            val data = sheetsManager.leerRango(libroId, "$hoja!A:ZZ")
+            if (data.isEmpty()) {
+                Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja para guardar")
+                return
+            }
+            
+            // Buscar la fila del equipo (columna B = TAG)
+            var filaEquipo = -1
+            for (i in 2 until data.size) { // Empezar desde fila 3 (índice 2)
+                val fila = data[i]
+                if (fila.size > 1) {
+                    val tag = fila[1]?.toString()?.trim()
+                    if (tag == equipo.id) {
+                        filaEquipo = i + 1 // +1 porque las filas en Google Sheets empiezan en 1
+                        break
+                    }
+                }
+            }
+            
+            if (filaEquipo == -1) {
+                Log.w("FragmentInspeccionEquipo", "No se encontró la fila del equipo ${equipo.id} en la hoja")
+                return
+            }
+            
+            // Leer fila 2 para encontrar la columna del número de inspección
+            val fila2 = data[1] // Fila 2 (índice 1)
+            var columnaInspeccion = -1
+            
+            for (i in fila2.indices) {
+                val valor = fila2[i]?.toString()?.trim()
+                if (valor == numeroInspeccion) {
+                    columnaInspeccion = i + 1 // +1 porque las columnas en Google Sheets empiezan en 1
+                    break
+                }
+            }
+            
+            if (columnaInspeccion == -1) {
+                Log.w("FragmentInspeccionEquipo", "No se encontró la columna para inspección $numeroInspeccion")
+                return
+            }
+            
+            // Calcular las columnas donde escribir los datos
+            val columnaEstado = columnaInspeccion + 1
+            val columnaFecha = columnaInspeccion + 2
+            val columnaNota = columnaInspeccion + 3
+            val columnaInspector = columnaInspeccion + 4
+            val columnaDetector = columnaInspeccion + 5
+            
+            Log.d("FragmentInspeccionEquipo", "Guardando en fila $filaEquipo:")
+            Log.d("FragmentInspeccionEquipo", "  - Estado en columna $columnaEstado")
+            Log.d("FragmentInspeccionEquipo", "  - Fecha en columna $columnaFecha")
+            Log.d("FragmentInspeccionEquipo", "  - Nota en columna $columnaNota")
+            Log.d("FragmentInspeccionEquipo", "  - Inspector en columna $columnaInspector")
+            Log.d("FragmentInspeccionEquipo", "  - Detector en columna $columnaDetector")
+            
+            // Convertir números de columna a letras (A=1, B=2, etc.)
+            fun numeroAColumna(numero: Int): String {
+                var resultado = ""
+                var n = numero - 1
+                while (n >= 0) {
+                    resultado = ('A' + (n % 26)) + resultado
+                    n = n / 26 - 1
+                }
+                return resultado
+            }
+            
+            val columnaEstadoLetra = numeroAColumna(columnaEstado)
+            val columnaFechaLetra = numeroAColumna(columnaFecha)
+            val columnaNotaLetra = numeroAColumna(columnaNota)
+            val columnaInspectorLetra = numeroAColumna(columnaInspector)
+            val columnaDetectorLetra = numeroAColumna(columnaDetector)
+            
+            // Escribir los datos en Google Sheets
+            val rangoEstado = "$hoja!$columnaEstadoLetra$filaEquipo"
+            val rangoFecha = "$hoja!$columnaFechaLetra$filaEquipo"
+            val rangoNota = "$hoja!$columnaNotaLetra$filaEquipo"
+            val rangoInspector = "$hoja!$columnaInspectorLetra$filaEquipo"
+            val rangoDetector = "$hoja!$columnaDetectorLetra$filaEquipo"
+            
+            Log.d("FragmentInspeccionEquipo", "Escribiendo datos:")
+            Log.d("FragmentInspeccionEquipo", "  - Estado '$rangoEstado': ${equipo.estado}")
+            Log.d("FragmentInspeccionEquipo", "  - Fecha '$rangoFecha': ${equipo.fechaInspeccion}")
+            Log.d("FragmentInspeccionEquipo", "  - Nota '$rangoNota': ${equipo.nota}")
+            Log.d("FragmentInspeccionEquipo", "  - Inspector '$rangoInspector': ${equipo.identidadInspector}")
+            Log.d("FragmentInspeccionEquipo", "  - Detector '$rangoDetector': ${equipo.detectorUtilizado}")
+            
+            // Escribir cada campo por separado
+            sheetsManager.escribirRango(libroId, rangoEstado, listOf(listOf(equipo.estado)))
+            sheetsManager.escribirRango(libroId, rangoFecha, listOf(listOf(equipo.fechaInspeccion ?: "")))
+            sheetsManager.escribirRango(libroId, rangoNota, listOf(listOf(equipo.nota ?: "")))
+            sheetsManager.escribirRango(libroId, rangoInspector, listOf(listOf(equipo.identidadInspector ?: "")))
+            sheetsManager.escribirRango(libroId, rangoDetector, listOf(listOf(equipo.detectorUtilizado ?: "")))
+            
+            Log.d("FragmentInspeccionEquipo", "✅ Inspección guardada exitosamente en Google Sheets")
+            
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionEquipo", "❌ Error guardando inspección en Google Sheets: ${e.message}", e)
+        }
+    }
+    
+    private suspend fun cargarEquiposDesdeFLOTA() {
+        Log.d("FragmentInspeccionEquipo", "Cargando equipos desde hoja FLOTA")
+        
+        try {
+            // Obtener configuración de DB inspecciones
+            val prefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
+            val libroId = prefs.getString("db_libro_id", null)
+            val hoja = prefs.getString("db_inspecciones_hoja", "FLOTA")
+            val numeroInspeccion = prefs.getString("numero_inspeccion", "25")
+            
+            Log.d("FragmentInspeccionEquipo", "=== CONFIGURACIÓN FLOTA ===")
+            Log.d("FragmentInspeccionEquipo", "Libro ID: $libroId")
+            Log.d("FragmentInspeccionEquipo", "Hoja: $hoja")
+            Log.d("FragmentInspeccionEquipo", "Número inspección: $numeroInspeccion")
+            
+            if (libroId == null) {
+                Log.e("FragmentInspeccionEquipo", "No hay libro DB inspecciones configurado")
+                return
+            }
+            
+            // Ejecutar en hilo de IO para evitar deadlock
+            val sheetsManager = withContext(Dispatchers.IO) {
+                obtenerGoogleSheetsManager()
+            }
+            if (sheetsManager == null) {
+                Log.e("FragmentInspeccionEquipo", "No se pudo crear GoogleSheetsManager")
+                return
+            }
+            
+            // Leer cabeceras de la hoja FLOTA (fila 2)
+            val headerResponse = sheetsManager.sheetsServicePublic.spreadsheets().values()
+                .get(libroId, "$hoja!A2:ZZ2")
+                .execute()
+            val headerRow = headerResponse.getValues()?.firstOrNull() ?: emptyList()
+            
+            Log.d("FragmentInspeccionEquipo", "Cabeceras encontradas en FLOTA: ${headerRow.joinToString(", ")}")
+            
+            // Leer datos desde la hoja FLOTA (desde fila 3)
+            val dataResponse = sheetsManager.sheetsServicePublic.spreadsheets().values()
+                .get(libroId, "$hoja!A3:ZZ")
+                .execute()
+            val dataRows = dataResponse.getValues() ?: emptyList()
+            
+            if (dataRows.isEmpty()) {
+                Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja FLOTA")
+                return
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "Datos obtenidos desde FLOTA: ${dataRows.size} filas con ${headerRow.size} columnas")
+            
+            // Procesar datos para crear equipos usando el mapeo de columnas
+            val equiposFLOTA = mutableListOf<Equipo>()
+            
+            // Cargar mapeo de columnas desde assets
+            val mapeoJson = requireContext().assets.open("mapeo_columnas.json").bufferedReader().use { it.readText() }
+            val mapeoColumnas = JSONObject(mapeoJson)
+            
+            // Leer fila 2 para obtener números de inspección
+            val fila2 = dataRows[0] // Fila 2 (índice 0 en dataRows)
+            val numerosConIndices = mutableMapOf<Int, Int>() // número -> índice
+            
+            for (i in fila2.indices) {
+                val valor = fila2[i]?.toString()?.trim()
+                if (valor != null && valor.matches(Regex("\\d+"))) {
+                    val numero = valor.toIntOrNull()
+                    if (numero != null && numero in 25..50) {
+                        numerosConIndices[numero] = i
+                        Log.d("FragmentInspeccionEquipo", "Número de inspección encontrado: $numero en columna $i")
+                    }
+                }
+            }
+            
+            // Función para obtener valor de una fila usando el mapeo de columnas
+            fun obtenerValor(fila: List<Any?>, campo: String): String {
+                val columnaMapeada = mapeoColumnas.optString(campo, "")
+                val indiceColumna = headerRow.indexOf(columnaMapeada)
+                return if (indiceColumna != -1 && fila.size > indiceColumna) {
+                    fila[indiceColumna]?.toString()?.trim() ?: ""
+                } else ""
+            }
+            
+            // Procesar cada fila de datos
+            for (rowIndex in dataRows.indices) {
+                val fila = dataRows[rowIndex]
+                if (fila.size <= 1) continue // Saltar filas vacías
+                
+                val equipoId = obtenerValor(fila, "id")
+                if (equipoId.isEmpty()) continue
+                
+                // Obtener datos básicos del equipo usando el mapeo de columnas
+                val area = obtenerValor(fila, "area")
+                val unidad = obtenerValor(fila, "unidad")
+                val manifold = obtenerValor(fila, "manifold")
+                val lineaEquipo = obtenerValor(fila, "lineaEquipo")
+                val ubicacion = obtenerValor(fila, "ubicacion")
+                val gpsCoord = obtenerValor(fila, "gpsCoord")
+                val gpsAcc = obtenerValor(fila, "gpsAcc")
+                val marca = obtenerValor(fila, "marca")
+                val modelo = obtenerValor(fila, "modelo")
+                val tipo = obtenerValor(fila, "tipo")
+                val diametro = obtenerValor(fila, "diametro")
+                val conexion = obtenerValor(fila, "conexion")
+                val presEntrada = obtenerValor(fila, "presEntrada")
+                val presSalida = obtenerValor(fila, "presSalida")
+                val byPass = obtenerValor(fila, "byPass")
+                val aislamiento = obtenerValor(fila, "aislamiento")
+                val descarga = obtenerValor(fila, "descarga")
+                val aplicacion = obtenerValor(fila, "aplicacion")
+                val foto = obtenerValor(fila, "foto")
+                val fotoUbic = obtenerValor(fila, "fotoUbic")
+                val fotoMf = obtenerValor(fila, "fotoMf")
+                val fotoExtra = obtenerValor(fila, "fotoExtra")
+                val orden = obtenerValor(fila, "orden")
+                val ordenJuan = obtenerValor(fila, "ordenJuan")
+                val ordenPaco = obtenerValor(fila, "ordenPaco")
+                val ordenTome = obtenerValor(fila, "ordenTome")
+                val badActors = obtenerValor(fila, "badActors")
+                val modificaciones = obtenerValor(fila, "modificaciones")
+                
+                // Buscar la última inspección con datos para este equipo
+                var ultimoEstado = ""
+                var ultimaFecha = ""
+                var ultimaNota = ""
+                var ultimoInspector = ""
+                var ultimoDetector = ""
+                
+                // Buscar en todas las inspecciones disponibles, de la más reciente a la más antigua
+                val inspeccionesOrdenadas = numerosConIndices.keys.sortedDescending()
+                
+                for (numeroInspeccionActual in inspeccionesOrdenadas) {
+                    val indiceInspeccionActual = numerosConIndices[numeroInspeccionActual] ?: continue
+                    val columnaBase = indiceInspeccionActual + 1
+                    
+                    val estado = fila.getOrNull(columnaBase)?.toString()?.trim() ?: ""
+                    val fecha = fila.getOrNull(columnaBase + 1)?.toString()?.trim() ?: ""
+                    val nota = fila.getOrNull(columnaBase + 2)?.toString()?.trim() ?: ""
+                    val inspector = fila.getOrNull(columnaBase + 3)?.toString()?.trim() ?: ""
+                    val detector = fila.getOrNull(columnaBase + 4)?.toString()?.trim() ?: ""
+                    
+                    // Si encontramos datos en esta inspección, los usamos
+                    if (estado.isNotBlank() || fecha.isNotBlank() || nota.isNotBlank()) {
+                        ultimoEstado = estado
+                        ultimaFecha = fecha
+                        ultimaNota = nota
+                        ultimoInspector = inspector
+                        ultimoDetector = detector
+                        Log.d("FragmentInspeccionEquipo", "Equipo $equipoId: usando datos de inspección $numeroInspeccionActual")
+                        break
+                    }
+                }
+                
+                // Filtrar #REF!
+                val estadoLimpio = if (ultimoEstado == "#REF!") "" else ultimoEstado
+                val fechaLimpia = if (ultimaFecha == "#REF!") "" else ultimaFecha
+                val notaLimpia = if (ultimaNota == "#REF!") "" else ultimaNota
+                val inspectorLimpio = if (ultimoInspector == "#REF!") "" else ultimoInspector
+                val detectorLimpio = if (ultimoDetector == "#REF!") "" else ultimoDetector
+                
+                // Crear equipo con datos mapeados correctamente
+                val equipo = Equipo(
+                    id = equipoId,
+                    instalacion = manifold,
+                    unidad = unidad,
+                    area = area,
+                    linea = lineaEquipo,
+                    marca = marca,
+                    modelo = modelo,
+                    tipo = tipo,
+                    periodicidad = "", // No está en el mapeo actual
+                    diametro = diametro,
+                    conexion = conexion,
+                    aislamiento = aislamiento,
+                    presEntrada = presEntrada,
+                    presSalida = presSalida,
+                    byPass = byPass.equals("true", ignoreCase = true),
+                    descarga = descarga,
+                    aplicacion = aplicacion,
+                    servicio = "", // No está en el mapeo actual
+                    ubicacion = ubicacion,
+                    estado = estadoLimpio,
+                    fechaInspeccion = fechaLimpia,
+                    nota = notaLimpia,
+                    identidadInspector = inspectorLimpio,
+                    detectorUtilizado = detectorLimpio,
+                    incidencias = "",
+                    gpsCoord = "",
+                    urlFotoEquipo = null,
+                    urlFotoUbicacion = null,
+                    orden = 0.0,
+                    gpsAcc = "",
+                    extra = null,
+                    modificadoLocal = false,
+                    instalacionMf = "",
+                    urlFotoManifold = null,
+                    urlFotosExtra = null
+                )
+                
+                equiposFLOTA.add(equipo)
+            }
+            
+            // Actualizar la lista de equipos
+            equipos.clear()
+            equipos.addAll(equiposFLOTA)
+            estadosUnicos = equipos.mapNotNull { it.estado }.distinct().sorted()
+            
+            Log.d("FragmentInspeccionEquipo", "Equipos cargados desde FLOTA: ${equipos.size}")
+            
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionEquipo", "Error cargando equipos desde FLOTA: ${e.message}", e)
+        }
+    }
+    
+    private fun mostrarHistorialEnTabla(historial: List<HistorialInspeccion>) {
+        Log.d("FragmentInspeccionEquipo", "Mostrando ${historial.size} registros de historial")
+        
+        for (registro in historial) {
+            val fila = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(16, 12, 16, 12) // Más espaciado interno
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    bottomMargin = 0 // Sin margen inferior
+                }
+            }
+            
+            // Columna 1: Fecha (20%) - Sin paréntesis y año corto
+            val fechaFormateada = formatearFecha(registro.fecha)
+            val tvFecha = TextView(requireContext()).apply {
+                text = fechaFormateada
+                setTextColor(resources.getColor(android.R.color.white, null))
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.2f)
+                setPadding(8, 0, 8, 0) // Espaciado entre columnas
+            }
+            
+            // Columna 2: Estado (30%) - Con color de fondo
+            val tvEstado = TextView(requireContext()).apply {
+                text = registro.estado
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.3f)
+                setPadding(8, 0, 8, 0) // Espaciado entre columnas
+                
+                // Aplicar color de fondo según el estado
+                if (registro.estado.isNotEmpty()) {
+                    val colorFondo = coloresEstados[registro.estado.uppercase().trim()] ?: android.graphics.Color.GRAY
+                    val colorTexto = if (esColorClaro(colorFondo)) {
+                        android.graphics.Color.BLACK
+                    } else {
+                        android.graphics.Color.WHITE
+                    }
+                    
+                    setTextColor(colorTexto)
+                    
+                    // Crear drawable con color de fondo y bordes redondeados
+                    val drawable = android.graphics.drawable.GradientDrawable().apply {
+                        shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                        cornerRadius = 8f
+                        setColor(colorFondo)
+                    }
+                    background = drawable
+                } else {
+                    setTextColor(resources.getColor(android.R.color.white, null))
+                }
+            }
+            
+            // Columna 3: Notas (45%)
+            val tvNotas = TextView(requireContext()).apply {
+                text = registro.nota
+                setTextColor(resources.getColor(android.R.color.white, null))
+                textSize = 12f
+                gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.45f)
+                setPadding(8, 0, 8, 0) // Espaciado entre columnas
+            }
+            
+            fila.addView(tvFecha)
+            fila.addView(tvEstado)
+            fila.addView(tvNotas)
+            
+            // Añadir línea divisoria horizontal (solo líneas, sin bordes redondeados)
+            val divisor = View(requireContext()).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    1
+                ).apply {
+                    setMargins(16, 0, 16, 0)
+                }
+                setBackgroundColor(resources.getColor(android.R.color.darker_gray, null))
+            }
+            
+            tablaHistorial.addView(fila)
+            tablaHistorial.addView(divisor)
+        }
+    }
+    
+    private fun formatearFecha(fecha: String): String {
+        if (fecha.isEmpty()) return ""
+        
+        try {
+            // Intentar parsear diferentes formatos de fecha
+            val formatos = listOf(
+                "dd/MM/yyyy",
+                "dd/MM/yy", 
+                "dd-MM-yyyy",
+                "dd-MM-yy",
+                "yyyy-MM-dd"
+            )
+            
+            for (formato in formatos) {
+                try {
+                    val dateFormat = java.text.SimpleDateFormat(formato, java.util.Locale.getDefault())
+                    val fechaParsed = dateFormat.parse(fecha)
+                    if (fechaParsed != null) {
+                        // Convertir a formato dd/MM/yy (año corto)
+                        val formatoSalida = java.text.SimpleDateFormat("dd/MM/yy", java.util.Locale.getDefault())
+                        return formatoSalida.format(fechaParsed)
+                    }
+                } catch (e: Exception) {
+                    // Continuar con el siguiente formato
+                }
+            }
+            
+            // Si no se puede parsear, devolver la fecha original
+            return fecha
+        } catch (e: Exception) {
+            return fecha
+        }
+    }
+    
+    data class HistorialInspeccion(
+        val numero: Int,
+        val fecha: String,
+        val estado: String,
+        val nota: String
+    )
+    
+    data class ReparacionEquipo(
+        val id: String,
+        val fecha: String,
+        val tipo: String,
+        val descripcion: String
+    )
+    
+    private fun mostrarMensajeError(mensaje: String) {
+        val filaError = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(16, 16, 16, 16)
+            background = resources.getDrawable(R.drawable.bg_edittext_dark, null)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                bottomMargin = 4
+            }
+        }
+        
+        val tvError = TextView(requireContext()).apply {
+            text = mensaje
+            setTextColor(resources.getColor(android.R.color.holo_red_light, null))
+            textSize = 14f
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        
+        filaError.addView(tvError)
+        tablaHistorial.addView(filaError)
+    }
+    
+    private fun obtenerGoogleSheetsManager(): GoogleSheetsManager? {
+        return try {
+            val context = requireContext()
+            val settingsManager = SettingsManager(context)
+            val settings = settingsManager.getSettings()
+            
+            val credentialsStream = if (settings.useOAuth) {
+                null // Para OAuth no necesitamos credenciales
+            } else {
+                settingsManager.getCredentialsInputStream() // Para Service Account sí necesitamos credenciales
+            }
+            
+            val authAdapter = GoogleAuthAdapter(
+                context = context,
+                useOAuth = settings.useOAuth,
+                oAuthEmail = settings.oAuthEmail,
+                credentialsStream = credentialsStream
+            )
+            
+            GoogleSheetsManager(
+                authAdapter = authAdapter,
+                context = context
+            )
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionEquipo", "Error creando GoogleSheetsManager: ${e.message}", e)
+            null
+        }
     }
     
     // ==================== FUNCIONES DE GPS ====================
