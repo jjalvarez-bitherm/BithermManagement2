@@ -1,80 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_600">#FF7B1FA2</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Colores primarios -->
+    <color name="primary">#FF6B6B</color>
+    <color name="primary_dark">#E55A5A</color>
+    <color name="primary_light">#FF8E8E</color>
     
-    <!-- Colores específicos de Bitherm -->
-    <color name="bitherm_blue">#2196F3</color>
-    <color name="bitherm_green">#00CC66</color>
-    <color name="azul_bitherm">#2196F3</color>
-    <color name="verde_bitherm">#00CC66</color>
-    <color name="bottom_nav_unselected">#757575</color>
-
-    <!-- Color para el fondo del icono -->
-    <color name="ic_launcher_background">#FFFFFF</color>
-
-    <color name="menuUser">#90CAF9</color>
-    <color name="menuFavoritos">#FFD600</color>
-
-    <color name="md_theme_errorContainer">#FFCDD2</color> <!-- Rojo claro Material -->
+    <!-- Colores secundarios -->
+    <color name="secondary">#4ECDC4</color>
+    <color name="secondary_dark">#3BA39C</color>
+    <color name="secondary_light">#6ED5CE</color>
     
-    <!-- Colores para el sistema de fichaje -->
-    <color name="primary">#2196F3</color>
-    <color name="secondary">#FF9800</color>
-    <color name="success">#4CAF50</color>
-    <color name="error">#F44336</color>
-    <color name="warning">#FF9800</color>
-    <color name="info">#2196F3</color>
-    <color name="gray_light">#F0F0F0</color>
-    <color name="azul_claro">#64B5F6</color>
+    <!-- Colores de fondo -->
+    <color name="background_primary">#FFFFFF</color>
+    <color name="background_secondary">#F8F9FA</color>
+    <color name="background_tertiary">#E9ECEF</color>
     
-    <!-- Colores para el sistema de ausencias -->
-    <color name="blue_100">#BBDEFB</color>
-    <color name="blue_300">#64B5F6</color>
-    <color name="blue_400">#42A5F5</color>
-    <color name="blue_500">#2196F3</color>
-    <color name="blue_600">#1E88E5</color>
-    <color name="blue_800">#1565C0</color>
-    <color name="gray_200">#EEEEEE</color>
-    <color name="gray_400">#BDBDBD</color>
-    <color name="yellow_100">#FFF9C4</color>
-    <color name="yellow_500">#FFEB3B</color>
-    <color name="yellow_600">#FDD835</color>
-    <color name="purple_100">#E1BEE7</color>
-    <color name="teal_100">#B2DFDB</color>
-    <color name="teal_500">#009688</color>
-    <color name="brown_100">#D7CCC8</color>
-    <color name="brown_500">#795548</color>
-    <color name="gray_800">#424242</color>
+    <!-- Colores de texto -->
+    <color name="text_primary">#2C3E50</color>
+    <color name="text_secondary">#7F8C8D</color>
+    <color name="text_tertiary">#BDC3C7</color>
     
-    <!-- Colores para indicadores de ausencias en el calendario -->
-    <color name="absence_vacaciones">#10b981</color> <!-- Verde -->
-    <color name="absence_permiso">#3b82f6</color> <!-- Azul -->
-    <color name="absence_enfermedad">#ef4444</color> <!-- Rojo -->
-    <color name="absence_otros">#6b7280</color> <!-- Gris -->
+    <!-- Colores de botones -->
+    <color name="button_primary_bg">#FF6B6B</color>
+    <color name="button_secondary_bg">#4ECDC4</color>
+    <color name="button_tertiary_bg">#95A5A6</color>
     
-    <!-- Colores adicionales -->
-    <color name="green_100">#dcfce7</color>
-    <color name="green_300">#86efac</color>
-    <color name="green_600">#16a34a</color>
-    <color name="orange_100">#fed7aa</color>
-    <color name="orange_300">#fdba74</color>
-    <color name="orange_600">#ea580c</color>
-    <color name="red_100">#fee2e2</color>
-    <color name="red_300">#fca5a5</color>
-    <color name="red_600">#dc2626</color>
-    <color name="gray_100">#f3f4f6</color>
-    <color name="gray_300">#d1d5db</color>
-    <color name="gray_500">#6b7280</color>
-    <color name="gray_600">#4b5563</color>
-    <color name="gray_700">#374151</color>
+    <!-- Colores de estado -->
+    <color name="success">#27AE60</color>
+    <color name="warning">#F39C12</color>
+    <color name="error">#E74C3C</color>
+    <color name="info">#3498DB</color>
     
-    <!-- Color para campos editables con fondo blanco opaco -->
+    <!-- Colores básicos -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
     <color name="white_80_opacity">#CCFFFFFF</color>
+    
+    <!-- Colores de gradiente -->
+    <color name="gradient_start">#FF6B6B</color>
+    <color name="gradient_end">#4ECDC4</color>
+    
+    <!-- Colores del proyecto original -->
+    <color name="absence_vacaciones">#FF6B6B</color>
+    <color name="red_600">#DC2626</color>
+    <color name="red_100">#FEE2E2</color>
+    <color name="red_300">#FCA5A5</color>
+    <color name="blue_600">#2563EB</color>
+    <color name="blue_800">#1E40AF</color>
+    <color name="gray_400">#9CA3AF</color>
+    <color name="gray_light">#F3F4F6</color>
+    <color name="azul_claro">#3B82F6</color>
+    <color name="green_600">#16A34A</color>
+    <color name="green_100">#DCFCE7</color>
+    <color name="green_300">#86EFAC</color>
+    <color name="orange_600">#EA580C</color>
+    <color name="orange_100">#FED7AA</color>
+    <color name="orange_300">#FDBA74</color>
+    <color name="yellow_600">#CA8A04</color>
+    <color name="gray_100">#F3F4F6</color>
+    <color name="gray_600">#4B5563</color>
+    <color name="gray_800">#1F2937</color>
+    <color name="md_theme_errorContainer">#FEE2E2</color>
+    <color name="teal_500">#14B8A6</color>
+    <color name="purple_600">#9333EA</color>
+    <color name="purple_bitherm">#9333EA</color>
+    <color name="verde_bitherm">#16A34A</color>
+    <color name="gray_200">#E5E7EB</color>
+    <color name="absence_permiso">#3B82F6</color>
+    <color name="absence_enfermedad">#EF4444</color>
+    <color name="absence_otros">#6B7280</color>
+    <color name="bitherm_blue">#2563EB</color>
 </resources>

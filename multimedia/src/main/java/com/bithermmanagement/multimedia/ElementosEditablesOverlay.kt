@@ -14,9 +14,51 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
     
     private var elementosEditables = mutableListOf<EditorWhatsAppStyleFragment.ElementoEditable>()
     private var photoView: PhotoView? = null
+    private var layerBaseBitmap: Bitmap? = null  // Layer base 1920x1920px como fondo
+    private var mostrarMarcoPreview: Boolean = false  // Mostrar preview del marco 1:1
+    private var pathPreview: Path? = null
+    private var paintPreview: Paint = Paint().apply {
+        color = Color.RED
+        strokeWidth = 8f
+        style = Paint.Style.STROKE
+        isAntiAlias = true
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+    
+    private val layerBasePaint = Paint().apply {
+        isAntiAlias = true
+        isFilterBitmap = true
+    }
+    
+    // Propiedades públicas para conversión de coordenadas
+    var layerBaseEscala: Float = 1f
+        private set
+    var layerBaseOffsetX: Float = 0f
+        private set
+    var layerBaseOffsetY: Float = 0f
+        private set
     
     fun setPhotoView(photoView: PhotoView) {
         this.photoView = photoView
+    }
+    
+    /**
+     * Establece el bitmap del layer base (1920x1920px) como fondo.
+     * Este bitmap se escala para encajar en la pantalla manteniendo aspect ratio.
+     */
+    fun setLayerBase(bitmap: Bitmap) {
+        this.layerBaseBitmap = bitmap
+        invalidate()
+    }
+    
+    /**
+     * Activa/desactiva el preview del marco cuadrado 1:1.
+     * Usado en fase AJUSTANDO_FOTO para mostrar el área que se capturará.
+     */
+    fun setMostrarMarcoPreview(mostrar: Boolean) {
+        this.mostrarMarcoPreview = mostrar
+        invalidate()
     }
     
     fun setElementosEditables(elementos: MutableList<EditorWhatsAppStyleFragment.ElementoEditable>) {
@@ -24,20 +66,78 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
         invalidate()
     }
     
+    fun setPathPreview(path: Path?) {
+        this.pathPreview = path
+        invalidate()
+    }
+    
+    fun setPaintPreview(paint: Paint) {
+        this.paintPreview = paint
+        invalidate()
+    }
+    
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         
-        photoView?.let { pv ->
-            // Obtener la matriz de transformación del PhotoView
-            val imageMatrix = pv.imageMatrix
+        // Si estamos en modo preview del marco, dibujar fondo opaco + marco cuadrado FIJO
+        if (mostrarMarcoPreview) {
+            // MARCO FIJO: tamaño basado en las dimensiones de la VISTA, no del displayRect
+            // El marco NO debe escalarse con el zoom - permanece fijo en pantalla
+            val marcoSize = minOf(width, height).toFloat()
+            val marcoLeft = (width - marcoSize) / 2f
+            val marcoTop = (height - marcoSize) / 2f
             
-            // Aplicar la misma transformación que tiene la imagen
-            canvas.concat(imageMatrix)
-            
-            // Dibujar cada elemento editable
-            elementosEditables.forEach { elemento ->
-                dibujarElemento(canvas, elemento)
+            // Dibujar fondo opaco fuera del marco
+            val paintOscuro = Paint().apply {
+                color = Color.argb(180, 0, 0, 0)  // Negro semitransparente
+                style = Paint.Style.FILL
             }
+            
+            // Rectángulos opacos alrededor del marco
+            // Arriba
+            canvas.drawRect(0f, 0f, width.toFloat(), marcoTop, paintOscuro)
+            // Abajo
+            canvas.drawRect(0f, marcoTop + marcoSize, width.toFloat(), height.toFloat(), paintOscuro)
+            // Izquierda
+            canvas.drawRect(0f, marcoTop, marcoLeft, marcoTop + marcoSize, paintOscuro)
+            // Derecha
+            canvas.drawRect(marcoLeft + marcoSize, marcoTop, width.toFloat(), marcoTop + marcoSize, paintOscuro)
+            
+            // Dibujar borde del marco cuadrado
+            val paintMarco = Paint().apply {
+                color = Color.WHITE
+                strokeWidth = 4f
+                style = Paint.Style.STROKE
+                isAntiAlias = true
+            }
+            canvas.drawRect(marcoLeft, marcoTop, marcoLeft + marcoSize, marcoTop + marcoSize, paintMarco)
+            
+            return  // No dibujar nada más en modo preview
+        }
+        
+        // Dibujar layer base como fondo (si está disponible)
+        layerBaseBitmap?.let { bitmap ->
+            // Escalar layer base (1920x1920px) para encajar en pantalla manteniendo aspect ratio
+            layerBaseEscala = minOf(width.toFloat() / bitmap.width, height.toFloat() / bitmap.height)
+            val scaledWidth = bitmap.width * layerBaseEscala
+            val scaledHeight = bitmap.height * layerBaseEscala
+            
+            // Centrar en pantalla
+            layerBaseOffsetX = (width - scaledWidth) / 2f
+            layerBaseOffsetY = (height - scaledHeight) / 2f
+            
+            val destRect = RectF(layerBaseOffsetX, layerBaseOffsetY, layerBaseOffsetX + scaledWidth, layerBaseOffsetY + scaledHeight)
+            canvas.drawBitmap(bitmap, null, destRect, layerBasePaint)
+        }
+        
+        // Dibujar preview del path (dibujo en tiempo real)
+        pathPreview?.let { path ->
+            canvas.drawPath(path, paintPreview)
+        }
+        
+        // Dibujar cada elemento editable
+        elementosEditables.forEach { elemento ->
+            dibujarElemento(canvas, elemento)
         }
     }
     
@@ -45,19 +145,44 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
         // Guardar el estado actual del canvas
         canvas.save()
         
+        // Convertir coordenadas si es STAMP o LOGO (están en espacio LayerBase)
+        val (elementoX, elementoY, elementoWidth, elementoHeight) = if (elemento.tipo == EditorWhatsAppStyleFragment.TipoElemento.STAMP || 
+                                                                         elemento.tipo == EditorWhatsAppStyleFragment.TipoElemento.LOGO) {
+            // Convertir de coordenadas LayerBase a coordenadas de pantalla
+            val xPantalla = elemento.x * layerBaseEscala + layerBaseOffsetX
+            val yPantalla = elemento.y * layerBaseEscala + layerBaseOffsetY
+            val widthPantalla = elemento.width * layerBaseEscala
+            val heightPantalla = elemento.height * layerBaseEscala
+            arrayOf(xPantalla, yPantalla, widthPantalla, heightPantalla)
+        } else {
+            // Ya están en coordenadas de pantalla
+            arrayOf(elemento.x, elemento.y, elemento.width, elemento.height)
+        }
+        
         // Aplicar transformaciones al elemento
-        canvas.translate(elemento.x, elemento.y)
+        canvas.translate(elementoX, elementoY)
         canvas.rotate(elemento.rotacion)
         canvas.scale(elemento.escala, elemento.escala)
-        canvas.translate(-elemento.x, -elemento.y)
+        canvas.translate(-elementoX, -elementoY)
         
-        when (elemento.tipo) {
-            EditorWhatsAppStyleFragment.TipoElemento.FLECHA -> dibujarFlecha(canvas, elemento)
-            EditorWhatsAppStyleFragment.TipoElemento.CIRCULO -> dibujarCirculo(canvas, elemento)
-            EditorWhatsAppStyleFragment.TipoElemento.CUADRADO -> dibujarCuadrado(canvas, elemento)
-            EditorWhatsAppStyleFragment.TipoElemento.TEXTO -> dibujarTexto(canvas, elemento)
-            EditorWhatsAppStyleFragment.TipoElemento.STAMP -> dibujarStamp(canvas, elemento)
-            EditorWhatsAppStyleFragment.TipoElemento.LOGO -> dibujarLogo(canvas, elemento)
+        // Crear una copia temporal del elemento con las coordenadas convertidas
+        val elementoAjustado = if (elemento.tipo == EditorWhatsAppStyleFragment.TipoElemento.STAMP || 
+                                    elemento.tipo == EditorWhatsAppStyleFragment.TipoElemento.LOGO) {
+            elemento.copy(x = elementoX, y = elementoY, width = elementoWidth, height = elementoHeight)
+        } else {
+            elemento
+        }
+        
+        when (elementoAjustado.tipo) {
+            EditorWhatsAppStyleFragment.TipoElemento.FLECHA -> dibujarFlecha(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.CIRCULO -> dibujarCirculo(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.CUADRADO -> dibujarCuadrado(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.TRIANGULO -> dibujarTriangulo(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.TEXTO -> dibujarTexto(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.DIBUJO -> dibujarDibujo(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.LINEA -> dibujarLinea(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.STAMP -> dibujarStamp(canvas, elementoAjustado)
+            EditorWhatsAppStyleFragment.TipoElemento.LOGO -> dibujarLogo(canvas, elementoAjustado)
             else -> {}
         }
         
@@ -72,35 +197,36 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
             isAntiAlias = true
         }
         
-        // Crear flecha con cola en la base del triángulo
+        // Flecha SVG-style: triángulo a la derecha, línea a la izquierda
+        // Tamaño 400% más grande (4x)
         val path = Path()
         
         val centerX = elemento.x
         val centerY = elemento.y
-        val ancho = elemento.width
-        val alto = elemento.height
+        val ancho = elemento.width * 4f  // 400% más grande
+        val alto = elemento.height * 4f   // 400% más grande
         
         // Punta de la flecha (triángulo) - en el lado derecho
-        val puntaLeft = centerX + ancho/2 - ancho * 0.3f
+        val puntaLeft = centerX + ancho/2 - ancho * 0.25f
         val puntaRight = centerX + ancho/2
         val puntaTop = centerY - alto/2
         val puntaBottom = centerY + alto/2
         
-        // Dibujar punta (triángulo)
-        path.moveTo(puntaLeft, centerY)
-        path.lineTo(puntaRight, puntaTop)
-        path.lineTo(puntaRight, puntaBottom)
+        // Dibujar triángulo apuntando a la derecha
+        path.moveTo(puntaRight, centerY)  // Punta
+        path.lineTo(puntaLeft, puntaTop)   // Esquina superior
+        path.lineTo(puntaLeft, puntaBottom) // Esquina inferior
         path.close()
         
-        // Cuerpo de la flecha (rectángulo) - en el lado izquierdo (cola)
-        val cuerpoAncho = ancho * 0.7f
-        val cuerpoAlto = alto * 0.3f
+        // Cuerpo de la flecha (línea rectangular) - en el lado izquierdo
+        val cuerpoAncho = ancho * 0.75f
+        val cuerpoAlto = alto * 0.15f  // Línea más fina
         val cuerpoLeft = centerX - ancho/2
         val cuerpoRight = puntaLeft
         val cuerpoTop = centerY - cuerpoAlto/2
         val cuerpoBottom = centerY + cuerpoAlto/2
         
-        // Dibujar cuerpo (cola)
+        // Dibujar línea (cola)
         path.addRect(cuerpoLeft, cuerpoTop, cuerpoRight, cuerpoBottom, Path.Direction.CW)
         
         canvas.drawPath(path, paint)
@@ -168,6 +294,75 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
         }
     }
     
+    private fun dibujarTriangulo(canvas: Canvas, elemento: EditorWhatsAppStyleFragment.ElementoEditable) {
+        val paint = Paint().apply {
+            color = elemento.color
+            style = Paint.Style.STROKE
+            strokeWidth = elemento.strokeWidth
+            isAntiAlias = true
+        }
+        
+        val path = Path()
+        
+        // Triángulo equilátero con punta hacia arriba
+        val centerX = elemento.x
+        val centerY = elemento.y
+        val width = elemento.width
+        val height = elemento.height
+        
+        // Punto superior (punta)
+        path.moveTo(centerX, centerY - height/2)
+        
+        // Punto inferior izquierdo
+        path.lineTo(centerX - width/2, centerY + height/2)
+        
+        // Punto inferior derecho
+        path.lineTo(centerX + width/2, centerY + height/2)
+        
+        // Cerrar el triángulo
+        path.close()
+        
+        canvas.drawPath(path, paint)
+        
+        // Dibujar borde si está seleccionado
+        if (elemento.seleccionado) {
+            val paintBorde = Paint().apply {
+                color = Color.YELLOW
+                style = Paint.Style.STROKE
+                strokeWidth = 4f
+                isAntiAlias = true
+            }
+            canvas.drawPath(path, paintBorde)
+        }
+    }
+    
+    private fun dibujarDibujo(canvas: Canvas, elemento: EditorWhatsAppStyleFragment.ElementoEditable) {
+        elemento.path?.let { path ->
+            val paint = Paint().apply {
+                color = elemento.color
+                strokeWidth = elemento.strokeWidth
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+                strokeJoin = Paint.Join.ROUND
+                isAntiAlias = true
+            }
+            canvas.drawPath(path, paint)
+        }
+    }
+    
+    private fun dibujarLinea(canvas: Canvas, elemento: EditorWhatsAppStyleFragment.ElementoEditable) {
+        elemento.path?.let { path ->
+            val paint = Paint().apply {
+                color = elemento.color
+                strokeWidth = elemento.strokeWidth
+                style = Paint.Style.STROKE
+                strokeCap = Paint.Cap.ROUND
+                isAntiAlias = true
+            }
+            canvas.drawPath(path, paint)
+        }
+    }
+    
     private fun dibujarTexto(canvas: Canvas, elemento: EditorWhatsAppStyleFragment.ElementoEditable) {
         val paintTexto = Paint().apply {
             color = elemento.color
@@ -208,38 +403,68 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
             isAntiAlias = true
         }
         
-        val paintTexto = Paint().apply {
-            color = Color.WHITE
-            textSize = 48f
-            textAlign = Paint.Align.CENTER
-            isAntiAlias = true
-            isFakeBoldText = true
-        }
-        
-        val paintTextoPequeño = Paint().apply {
-            color = Color.WHITE
-            textSize = 32f
-            textAlign = Paint.Align.CENTER
-            isAntiAlias = true
-        }
-        
-        // Posición del stamp
+        // Posición del stamp - alineado a esquina superior izquierda
         val stampWidth = elemento.width
         val stampHeight = elemento.height
-        val stampX = elemento.x - stampWidth/2
-        val stampY = elemento.y - stampHeight/2
+        val stampX = elemento.x  // Sin centrar, directo desde la posición X
+        val stampY = elemento.y  // Sin centrar, directo desde la posición Y
         
         // Dibujar fondo del stamp
         canvas.drawRect(stampX, stampY, stampX + stampWidth, stampY + stampHeight, paintFondo)
         
-        // Línea 1: TAG del equipo (simulado)
-        canvas.drawText("TAG_EQUIPO", stampX + stampWidth/2, stampY + 60, paintTexto)
+        // Calcular espacios para las 4 líneas de texto
+        val margenSuperior = stampHeight * 0.05f  // 5% margen superior
+        val margenInferior = stampHeight * 0.05f  // 5% margen inferior
+        val alturaDisponible = stampHeight - margenSuperior - margenInferior
         
-        // Línea 2: Coordenadas y precisión
-        canvas.drawText("0,0 (0m)", stampX + stampWidth/2, stampY + 110, paintTextoPequeño)
+        // Línea 1: 25% del alto del stamp
+        val alturaLinea1 = alturaDisponible * 0.25f
+        // Líneas 2-4: 18% del alto del stamp cada una
+        val alturaLinea2 = alturaDisponible * 0.18f
+        val alturaLinea3 = alturaDisponible * 0.18f
+        val alturaLinea4 = alturaDisponible * 0.18f
         
-        // Línea 3: Comentario
-        canvas.drawText("Sin comentario", stampX + stampWidth/2, stampY + 150, paintTextoPequeño)
+        // Separaciones pequeñas entre líneas (resto del espacio distribuido)
+        val separacionTotal = alturaDisponible - (alturaLinea1 + alturaLinea2 + alturaLinea3 + alturaLinea4)
+        val separacion = separacionTotal / 3f  // 3 separaciones entre 4 líneas
+        
+        // Configurar paints para cada línea
+        val paintLinea1 = Paint().apply {
+            color = Color.WHITE
+            textSize = alturaLinea1 * 0.8f  // 80% del espacio para el texto
+            textAlign = Paint.Align.LEFT
+            isAntiAlias = true
+            isFakeBoldText = true
+        }
+        
+        val paintLineas234 = Paint().apply {
+            color = Color.WHITE
+            textSize = alturaLinea2 * 0.8f  // 80% del espacio para el texto
+            textAlign = Paint.Align.LEFT
+            isAntiAlias = true
+        }
+        
+        // Calcular posiciones Y para cada línea (baseline del texto)
+        val margenIzquierdo = stampWidth * 0.05f  // 5% margen izquierdo
+        val y1 = stampY + margenSuperior + alturaLinea1 * 0.75f  // 75% de la altura para centrar el texto
+        val y2 = y1 + alturaLinea1 * 0.25f + separacion + alturaLinea2 * 0.75f
+        val y3 = y2 + alturaLinea2 * 0.25f + separacion + alturaLinea3 * 0.75f
+        val y4 = y3 + alturaLinea3 * 0.25f + separacion + alturaLinea4 * 0.75f
+        
+        // Dibujar las líneas de texto dinámicamente
+        // Línea 1: TAG del equipo (25% del alto)
+        canvas.drawText(elemento.stampTag, stampX + margenIzquierdo, y1, paintLinea1)
+        
+        // Línea 2: Coordenadas y precisión (18% del alto)
+        canvas.drawText(elemento.stampCoordenadas, stampX + margenIzquierdo, y2, paintLineas234)
+        
+        // Línea 3: Fecha (18% del alto)
+        canvas.drawText(elemento.stampFecha, stampX + margenIzquierdo, y3, paintLineas234)
+        
+        // Línea 4: Comentario (18% del alto) - SOLO SI HAY COMENTARIO
+        if (elemento.stampComentario.isNotBlank()) {
+            canvas.drawText(elemento.stampComentario, stampX + margenIzquierdo, y4, paintLineas234)
+        }
         
         // Dibujar borde si está seleccionado
         if (elemento.seleccionado) {
@@ -268,10 +493,11 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
                     true
                 )
                 
+                // Dibujar desde la esquina superior derecha (alineado simétrico al STAMP)
                 canvas.drawBitmap(
                     logoEscalado,
-                    elemento.x - elemento.width/2,
-                    elemento.y - elemento.height/2,
+                    elemento.x,  // Posición directa desde la esquina
+                    elemento.y,  // Posición directa desde la esquina
                     null
                 )
                 
@@ -293,8 +519,10 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
                     isFakeBoldText = true
                 }
                 
-                canvas.drawCircle(elemento.x, elemento.y, elemento.width/2, paint)
-                canvas.drawText("BITHERM", elemento.x, elemento.y + 10, paintTexto)
+                val centerX = elemento.x + elemento.width/2
+                val centerY = elemento.y + elemento.height/2
+                canvas.drawCircle(centerX, centerY, elemento.width/2, paint)
+                canvas.drawText("BITHERM", centerX, centerY + 10, paintTexto)
             }
         } catch (e: Exception) {
             // Fallback: crear logo simple
@@ -312,8 +540,10 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
                 isFakeBoldText = true
             }
             
-            canvas.drawCircle(elemento.x, elemento.y, elemento.width/2, paint)
-            canvas.drawText("BITHERM", elemento.x, elemento.y + 10, paintTexto)
+            val centerX = elemento.x + elemento.width/2
+            val centerY = elemento.y + elemento.height/2
+            canvas.drawCircle(centerX, centerY, elemento.width/2, paint)
+            canvas.drawText("BITHERM", centerX, centerY + 10, paintTexto)
         }
         
         // Dibujar borde si está seleccionado
@@ -324,7 +554,9 @@ class ElementosEditablesOverlay @JvmOverloads constructor(
                 strokeWidth = 4f
                 isAntiAlias = true
             }
-            canvas.drawCircle(elemento.x, elemento.y, elemento.width/2, paintBorde)
+            val centerX = elemento.x + elemento.width/2
+            val centerY = elemento.y + elemento.height/2
+            canvas.drawCircle(centerX, centerY, elemento.width/2, paintBorde)
         }
     }
 } 

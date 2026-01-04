@@ -4,6 +4,7 @@ package com.bithermmanagement.database.entities
 data class EquipoView(
     val id: String,
     val estado: String?,
+    val flota: String?, // FLOTA: ACTIVO, MONITORIZADO, AFS, ELIMINADO (no se usa para colorear)
     val area: String?,
     val unidad: String?,
     val marca: String?,
@@ -23,9 +24,12 @@ data class EquipoView(
     val detector: String?,
     val incidencias: String?,
     val gps: String?,
+    val gpsAcc: String?, // Precisión GPS
     val foto: String?,
     val orden: Double?,
     val instalacion: String?,
     val linea: String?,
-    val aislamiento: String?
+    val aislamiento: String?,
+    val periodicidad: String?,
+    val byPass: Boolean?
 ) 

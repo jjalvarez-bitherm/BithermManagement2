@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="2dp">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        app:cardCornerRadius="4dp"
+        app:cardElevation="1dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- Photo Thumbnail -->
+            <ImageView
+                android:id="@+id/ivThumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:background="#333333" />
+
+            <!-- Selection Overlay -->
+            <View
+                android:id="@+id/vSelectionOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#664CAF50"
+                android:visibility="gone" />
+
+            <!-- Selection Circle -->
+            <ImageView
+                android:id="@+id/ivSelectionCircle"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end|top"
+                android:layout_margin="8dp"
+                android:src="@drawable/ic_circle_outline"
+                android:visibility="gone" />
+
+            <!-- Selection Check -->
+            <ImageView
+                android:id="@+id/ivSelectionCheck"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end|top"
+                android:layout_margin="8dp"
+                android:src="@drawable/ic_check_circle_green"
+                android:visibility="gone" />
+
+            <!-- Timestamp -->
+            <TextView
+                android:id="@+id/tvTimestamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_margin="4dp"
+                android:text="12/11 14:30"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"
+                android:background="#80000000"
+                android:padding="2dp"
+                android:visibility="gone" />
+            
+            <!-- Folder Name for subfolders -->
+            <TextView
+                android:id="@+id/tvFolderName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center"
+                android:layout_margin="4dp"
+                android:text="Carpeta"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:background="#80000000"
+                android:padding="4dp"
+                android:gravity="center"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</FrameLayout>

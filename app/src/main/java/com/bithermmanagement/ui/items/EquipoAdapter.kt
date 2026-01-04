@@ -68,11 +68,21 @@ class EquipoAdapter(
         fun bind(equipo: EquipoView, coloresEstados: Map<String, Int>) {
             equipoActual = equipo
             txtTag.text = equipo.id
-            txtEstado.text = equipo.estado ?: ""
             
-            // Normalizar el estado antes de buscar el color
+            // Mostrar SOLO estado de inspección (estado) - NO usar flota para colorear
+            val estadoTexto = equipo.estado ?: ""
+            txtEstado.text = estadoTexto
+            
+            // Usar SOLO estado de inspección para colorear (flota no se usa para colorear)
             val estadoKey = (equipo.estado ?: "").uppercase().trim()
             val color = coloresEstados[estadoKey] ?: 0xFFFFFFFF.toInt()
+            
+            Log.d("EquipoAdapter", "Equipo ${equipo.id}: estado='${equipo.estado}', flota='${equipo.flota}', estadoKey='$estadoKey', color=${String.format("#%06X", 0xFFFFFF and color)}, coloresEstados.size=${coloresEstados.size}")
+            
+            // Si no se encontró color y hay estados disponibles, mostrar las claves disponibles
+            if (color == 0xFFFFFFFF.toInt() && coloresEstados.isNotEmpty() && estadoKey.isNotEmpty()) {
+                Log.w("EquipoAdapter", "No se encontró color para estado '$estadoKey'. Claves disponibles: ${coloresEstados.keys.take(10).joinToString(", ")}")
+            }
             
             // Aplicar el color de fondo al card
             card.setCardBackgroundColor(color)

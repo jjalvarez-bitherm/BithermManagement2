@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --primary: #0f172a;
+  --primary-light: #1e293b;
+  --brand: #3b82f6;
+  --brand-hover: #2563eb;
+  --bg: #f3f4f6;
+  --card-bg: rgba(255, 255, 255, 1);
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --border: #e5e7eb;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  font-family: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* REDUCED BORDERS GLOBALLY */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 2rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 450px;
+  background: white;
+  border-radius: 1rem;
+  /* Reduced from 2.5rem */
+  padding: 3rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.logo-badge {
+  position: absolute;
+  top: -25px;
+  left: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 0.75rem;
+  /* Reduced from 1.5rem */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: white;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card {
+  background: #0f172a;
+  color: white;
+  border-radius: 1rem;
+  /* Reduced from 2rem */
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.input-field {
+  width: 100%;
+  background: #f9fafb;
+  border: 2px solid #f3f4f6;
+  border-radius: 0.75rem;
+  /* Reduced from 1.25rem */
+  padding: 1.1rem 1.1rem 1.1rem 3.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.input-field:focus {
+  border-color: var(--brand);
+  background: white;
+  outline: none;
+}
+
+/* Reduced border-radius for all main containers */
+.rounded-\[2\.5rem\] {
+  border-radius: 1rem !important;
+}
+
+.rounded-\[3rem\] {
+  border-radius: 1rem !important;
+}
+
+.rounded-3xl {
+  border-radius: 0.75rem !important;
+}
+
+.rounded-2xl {
+  border-radius: 0.5rem !important;
+}
+
+/* Slider Customization */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #f3f4f6;
+  border-radius: 5px;
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  background: var(--brand);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 4px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

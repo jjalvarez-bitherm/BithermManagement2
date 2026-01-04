@@ -76,6 +76,11 @@ class SettingsActivity : AppCompatActivity() {
         binding.etDriveFolderId.setText(settings.driveFolderId)
         binding.etCompanyName.setText(settings.companyName)
         
+        // Cargar nuevos campos personalizables
+        binding.etCameraAppName.setText(settings.cameraAppName)
+        binding.etManagementSystemName.setText(settings.managementSystemName)
+        binding.etChatAppName.setText(settings.chatAppName)
+        
         // Configurar método de autenticación
         if (settings.useOAuth) {
             binding.rbOAuth.isChecked = true
@@ -345,6 +350,9 @@ class SettingsActivity : AppCompatActivity() {
                 spreadsheetId = binding.etSpreadsheetId.text.toString(),
                 driveFolderId = binding.etDriveFolderId.text.toString(),
                 companyName = binding.etCompanyName.text.toString(),
+                cameraAppName = binding.etCameraAppName.text.toString(),
+                managementSystemName = binding.etManagementSystemName.text.toString(),
+                chatAppName = binding.etChatAppName.text.toString(),
                 workStartHour = binding.timePickerStart.hour,
                 workStartMinute = binding.timePickerStart.minute,
                 workEndHour = binding.timePickerEnd.hour,

@@ -17,6 +17,9 @@ class SettingsManager(private val context: Context) {
         val spreadsheetId: String = "",
         val driveFolderId: String = "",
         val companyName: String = "",
+        val cameraAppName: String = "BithermCAM",
+        val managementSystemName: String = "Bitherm Management", 
+        val chatAppName: String = "Bitherm Chat",
         val workStartHour: Int = 8,
         val workStartMinute: Int = 0,
         val workEndHour: Int = 18,
@@ -48,6 +51,9 @@ class SettingsManager(private val context: Context) {
                 spreadsheetId = "1IyWGyxYDDTWY5SHh2xLBxtakSZX_xhZFo2jta4JeSW4",
                 driveFolderId = "",
                 companyName = "Bitherm Management",
+                cameraAppName = "BithermCAM",
+                managementSystemName = "Bitherm Management",
+                chatAppName = "Bitherm Chat",
                 useOAuth = false, // Usar cuenta de servicio por defecto (no OAuth)
                 useDefaultCredentials = true
             )

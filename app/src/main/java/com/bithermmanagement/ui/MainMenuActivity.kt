@@ -7,9 +7,11 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
 import com.bithermmanagement.core.base.DebugBaseActivity
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.commit
@@ -17,6 +19,9 @@ import com.bithermmanagement.R
 import com.bithermmanagement.data.UserData
 import com.bithermmanagement.ui.favoritos.FragmentFavoritos
 import com.bithermmanagement.ui.work.WorkFragment
+import com.bithermmanagement.data.SettingsManager
+import com.bithermmanagement.ui.fragments.WorkCameraFragment
+import com.bithermmanagement.ui.gallery.CustomGalleryView
 
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -29,7 +34,6 @@ import javax.inject.Inject
 import android.content.Intent
 import com.bithermmanagement.core.utils.DebugConfigManager
 import com.bithermmanagement.database.AppDatabase
-import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
 import android.view.LayoutInflater
@@ -57,10 +61,31 @@ class MainMenuActivity : DebugBaseActivity() {
     
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
+    private lateinit var settingsManager: SettingsManager
     private var bestLocation: Location? = null
     private var bestPrecision: Float = Float.MAX_VALUE
     private val handler = Handler(Looper.getMainLooper())
     private val updateInterval: Long = 30000 // 30 segundos
+    private var currentSubAppDialog: Dialog? = null // Para controlar window leaks
+
+	// Launcher para cámara de WorkCameraFragment
+	private val workCameraLauncher = registerForActivityResult(
+		ActivityResultContracts.TakePicture()
+	) { success ->
+		Log.d("MainMenuActivity", "Camera result: $success")
+		// Crear una instancia temporal si la original no está disponible
+		WorkCameraFragment.instance?.let { fragment ->
+			Log.d("MainMenuActivity", "Llamando handleCameraResult en fragment")
+			fragment.handleCameraResult(this, success)
+		} ?: run {
+			Log.w("MainMenuActivity", "WorkCameraFragment.instance es null, creando instancia temporal")
+			// Crear instancia temporal para manejar el resultado
+			val tempFragment = WorkCameraFragment()
+			tempFragment.settingsManager = SettingsManager(this)
+			tempFragment.handleCameraResult(this, success)
+		}
+	}
+
 
     object GpsProvider {
         var lastLocation: Location? = null
@@ -70,6 +95,9 @@ class MainMenuActivity : DebugBaseActivity() {
         super.onCreate(savedInstanceState)
         Log.d("MainMenuActivity", "onCreate llamado")
         setContentView(R.layout.activity_main_menu)
+        
+        // Inicializar SettingsManager
+        settingsManager = SettingsManager(this)
 
         // Obtener datos del usuario
         val userData = intent.getParcelableExtra<UserData>("USER_DATA")
@@ -152,11 +180,20 @@ class MainMenuActivity : DebugBaseActivity() {
                     }
                     true
                 }
-                R.id.nav_camara -> {
-                    // Icono 4: BithermCAM - Mostrar popup modal
-                    showSubAppPopup("BithermCAM", R.layout.fragment_bitherm_cam)
-                    true
-                }
+				
+				
+				R.id.nav_camara -> {
+					// Icono 4: Usar nombre configurado de cámara - Mostrar popup modal
+					val settings = settingsManager.getSettings()
+					// Configurar el launcher antes de mostrar el diálogo
+					WorkCameraFragment.setCameraLauncher(workCameraLauncher)
+					showSubAppPopup(settings.cameraAppName, R.layout.fragment_work_camera)
+					true
+				}
+
+
+
+
                 R.id.nav_notas -> {
                     // Icono 5: Mis tareas - Mostrar popup modal
                     showSubAppPopup("Mis Tareas", R.layout.fragment_mis_tareas)
@@ -254,6 +291,20 @@ class MainMenuActivity : DebugBaseActivity() {
             // También activar GPS automático cuando se concedan permisos
             initializeAutomaticGps()
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        Log.d("MainMenuActivity", "onPause llamado")
+        
+        // Cerrar diálogo si está abierto para evitar window leak
+        currentSubAppDialog?.let { dialog ->
+            if (dialog.isShowing) {
+                Log.d("MainMenuActivity", "Cerrando diálogo en onPause")
+                dialog.dismiss()
+            }
+        }
+        currentSubAppDialog = null
     }
 
     private fun showGpsDebugDialog() {
@@ -439,7 +490,7 @@ class MainMenuActivity : DebugBaseActivity() {
     
     private fun obtenerGoogleSheetsManager(): com.bithermmanagement.data.GoogleSheetsManager? {
         return try {
-            val credentialsStream = applicationContext.assets.open("credentials2.json")
+            val credentialsStream = applicationContext.assets.open("credentials_default.json")
             val authAdapter = com.bithermmanagement.data.GoogleAuthAdapter(
                 context = applicationContext,
                 useOAuth = false,
@@ -501,8 +552,21 @@ class MainMenuActivity : DebugBaseActivity() {
      * @param subAppLayout ID del layout a mostrar en el popup
      */
     private fun showSubAppPopup(subAppName: String, subAppLayout: Int) {
+        Log.d("MainMenuActivity", "=== INICIANDO showSubAppPopup ===")
+        Log.d("MainMenuActivity", "subAppName: $subAppName, subAppLayout: $subAppLayout")
+        
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        currentSubAppDialog = dialog // Guardar referencia
+        Log.d("MainMenuActivity", "Dialog creado")
+        
         dialog.setContentView(R.layout.dialog_subapp_modal)
+        
+        // Configurar listener para limpiar referencia cuando se cierre
+        dialog.setOnDismissListener {
+            Log.d("MainMenuActivity", "Dialog dismissed")
+            currentSubAppDialog = null
+        }
+        Log.d("MainMenuActivity", "ContentView configurado")
         
         // Obtener dimensiones de la pantalla
         val displayMetrics = resources.displayMetrics
@@ -512,6 +576,8 @@ class MainMenuActivity : DebugBaseActivity() {
         // Calcular 97% del ancho y alto
         val dialogWidth = (screenWidth * 0.97).toInt()
         val dialogHeight = (screenHeight * 0.97).toInt()
+        
+        Log.d("MainMenuActivity", "Dimensiones calculadas: ${dialogWidth}x${dialogHeight}")
         
         dialog.window?.setLayout(dialogWidth, dialogHeight)
         
@@ -525,14 +591,35 @@ class MainMenuActivity : DebugBaseActivity() {
         val textViewSubAppName = dialog.findViewById<TextView>(R.id.textViewSubAppName)
         val containerSubAppContent = dialog.findViewById<FrameLayout>(R.id.containerSubAppContent)
         
+        Log.d("MainMenuActivity", "Elementos encontrados: buttonClose=${buttonClose != null}, textView=${textViewSubAppName != null}, container=${containerSubAppContent != null}")
+        
         textViewSubAppName.text = subAppName
-        buttonClose.setOnClickListener { dialog.dismiss() }
+        buttonClose.setOnClickListener { 
+            Log.d("MainMenuActivity", "Dialog cerrado por botón close")
+            dialog.dismiss() 
+        }
         
         // Inflar el contenido específico de la subApp
         val inflater = LayoutInflater.from(this)
         val subAppView = inflater.inflate(subAppLayout, containerSubAppContent, false)
         containerSubAppContent.removeAllViews()
         containerSubAppContent.addView(subAppView)
+        
+        Log.d("MainMenuActivity", "SubApp view inflado y agregado al container")
+        
+        // Mostrar el diálogo
+        try {
+            dialog.show()
+            Log.d("MainMenuActivity", "=== DIALOG.SHOW() EJECUTADO ===")
+            
+            // Configurar botones específicamente para WorkCamera
+            if (subAppLayout == R.layout.fragment_work_camera) {
+                Log.d("MainMenuActivity", "Detectado WorkCamera por layout, configurando botones...")
+                setupWorkCameraButtons(dialog)
+            }
+        } catch (e: Exception) {
+            Log.e("MainMenuActivity", "Error al mostrar diálogo", e)
+        }
         
         // Inicializar BithermChat si es necesario
                         if (subAppName == "BithermChat") {
@@ -598,9 +685,68 @@ class MainMenuActivity : DebugBaseActivity() {
     }
     
     /**
-     * Muestra un popup modal con un fragmento
+     * Muestra la galería personalizada en un diálogo
      */
-    private fun showSubAppPopupWithFragment(subAppName: String, fragment: androidx.fragment.app.Fragment) {
+    fun showCustomGallery() {
+        Log.d("MainMenuActivity", "Mostrando galería personalizada")
+        
+        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        dialog.setContentView(R.layout.dialog_subapp_modal)
+        
+        // Obtener dimensiones de la pantalla
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        
+        // Calcular 97% del ancho y alto
+        val dialogWidth = (screenWidth * 0.97).toInt()
+        val dialogHeight = (screenHeight * 0.97).toInt()
+        
+        dialog.window?.setLayout(dialogWidth, dialogHeight)
+        
+        // Centrar el diálogo y desplazarlo 3px hacia arriba
+        val layoutParams = dialog.window?.attributes
+        layoutParams?.y = -3 // Desplazar 3px hacia arriba
+        dialog.window?.attributes = layoutParams
+        dialog.window?.setGravity(Gravity.CENTER)
+        
+        val buttonClose = dialog.findViewById<ImageButton>(R.id.buttonClose)
+        val textViewSubAppName = dialog.findViewById<TextView>(R.id.textViewSubAppName)
+        val containerSubAppContent = dialog.findViewById<FrameLayout>(R.id.containerSubAppContent)
+        
+        textViewSubAppName.text = "Galería"
+        buttonClose.setOnClickListener { dialog.dismiss() }
+        
+        // Limpiar contenedor
+        containerSubAppContent.removeAllViews()
+        
+        // Crear y configurar la vista de galería personalizada
+        val galleryView = com.bithermmanagement.ui.gallery.CustomGalleryView(this)
+        galleryView.onBackPressed = { dialog.dismiss() }
+        galleryView.onPhotoSelected = { photo ->
+            Log.d("MainMenuActivity", "Foto seleccionada: ${photo.file.name}")
+            android.widget.Toast.makeText(this, "Foto: ${photo.file.name}", android.widget.Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+        
+        // Agregar la vista al contenedor
+        containerSubAppContent.addView(galleryView)
+        
+        // Mostrar el diálogo
+        dialog.show()
+        
+        Log.d("MainMenuActivity", "Diálogo de galería mostrado")
+    }
+
+    /**
+     * Muestra un popup modal con un fragmento
+     * NOTA: Temporalmente deshabilitado por problemas de lifecycle
+     */
+    fun showSubAppPopupWithFragment(subAppName: String, fragment: androidx.fragment.app.Fragment) {
+        Log.w("MainMenuActivity", "showSubAppPopupWithFragment deshabilitado temporalmente")
+        android.widget.Toast.makeText(this, "Funcionalidad en desarrollo", android.widget.Toast.LENGTH_SHORT).show()
+        
+        /* CÓDIGO COMENTADO HASTA RESOLVER PROBLEMAS DE LIFECYCLE
         val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.setContentView(R.layout.dialog_subapp_modal)
         
@@ -633,19 +779,73 @@ class MainMenuActivity : DebugBaseActivity() {
         
         // Mostrar el diálogo PRIMERO
         dialog.show()
-        
-        // Después de mostrar el diálogo, agregar el fragmento
-        dialog.window?.decorView?.post {
-            try {
-                supportFragmentManager.beginTransaction()
-                    .add(R.id.containerSubAppContent, fragment)
-                    .commit()
-            } catch (e: Exception) {
-                Log.e("MainMenuActivity", "Error agregando fragmento", e)
-            }
-        }
+        */
     }
     
+	
+		private fun setupWorkCameraButtons(dialog: Dialog) {
+			Log.d("MainMenuActivity", "=== INICIANDO setupWorkCameraButtons CON DIÁLOGO ===")
+			Handler(Looper.getMainLooper()).postDelayed({
+				Log.d("MainMenuActivity", "=== EJECUTANDO setupWorkCameraButtons después del delay ===")
+				try {
+					// Buscar el contenedor EN LA VENTANA DEL DIÁLOGO
+					val dialogDecorView = dialog.window?.decorView as? ViewGroup
+					Log.d("MainMenuActivity", "Dialog DecorView obtenido: ${dialogDecorView?.javaClass?.simpleName}")
+					
+					if (dialogDecorView != null) {
+						val containerView = findViewWithId(dialogDecorView, R.id.containerSubAppContent) as? ViewGroup
+						Log.d("MainMenuActivity", "ContainerView encontrado en diálogo: ${containerView != null}")
+						
+						containerView?.let {
+							Log.d("MainMenuActivity", "=== CONTAINER ENCONTRADO EN DIÁLOGO, LLAMANDO A WorkCameraFragment.setupButtonsForView ===")
+							WorkCameraFragment.setupButtonsForView(it, this)
+							Log.d("MainMenuActivity", "Botones de cámara configurados correctamente")
+						} ?: run {
+							Log.e("MainMenuActivity", "*** NO SE ENCONTRÓ EL CONTENEDOR EN EL DIÁLOGO ***")
+							
+							// Intentar buscar en toda la jerarquía del diálogo
+							Log.d("MainMenuActivity", "=== BUSCANDO EN TODA LA JERARQUÍA DEL DIÁLOGO ===")
+							logViewHierarchy(dialogDecorView, 0)
+						}
+					} else {
+						Log.e("MainMenuActivity", "*** NO SE PUDO OBTENER EL DECORVIEW DEL DIÁLOGO ***")
+					}
+				} catch (e: Exception) {
+					Log.e("MainMenuActivity", "Error configurando botones de cámara", e)
+				}
+			}, 500) // Delay para asegurar que el diálogo esté completamente renderizado
+		}
+
+		private fun findViewWithId(parent: ViewGroup, id: Int): View? {
+			if (parent.id == id) return parent
+			for (i in 0 until parent.childCount) {
+				val child = parent.getChildAt(i)
+				if (child.id == id) return child
+				if (child is ViewGroup) {
+					val found = findViewWithId(child, id)
+					if (found != null) return found
+				}
+			}
+			return null
+		}
+		
+		private fun logViewHierarchy(view: View, depth: Int) {
+			val indent = "  ".repeat(depth)
+			val idName = try {
+				if (view.id != View.NO_ID) resources.getResourceEntryName(view.id) else "NO_ID"
+			} catch (e: Exception) {
+				"UNKNOWN_ID"
+			}
+			Log.d("MainMenuActivity", "$indent${view.javaClass.simpleName} - ID: $idName")
+			
+			if (view is ViewGroup) {
+				for (i in 0 until view.childCount) {
+					logViewHierarchy(view.getChildAt(i), depth + 1)
+				}
+			}
+		}
+	
+	
     /**
      * Inicializa manualmente la lógica del BithermChat
      */

@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@android:color/black">
 
-    <!-- Barra superior tipo WhatsApp -->
+    <!-- Barra superior principal -->
     <LinearLayout
+        android:id="@+id/barraHerramientasPrincipal"
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:orientation="horizontal"
@@ -15,74 +17,125 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp">
 
-        <!-- Botón guardar izquierda -->
         <ImageButton
-            android:id="@+id/btnGuardar"
+            android:id="@+id/btnRotar"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_rotate_arrow"
+            app:tint="@android:color/white"
+            android:contentDescription="Rotar" />
+
+        <ImageButton
+            android:id="@+id/btnDibujar"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_draw"
+            app:tint="@android:color/white"
+            android:contentDescription="Lápiz" />
+
+        <ImageButton
+            android:id="@+id/btnPoligonos"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_polygon"
+            app:tint="@android:color/white"
+            android:contentDescription="Polígonos" />
+
+        <ImageButton
+            android:id="@+id/btnFlecha"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_forward"
+            app:tint="@android:color/white"
+            android:contentDescription="Flecha" />
+
+        <ImageButton
+            android:id="@+id/btnTexto"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_text"
+            app:tint="@android:color/white"
+            android:contentDescription="Texto" />
+
+        <ImageButton
+            android:id="@+id/btnPolilinea"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_polyline"
+            app:tint="@android:color/white"
+            android:contentDescription="Polilínea" />
+
+        <ImageButton
+            android:id="@+id/btnDeshacer"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="@android:color/white"
+            android:contentDescription="Deshacer" />
+
+    </LinearLayout>
+
+    <!-- Barra contextual (visible cuando se activa una herramienta) -->
+    <LinearLayout
+        android:id="@+id/barraContextual"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:background="#CC000000"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/btnColorPicker"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_save"
-            android:tint="@android:color/white"
-            android:contentDescription="Guardar" />
+            android:src="@drawable/ic_color_picker"
+            app:tint="@android:color/white"
+            android:contentDescription="Seleccionar color" />
 
-        <!-- Botones derechos -->
-        <LinearLayout
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Grosor:"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="16dp" />
+
+        <SeekBar
+            android:id="@+id/seekBarGrosor"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="end">
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="16dp"
+            android:max="20"
+            android:progress="8" />
 
-            <ImageButton
-                android:id="@+id/btnRecortar"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_crop"
-                android:tint="@android:color/white"
-                android:contentDescription="Recortar" />
-
-            <ImageButton
-                android:id="@+id/btnRotar"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_rotate_arrow"
-                android:tint="@android:color/white"
-                android:contentDescription="Rotar" />
-
-            <ImageButton
-                android:id="@+id/btnEmoticonos"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_emoticon"
-                android:tint="@android:color/white"
-                android:contentDescription="Emoticonos y formas" />
-
-            <ImageButton
-                android:id="@+id/btnTexto"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_text"
-                android:tint="@android:color/white"
-                android:contentDescription="Añadir texto" />
-
-            <ImageButton
-                android:id="@+id/btnDibujar"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_draw"
-                android:tint="@android:color/white"
-                android:contentDescription="Dibujar" />
-
-        </LinearLayout>
+        <Button
+            android:id="@+id/btnFinHerramienta"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="FIN"
+            android:textColor="@android:color/white"
+            android:background="#4CAF50"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp" />
 
     </LinearLayout>
 
@@ -103,7 +156,9 @@
             android:id="@+id/overlayEditables"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/transparent" />
+            android:background="@android:color/transparent"
+            android:clickable="true"
+            android:focusable="true" />
 
     </FrameLayout>
 
@@ -115,11 +170,42 @@
         android:background="@android:color/black"
         android:padding="16dp">
 
+        <!-- Campo TAG_EQUIPO con botón lupa -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <EditText
+                android:id="@+id/etTagEquipo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_edit_text_rounded"
+                android:hint="TAG/EQUIPO..."
+                android:textColorHint="#CCCCCC"
+                android:textColor="@android:color/white"
+                android:padding="12dp"
+                android:inputType="text" />
+            
+            <ImageButton
+                android:id="@+id/btnBuscarEquipo"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="@android:color/white"
+                android:contentDescription="Buscar equipo" />
+        </LinearLayout>
+
         <!-- Campo de comentario -->
         <EditText
             android:id="@+id/etComentario"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:background="@drawable/bg_edit_text_rounded"
             android:hint="Añade un comentario..."
             android:textColorHint="#CCCCCC"
@@ -128,7 +214,7 @@
             android:maxLines="3"
             android:inputType="textMultiLine" />
 
-        <!-- Fila inferior: Botones y selector de tipo -->
+        <!-- Fila inferior: Botones iconos y selector de tipo -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -136,34 +222,38 @@
             android:layout_marginTop="12dp"
             android:gravity="center_vertical">
 
-            <!-- Botón Cancelar (izquierda, rojo) -->
-            <Button
+            <!-- Botón Cancelar (X roja) -->
+            <ImageButton
                 android:id="@+id/btnCancelar"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="Cancelar"
-                android:textColor="@android:color/white"
-                android:background="@drawable/bg_button_rounded_red"
-                android:layout_marginEnd="8dp" />
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_close_red_modern"
+                android:contentDescription="Cancelar"
+                android:scaleType="fitCenter"
+                android:padding="8dp" />
 
-            <!-- Selector de tipo de foto (centro) -->
+            <!-- Selector de tipo de foto (centro, expandido) -->
             <Spinner
                 android:id="@+id/spinnerTipoFoto"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
                 android:background="@drawable/bg_spinner_rounded"
                 android:popupBackground="@drawable/bg_spinner_dropdown" />
 
-            <!-- Botón Aceptar (derecha, verde) -->
-            <Button
+            <!-- Botón Aceptar (check verde) -->
+            <ImageButton
                 android:id="@+id/btnAceptar"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="Aceptar"
-                android:textColor="@android:color/white"
-                android:background="@drawable/bg_button_rounded_green"
-                android:layout_marginStart="8dp" />
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_check_green_modern"
+                android:contentDescription="Aceptar"
+                android:scaleType="fitCenter"
+                android:padding="8dp" />
 
         </LinearLayout>
 

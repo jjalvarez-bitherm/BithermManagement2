@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    
+    <!-- Círculo de fondo -->
+    <path
+        android:fillColor="@color/primary"
+        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    
+    <!-- Icono de conexión -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M30,45 L50,45 L50,35 L70,35 L70,45 L90,45 L90,55 L70,55 L70,65 L50,65 L50,55 L30,55 Z" />
+    
+    <!-- Puntos de conexión -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M30,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M90,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    
+</vector>

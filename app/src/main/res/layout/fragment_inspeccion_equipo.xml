@@ -154,6 +154,17 @@
                         android:textStyle="italic"
                         android:ellipsize="end" />
 
+                    <TextView
+                        android:id="@+id/tvStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:paddingTop="4dp"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/white"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
                     <Button
                         android:id="@+id/btnGuardar"
                         android:layout_width="220dp"

@@ -57,16 +57,20 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         )
         
         private val valoresAislamientoPorDefecto = listOf(
+            "SIN BLOQUEO",
             "V/V VAPOR",
             "V/V CONDENSADO",
-            "V/V VAPOR/COND",
-            "TVS 4V/V PISTÓN",
-            "TVS (OTRAS)",
+            "V/V ANT-POST",
+            " ",
+            "TVS 4V/V",
+            "TVS (OTRA)",
+            " ",
             "V/V VAPOR GRIPADA",
             "V/V COND. GRIPADA",
             "V/Vs GRIPADAS",
-            "TVS GRIPADA",
-            "TVS TRASPASADA"
+            " ",
+            "TVS TRASPASADA",
+            "TVS GRIPADA"
         )
         
         fun newInstance(equipoId: String): FragmentInspeccionEquipo {
@@ -138,6 +142,8 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private lateinit var spinnerServicio: Spinner
     private lateinit var etUbicacion: EditText
     private lateinit var etLinea: EditText
+    private lateinit var etNombreManifold: AutoCompleteTextView
+    private lateinit var checkboxByPass: CheckBox
     private lateinit var etObservaciones: EditText
     private lateinit var etIncidencias: EditText
     private lateinit var tvGpsCoord: TextView
@@ -146,6 +152,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private lateinit var tvIdEquipoFixed: TextView
     private lateinit var textView: TextView
     private lateinit var tvInspectorFecha: TextView
+    private lateinit var tvStatus: TextView
     private lateinit var btnGuardar: Button
     private lateinit var btnAnteriorEstado: ImageButton
     private lateinit var btnSiguienteEstado: ImageButton
@@ -207,7 +214,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         // Cargar datos y mostrar equipo seleccionado
         lifecycleScope.launch {
             // Cargar equipos desde la hoja FLOTA según la inspección seleccionada
-            cargarEquiposDesdeFLOTA()
+            cargarEquiposDesdeBaseDatos()
             
             Log.d("FragmentInspeccionEquipo", "=== VERIFICACIÓN DE DATOS ===")
             Log.d("FragmentInspeccionEquipo", "Total equipos cargados: ${equipos.size}")
@@ -270,6 +277,8 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         // EditTexts
         etUbicacion = view.findViewById(R.id.etUbicacion)
         etLinea = view.findViewById(R.id.etLinea)
+        etNombreManifold = view.findViewById(R.id.autoInstalacionMf)
+        checkboxByPass = view.findViewById(R.id.checkboxByPass)
         etObservaciones = view.findViewById(R.id.etObservaciones)
         etIncidencias = view.findViewById(R.id.etIncidencias)
         
@@ -290,6 +299,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         tvIdEquipoFixed = view.findViewById(R.id.tvIdEquipoFixed)
         textView = view.findViewById(R.id.textView)
         tvInspectorFecha = view.findViewById(R.id.tvInspectorFecha)
+        tvStatus = view.findViewById(R.id.tvStatus)
         
         // Botones
         btnGuardar = view.findViewById(R.id.btnGuardar)
@@ -343,34 +353,14 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             unidadAdapter.setDropDownViewResource(R.layout.spinner_dropdown_white_text)
             spinnerUnidad.adapter = unidadAdapter
             
-            val estados = inspeccionDao.getEstadosUnicos().ifEmpty { 
-                listOf("OPERATIVO", "MANTENIMIENTO", "FUERA DE SERVICIO", "REPARACIÓN") 
-            }
-            
-            // Cargar colores primero para poder ordenar
+            // Cargar colores primero para obtener los estados de inspección del JSON
             coloresEstados = cargarColoresEstados()
             
-            // Ordenar estados según el orden del JSON (mantener orden original)
-            val estadosOrdenados = estados.sortedWith { estado1, estado2 ->
-                // Obtener las claves del JSON en el orden original
-                val clavesJson = coloresEstados.keys.toList()
+            // Usar directamente los estados del JSON (estados de inspección, no status del equipo)
+            // Mantener el orden original del JSON
+            val estadosOrdenados = coloresEstados.keys.toList()
                 
-                // Buscar la posición de cada estado en el JSON
-                val posicion1 = clavesJson.indexOf(estado1.uppercase().trim())
-                val posicion2 = clavesJson.indexOf(estado2.uppercase().trim())
-                
-                // Si ambos están en el JSON, ordenar por su posición
-                if (posicion1 != -1 && posicion2 != -1) {
-                    posicion1.compareTo(posicion2)
-                } else if (posicion1 != -1) {
-                    -1 // estado1 está en JSON, va primero
-                } else if (posicion2 != -1) {
-                    1 // estado2 está en JSON, va primero
-                } else {
-                    // Si ninguno está en JSON, ordenar alfabéticamente
-                    estado1.compareTo(estado2)
-                }
-            }
+            Log.d("FragmentInspeccionEquipo", "Estados de inspección cargados desde JSON: ${estadosOrdenados.size} estados")
             
             val estadoAdapter = EstadoSpinnerAdapter(requireContext(), estadosOrdenados)
             spinnerEstado.adapter = estadoAdapter
@@ -544,7 +534,17 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         Log.d("MOSTRAR_EQUIPO", "Mostrando equipo: $equipo")
         Log.d("MOSTRAR_EQUIPO", "Índice: $index, Total equipos: ${equipos.size}")
         Log.d("MOSTRAR_EQUIPO", "ID del equipo: ${equipo?.id}")
-        Log.d("MOSTRAR_EQUIPO", "Área: ${equipo?.area}, Unidad: ${equipo?.unidad}")
+        Log.d("MOSTRAR_EQUIPO", "=== DATOS DEL EQUIPO EN MEMORIA ===")
+        Log.d("MOSTRAR_EQUIPO", "area='${equipo?.area}' (null=${equipo?.area == null}, empty=${equipo?.area?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "unidad='${equipo?.unidad}' (null=${equipo?.unidad == null}, empty=${equipo?.unidad?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "instalacion='${equipo?.instalacion}' (null=${equipo?.instalacion == null}, empty=${equipo?.instalacion?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "ubicacion='${equipo?.ubicacion}' (null=${equipo?.ubicacion == null}, empty=${equipo?.ubicacion?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "linea='${equipo?.linea}' (null=${equipo?.linea == null}, empty=${equipo?.linea?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "marca='${equipo?.marca}' (null=${equipo?.marca == null}, empty=${equipo?.marca?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "modelo='${equipo?.modelo}' (null=${equipo?.modelo == null}, empty=${equipo?.modelo?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "estado='${equipo?.estado}' (null=${equipo?.estado == null}, empty=${equipo?.estado?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "flota='${equipo?.flota}' (null=${equipo?.flota == null}, empty=${equipo?.flota?.isEmpty() == true})")
+        Log.d("MOSTRAR_EQUIPO", "=== FIN DATOS EN MEMORIA ===")
         
         // Llenar campos principales
         // Mostrar ID del equipo en el TAG fijo (parte superior no scrollable)
@@ -574,6 +574,8 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         // Llenar EditTexts de DATOS GENERALES
         etUbicacion.setText(equipo?.ubicacion ?: "")
         etLinea.setText(equipo?.linea ?: "")
+        etNombreManifold.setText(equipo?.instalacionMf ?: "")
+        checkboxByPass.isChecked = equipo?.byPass ?: false
         
         // Mostrar coordenadas GPS existentes (formato de 6 decimales)
         equipo?.gpsCoord?.let { gpsCoord ->
@@ -640,6 +642,16 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         val fecha = equipo?.fechaInspeccion ?: "-"
         val detector = equipo?.detectorUtilizado ?: "-"
         tvInspectorFecha.text = "$fecha - $inspector ($detector)"
+        
+        // Mostrar FLOTA si está disponible (no se usa para colorear)
+        val flota = equipo?.flota ?: ""
+        if (flota.isNotEmpty()) {
+            tvStatus.text = "FLOTA: $flota"
+            tvStatus.visibility = View.VISIBLE
+            Log.d("FragmentInspeccionEquipo", "FLOTA del equipo: $flota")
+        } else {
+            tvStatus.visibility = View.GONE
+        }
         
         // Actualizar mini galería
         equipo?.id?.let { equipoId ->
@@ -777,6 +789,10 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             val nota = etObservaciones.text.toString()
             val incidencias = etIncidencias.text.toString()
             val linea = etLinea.text.toString()
+            val nombreManifold = etNombreManifold.text.toString()
+            val byPass = checkboxByPass.isChecked
+            val instalacion = spinnerInstalacion.selectedItem?.toString() ?: ""
+            val aislamiento = spinnerAislamiento.selectedItem?.toString() ?: ""
             
             Log.d("FragmentInspeccionEquipo", "Datos de los campos:")
             Log.d("FragmentInspeccionEquipo", "  - Estado: $estado")
@@ -784,6 +800,10 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             Log.d("FragmentInspeccionEquipo", "  - Nota: $nota")
             Log.d("FragmentInspeccionEquipo", "  - Incidencias: $incidencias")
             Log.d("FragmentInspeccionEquipo", "  - Línea: $linea")
+            Log.d("FragmentInspeccionEquipo", "  - Instalación: $instalacion")
+            Log.d("FragmentInspeccionEquipo", "  - Nombre Manifold: $nombreManifold")
+            Log.d("FragmentInspeccionEquipo", "  - By-Pass: $byPass")
+            Log.d("FragmentInspeccionEquipo", "  - Aislamiento: $aislamiento")
             
             // Verificar si se modificaron campos manuales (no automáticos)
             val camposModificados = mutableListOf<String>()
@@ -800,6 +820,10 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             if (nota != (equipoActual.nota ?: "")) camposModificados.add("nota")
             if (incidencias != (equipoActual.incidencias ?: "")) camposModificados.add("incidencias")
             if (linea != (equipoActual.linea ?: "")) camposModificados.add("linea")
+            if (nombreManifold != (equipoActual.instalacionMf ?: "")) camposModificados.add("instalacionMf")
+            if (byPass != equipoActual.byPass) camposModificados.add("byPass")
+            if (instalacion != (equipoActual.instalacion ?: "")) camposModificados.add("instalacion")
+            if (aislamiento != (equipoActual.aislamiento ?: "")) camposModificados.add("aislamiento")
             
             // GPS: Solo considerar cambio si hay diferencia significativa (más de 10 metros)
             val gpsOriginal = equipoActual.gpsCoord ?: ""
@@ -886,6 +910,10 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 nota = nota,
                 incidencias = incidencias,
                 linea = linea,
+                instalacion = instalacion,
+                instalacionMf = nombreManifold,
+                byPass = byPass,
+                aislamiento = aislamiento,
                 gpsCoord = coordenadasGPS,
                 gpsAcc = precisionGPS,
                 periodicidad = periodicidadActual,
@@ -1112,18 +1140,28 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             tablaHistorial.removeViewAt(i)
         }
         
-        // Obtener datos del historial desde la configuración
+        // Obtener datos del historial desde la configuración (usar nuevas claves)
         val prefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
-        val libroId = prefs.getString("db_inspecciones_libro_id", null)
-        val hoja = prefs.getString("db_inspecciones_hoja", "FLOTA")
+        // Usar libro_id y hoja_flota (nuevas claves del sistema simplificado)
+        val libroId = prefs.getString("libro_id", null) ?: prefs.getString("db_inspecciones_libro_id", null)
+        val hoja = prefs.getString("hoja_flota", null) ?: prefs.getString("db_inspecciones_hoja", "FLOTA")
         
         // Debug: Verificar todas las claves de configuración
         Log.d("FragmentInspeccionEquipo", "=== DEBUG CONFIGURACIÓN ===")
         Log.d("FragmentInspeccionEquipo", "Todas las claves en SharedPreferences:")
         val allKeys = prefs.all.keys
         for (key in allKeys) {
-            val value = prefs.getString(key, null)
-            Log.d("FragmentInspeccionEquipo", "  $key = $value")
+            val value = prefs.all[key]
+            // Convertir el valor a String de forma segura
+            val valueStr = when (value) {
+                is String -> value
+                is Int -> value.toString()
+                is Boolean -> value.toString()
+                is Float -> value.toString()
+                is Long -> value.toString()
+                else -> value?.toString() ?: "null"
+            }
+            Log.d("FragmentInspeccionEquipo", "  $key = $valueStr")
         }
         
         Log.d("FragmentInspeccionEquipo", "=== DIAGNÓSTICO HISTORIAL ===")
@@ -1173,6 +1211,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private suspend fun obtenerHistorialEquipo(sheetsManager: GoogleSheetsManager, libroId: String, hoja: String, equipoId: String): List<HistorialInspeccion> {
         return try {
             // Leer toda la hoja para encontrar el equipo
+            // La estructura es: Fila 1 (títulos), Fila 2 (cabeceras), Fila 3+ (datos)
             val range = "$hoja!A:ZZ"
             val values = sheetsManager.leerRango(libroId, range)
             
@@ -1181,9 +1220,9 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 return emptyList()
             }
             
-            // Buscar la fila del equipo
-            val filaEquipo = values.find { fila: List<Any?> ->
-                fila.isNotEmpty() && fila[1]?.toString()?.trim() == equipoId // Columna B (TAG)
+            // Buscar la fila del equipo (empezar desde índice 2 = fila 3, después de las cabeceras en fila 2)
+            val filaEquipo = values.drop(2).find { fila: List<Any?> ->
+                fila.isNotEmpty() && fila.size > 1 && fila[1]?.toString()?.trim() == equipoId // Columna B (TAG)
             }
             
             if (filaEquipo == null) {
@@ -1191,23 +1230,27 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 return emptyList()
             }
             
-            // Leer la fila 2 para obtener los números de inspección
-            val fila2 = values[1] // Fila 2 (índice 1)
+            // Leer la fila 2 (índice 1) para obtener los números de inspección desde las cabeceras
+            // Las cabeceras tienen formato "ESTADO 25", "FECHA 25", "INSPECTOR 25", "DETECTOR 25", "NOTA 25"
+            val fila2 = if (values.size > 1) values[1] else emptyList<Any?>() // Fila 2 (índice 1)
             val numerosInspeccion = mutableListOf<Int>()
             
-            Log.d("FragmentInspeccionEquipo", "Fila 2 tiene ${fila2.size} columnas")
-            Log.d("FragmentInspeccionEquipo", "Primeras 10 columnas de fila 2: ${fila2.take(10)}")
+            Log.d("FragmentInspeccionEquipo", "Fila 2 (cabeceras) tiene ${fila2.size} columnas")
+            Log.d("FragmentInspeccionEquipo", "Primeras 20 columnas de fila 2: ${fila2.take(20).map { it?.toString() }}")
             
-            val numerosConIndices = mutableMapOf<Int, Int>() // número -> índice
+            val numerosConIndices = mutableMapOf<Int, Int>() // número -> índice de columna ESTADO
             
+            // Buscar columnas con formato "ESTADO 25", "ESTADO 26", etc.
             for (i in fila2.indices) {
-                val valor = fila2[i]?.toString()?.trim()
-                if (valor != null && valor.matches(Regex("\\d+"))) {
-                    val numero = valor.toIntOrNull()
+                val valor = fila2[i]?.toString()?.trim() ?: ""
+                // Buscar patrones como "ESTADO 25", "ESTADO 26", etc.
+                val match = Regex("ESTADO\\s+(\\d+)", RegexOption.IGNORE_CASE).find(valor)
+                if (match != null) {
+                    val numero = match.groupValues[1].toIntOrNull()
                     if (numero != null && numero >= 25 && numero <= 50) {
                         numerosInspeccion.add(numero)
-                        numerosConIndices[numero] = i
-                        Log.d("FragmentInspeccionEquipo", "Número de inspección encontrado: $numero en columna $i")
+                        numerosConIndices[numero] = i // Guardar el índice de la columna ESTADO
+                        Log.d("FragmentInspeccionEquipo", "Número de inspección encontrado: $numero en columna $i (ESTADO)")
                     }
                 }
             }
@@ -1216,18 +1259,20 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             val historial = mutableListOf<HistorialInspeccion>()
             
             for (numero in numerosInspeccion.sorted()) {
-                // Obtener el índice real del número de inspección en la fila 2
-                val indiceNumero = numerosConIndices[numero] ?: continue
+                // Obtener el índice de la columna ESTADO para este número de inspección
+                val indiceEstado = numerosConIndices[numero] ?: continue
                 
-                // La columna ESTADO está justo después del número de inspección
-                val columnaBase = indiceNumero + 1
+                // Las columnas están en orden: ESTADO, FECHA, INSPECTOR, DETECTOR, NOTA
+                // Entonces: ESTADO = indiceEstado, FECHA = indiceEstado + 1, INSPECTOR = indiceEstado + 2, DETECTOR = indiceEstado + 3, NOTA = indiceEstado + 4
                 
-                Log.d("FragmentInspeccionEquipo", "Procesando inspección $numero: índice=$indiceNumero, columnaBase=$columnaBase")
+                Log.d("FragmentInspeccionEquipo", "Procesando inspección $numero: índice ESTADO=$indiceEstado")
                 
-                if (columnaBase < filaEquipo.size) {
-                    var estado = filaEquipo.getOrNull(columnaBase)?.toString()?.trim() ?: ""
-                    var fecha = filaEquipo.getOrNull(columnaBase + 1)?.toString()?.trim() ?: ""
-                    var nota = filaEquipo.getOrNull(columnaBase + 2)?.toString()?.trim() ?: ""
+                if (indiceEstado < filaEquipo.size) {
+                    var estado = filaEquipo.getOrNull(indiceEstado)?.toString()?.trim() ?: ""
+                    var fecha = filaEquipo.getOrNull(indiceEstado + 1)?.toString()?.trim() ?: ""
+                    var inspector = filaEquipo.getOrNull(indiceEstado + 2)?.toString()?.trim() ?: ""
+                    var detector = filaEquipo.getOrNull(indiceEstado + 3)?.toString()?.trim() ?: ""
+                    var nota = filaEquipo.getOrNull(indiceEstado + 4)?.toString()?.trim() ?: ""
                     
                     // Filtrar #REF! - convertir a vacío
                     if (estado == "#REF!") estado = ""
@@ -1240,7 +1285,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                         historial.add(HistorialInspeccion(numero, fecha, estado, nota))
                     }
                 } else {
-                    Log.w("FragmentInspeccionEquipo", "Columna base $columnaBase fuera de rango para inspección $numero")
+                    Log.w("FragmentInspeccionEquipo", "Índice ESTADO $indiceEstado fuera de rango para inspección $numero")
                 }
             }
             
@@ -1302,18 +1347,18 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             tablaReparaciones.removeViewAt(1)
         }
         
-        // Obtener configuración de DB inspecciones
+        // Obtener configuración de reparaciones (usar hoja de reparaciones)
         val prefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
-        val libroId = prefs.getString("db_libro_id", null)
-        val hoja = prefs.getString("db_inspecciones_hoja", "FLOTA")
+        val libroId = prefs.getString("libro_id", null) ?: prefs.getString("db_libro_id", null)
+        val hojaReparaciones = prefs.getString("hoja_reparaciones", null) ?: prefs.getString("db_reparaciones_hoja", "REPARACIONES")
         
         Log.d("FragmentInspeccionEquipo", "=== DIAGNÓSTICO REPARACIONES ===")
         Log.d("FragmentInspeccionEquipo", "Libro ID: $libroId")
-        Log.d("FragmentInspeccionEquipo", "Hoja: $hoja")
+        Log.d("FragmentInspeccionEquipo", "Hoja Reparaciones: $hojaReparaciones")
         Log.d("FragmentInspeccionEquipo", "Equipo ID: ${equipo?.id}")
         
         if (libroId == null) {
-            mostrarMensajeErrorReparaciones("Configura primero 'DB inspecciones' en la pantalla de configuración")
+            mostrarMensajeErrorReparaciones("Configura primero el libro en la pantalla de configuración")
             return
         }
         
@@ -1321,7 +1366,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             try {
                 val sheetsManager = obtenerGoogleSheetsManager()
                 if (sheetsManager != null) {
-                    val reparaciones = obtenerReparacionesEquipo(sheetsManager, libroId, hoja ?: "FLOTA", equipo?.id ?: "")
+                    val reparaciones = obtenerReparacionesEquipo(sheetsManager, libroId, hojaReparaciones ?: "REPARACIONES", equipo?.id ?: "")
                     
                     withContext(Dispatchers.Main) {
                         if (reparaciones.isEmpty()) {
@@ -1355,63 +1400,75 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         hoja: String,
         equipoId: String
     ): List<ReparacionEquipo> {
-        Log.d("FragmentInspeccionEquipo", "Obteniendo reparaciones para equipo: $equipoId")
+        Log.d("FragmentInspeccionEquipo", "Obteniendo reparaciones para equipo: $equipoId desde hoja: $hoja")
         
         try {
-            // Leer toda la hoja FLOTA
-            val data = sheetsManager.leerRango(libroId, "$hoja!A:ZZ")
+            // Leer toda la hoja de reparaciones
+            // Estructura esperada: Fila 1 (títulos), Fila 2 (cabeceras), Fila 3+ (datos)
+            val range = "$hoja!A:ZZ"
+            val data = sheetsManager.leerRango(libroId, range)
             
-            if (data.isEmpty()) {
+            if (data.isEmpty() || data.size < 2) {
                 Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja $hoja")
                 return emptyList()
             }
             
-            // Buscar la fila del equipo por ID (columna B)
-            val filaEquipo = data.find { fila: List<Any?> ->
-                fila.size > 1 && fila[1]?.toString()?.trim() == equipoId.trim()
-            }
+            // Leer cabeceras de la fila 2 (índice 1)
+            val headerRow = if (data.size > 1) data[1] else emptyList<Any?>()
             
-            if (filaEquipo == null) {
-                Log.w("FragmentInspeccionEquipo", "No se encontró el equipo $equipoId en la hoja")
-                return emptyList()
-            }
+            // Buscar índice de columna TAG (normalmente columna B, índice 1)
+            val tagIndex = headerRow.indexOfFirst { 
+                it?.toString()?.uppercase()?.trim()?.contains("TAG", ignoreCase = true) == true 
+            }.takeIf { it >= 0 } ?: 1 // Por defecto columna B (índice 1)
             
-            Log.d("FragmentInspeccionEquipo", "Equipo encontrado en fila ${data.indexOf(filaEquipo) + 1}")
+            // Buscar índice de columna FECHA
+            val fechaIndex = headerRow.indexOfFirst { 
+                it?.toString()?.uppercase()?.trim()?.contains("FECHA", ignoreCase = true) == true 
+            }.takeIf { it >= 0 } ?: -1
             
-            // Buscar columnas de reparaciones (asumiendo que están después de las columnas de inspecciones)
-            // Las reparaciones podrían estar en columnas como REPARACIONES_FECHA, REPARACIONES_TIPO, etc.
-            val headerRow = data[0]
+            // Buscar índice de columna REPARACION
+            val reparacionIndex = headerRow.indexOfFirst { 
+                it?.toString()?.uppercase()?.trim()?.let { header ->
+                    header.contains("REPARACION", ignoreCase = true) || 
+                    header.contains("DESCRIPCION", ignoreCase = true) ||
+                    header.contains("OBSERVACION", ignoreCase = true)
+                } == true
+            }.takeIf { it >= 0 } ?: -1
+            
+            Log.d("FragmentInspeccionEquipo", "Índices encontrados: TAG=$tagIndex, FECHA=$fechaIndex, REPARACION=$reparacionIndex")
+            
+            // Buscar todas las filas donde el TAG coincida con el equipoId (empezar desde fila 3, índice 2)
             val reparaciones = mutableListOf<ReparacionEquipo>()
             
-            // Buscar columnas que contengan "REPARACION" en el nombre
-            val columnasReparacion = headerRow.mapIndexedNotNull { index, header ->
-                if (header?.toString()?.contains("REPARACION", ignoreCase = true) == true) {
-                    index to header.toString()
-                } else null
-            }
-            
-            Log.d("FragmentInspeccionEquipo", "Columnas de reparación encontradas: $columnasReparacion")
-            
-            // Procesar cada grupo de reparaciones
-            columnasReparacion.forEach { (indice, nombreColumna) ->
-                val valor = filaEquipo.getOrNull(indice)?.toString()?.trim()
-                if (!valor.isNullOrEmpty() && valor != "#REF!") {
-                    // Extraer información de la reparación
-                    val partes = valor.split("|") // Asumiendo formato: fecha|tipo|descripcion
-                    if (partes.size >= 3) {
+            for (i in 2 until data.size) {
+                val fila = data[i]
+                if (fila.size > tagIndex) {
+                    val tag = fila.getOrNull(tagIndex)?.toString()?.trim() ?: ""
+                    if (tag.equals(equipoId, ignoreCase = true)) {
+                        val fecha = if (fechaIndex >= 0 && fechaIndex < fila.size) {
+                            fila.getOrNull(fechaIndex)?.toString()?.trim() ?: ""
+                        } else ""
+                        
+                        val reparacion = if (reparacionIndex >= 0 && reparacionIndex < fila.size) {
+                            fila.getOrNull(reparacionIndex)?.toString()?.trim() ?: ""
+                        } else ""
+                        
+                        if (fecha.isNotEmpty() || reparacion.isNotEmpty()) {
                         reparaciones.add(
                             ReparacionEquipo(
-                                id = "rep_${indice}",
-                                fecha = partes[0],
-                                tipo = partes[1],
-                                descripcion = partes[2]
+                                    id = "rep_${i}_${reparaciones.size}",
+                                    fecha = fecha,
+                                    tipo = "", // No hay tipo en la hoja de reparaciones
+                                    descripcion = reparacion
                             )
                         )
+                            Log.d("FragmentInspeccionEquipo", "Reparación encontrada: fecha=$fecha, reparacion=$reparacion")
+                        }
                     }
                 }
             }
             
-            Log.d("FragmentInspeccionEquipo", "Reparaciones encontradas: ${reparaciones.size}")
+            Log.d("FragmentInspeccionEquipo", "Total reparaciones encontradas: ${reparaciones.size}")
             return reparaciones
             
         } catch (e: Exception) {
@@ -1452,19 +1509,9 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 setBackgroundColor(resources.getColor(android.R.color.transparent, null))
             }
             
-            // Fecha
+            // Fecha (formato DD/MM/AA)
             val tvFecha = TextView(requireContext()).apply {
                 text = formatearFecha(reparacion.fecha)
-                setTextColor(resources.getColor(android.R.color.white, null))
-                textSize = 12f
-                gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.2f)
-                setPadding(8, 0, 8, 0)
-            }
-            
-            // Tipo
-            val tvTipo = TextView(requireContext()).apply {
-                text = reparacion.tipo
                 setTextColor(resources.getColor(android.R.color.white, null))
                 textSize = 12f
                 gravity = android.view.Gravity.CENTER or android.view.Gravity.CENTER_VERTICAL
@@ -1472,19 +1519,18 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 setPadding(8, 0, 8, 0)
             }
             
-            // Descripción
-            val tvDescripcion = TextView(requireContext()).apply {
+            // Reparación (descripción)
+            val tvReparacion = TextView(requireContext()).apply {
                 text = reparacion.descripcion
                 setTextColor(resources.getColor(android.R.color.white, null))
                 textSize = 12f
                 gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.5f)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 0.7f)
                 setPadding(8, 0, 8, 0)
             }
             
             fila.addView(tvFecha)
-            fila.addView(tvTipo)
-            fila.addView(tvDescripcion)
+            fila.addView(tvReparacion)
             
             // Divisor horizontal
             val divisor = View(requireContext()).apply {
@@ -1538,8 +1584,10 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private suspend fun guardarInspeccionEnGoogleSheets(equipo: Equipo) {
         try {
             val sharedPrefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
-            val libroId = sharedPrefs.getString("db_libro_id", null)
-            val hoja = sharedPrefs.getString("db_inspecciones_hoja", "FLOTA")
+            // Usar nuevas claves del sistema simplificado
+            val libroId = sharedPrefs.getString("libro_id", null) ?: sharedPrefs.getString("db_libro_id", null)
+            // Para guardar, usar la hoja de inspección actual, no FLOTA
+            val hoja = sharedPrefs.getString("hoja_inspeccion", null) ?: sharedPrefs.getString("db_inspecciones_hoja", "FLOTA")
             val numeroInspeccion = sharedPrefs.getString("numero_inspeccion", "25")
             
             if (libroId == null) {
@@ -1567,8 +1615,9 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
             }
             
             // Buscar la fila del equipo (columna B = TAG)
+            // Fila 1 = índice 0 (títulos), Fila 2 = índice 1 (cabeceras), Fila 3+ = índice 2+ (datos)
             var filaEquipo = -1
-            for (i in 2 until data.size) { // Empezar desde fila 3 (índice 2)
+            for (i in 2 until data.size) { // Empezar desde fila 3 (índice 2) después de cabeceras en fila 2
                 val fila = data[i]
                 if (fila.size > 1) {
                     val tag = fila[1]?.toString()?.trim()
@@ -1584,8 +1633,9 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 return
             }
             
-            // Leer fila 2 para encontrar la columna del número de inspección
-            val fila2 = data[1] // Fila 2 (índice 1)
+            // Leer fila 2 (índice 1) para encontrar la columna del número de inspección
+            // Las cabeceras están en la fila 2
+            val fila2 = data[1] // Fila 2 (índice 1) - cabeceras
             var columnaInspeccion = -1
             
             for (i in fila2.indices) {
@@ -1660,23 +1710,70 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
         }
     }
     
-    private suspend fun cargarEquiposDesdeFLOTA() {
-        Log.d("FragmentInspeccionEquipo", "Cargando equipos desde hoja FLOTA")
+    private suspend fun cargarEquiposDesdeBaseDatos() {
+        Log.d("FragmentInspeccionEquipo", "Cargando equipos desde base de datos local")
         
         try {
-            // Obtener configuración de DB inspecciones
+            // Cargar equipos desde la base de datos local
+            val equiposBD = withContext(Dispatchers.IO) {
+                inspeccionDao.getAllEquipos()
+            }
+            
+            if (equiposBD.isEmpty()) {
+                Log.w("FragmentInspeccionEquipo", "No se encontraron equipos en la base de datos local")
+                return
+            }
+            
+            Log.d("FragmentInspeccionEquipo", "Equipos cargados desde BD: ${equiposBD.size}")
+            
+            // Buscar y mostrar datos específicos del equipo A-00002
+            val equipoA00002 = equiposBD.find { it.id == "A-00002" }
+            equipoA00002?.let { eq ->
+                Log.d("FragmentInspeccionEquipo", "=== DATOS BD PARA A-00002 ===")
+                Log.d("FragmentInspeccionEquipo", "id=${eq.id}")
+                Log.d("FragmentInspeccionEquipo", "area='${eq.area}' (null=${eq.area == null}, empty=${eq.area?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "unidad='${eq.unidad}' (null=${eq.unidad == null}, empty=${eq.unidad?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "instalacion='${eq.instalacion}' (null=${eq.instalacion == null}, empty=${eq.instalacion?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "ubicacion='${eq.ubicacion}' (null=${eq.ubicacion == null}, empty=${eq.ubicacion?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "linea='${eq.linea}' (null=${eq.linea == null}, empty=${eq.linea?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "marca='${eq.marca}' (null=${eq.marca == null}, empty=${eq.marca?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "modelo='${eq.modelo}' (null=${eq.modelo == null}, empty=${eq.modelo?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "tipo='${eq.tipo}' (null=${eq.tipo == null}, empty=${eq.tipo?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "estado='${eq.estado}' (null=${eq.estado == null}, empty=${eq.estado?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "flota='${eq.flota}' (null=${eq.flota == null}, empty=${eq.flota?.isEmpty() == true})")
+                Log.d("FragmentInspeccionEquipo", "=== FIN DATOS BD A-00002 ===")
+            } ?: Log.w("FragmentInspeccionEquipo", "⚠️ Equipo A-00002 NO encontrado en BD")
+            
+            // Actualizar la lista de equipos
+            equipos.clear()
+            equipos.addAll(equiposBD)
+            estadosUnicos = equipos.mapNotNull { it.estado }.distinct().sorted()
+            
+            Log.d("FragmentInspeccionEquipo", "Equipos cargados desde BD: ${equipos.size}")
+            
+        } catch (e: Exception) {
+            Log.e("FragmentInspeccionEquipo", "Error cargando equipos desde BD: ${e.message}", e)
+        }
+    }
+    
+    private suspend fun cargarEquiposDesdeGoogleSheets() {
+        Log.d("FragmentInspeccionEquipo", "Cargando equipos desde Google Sheets")
+        
+        try {
+            // Obtener configuración de Google Sheets (usar nuevas claves)
             val prefs = requireContext().getSharedPreferences("configuracion_inspeccion", Context.MODE_PRIVATE)
-            val libroId = prefs.getString("db_libro_id", null)
-            val hoja = prefs.getString("db_inspecciones_hoja", "FLOTA")
+            val libroId = prefs.getString("libro_id", null) ?: prefs.getString("db_libro_id", null)
+            // Para cargar equipos, usar hoja FLOTA
+            val hoja = prefs.getString("hoja_flota", null) ?: prefs.getString("db_inspecciones_hoja", "FLOTA")
             val numeroInspeccion = prefs.getString("numero_inspeccion", "25")
             
-            Log.d("FragmentInspeccionEquipo", "=== CONFIGURACIÓN FLOTA ===")
+            Log.d("FragmentInspeccionEquipo", "=== CONFIGURACIÓN GOOGLE SHEETS ===")
             Log.d("FragmentInspeccionEquipo", "Libro ID: $libroId")
             Log.d("FragmentInspeccionEquipo", "Hoja: $hoja")
             Log.d("FragmentInspeccionEquipo", "Número inspección: $numeroInspeccion")
             
             if (libroId == null) {
-                Log.e("FragmentInspeccionEquipo", "No hay libro DB inspecciones configurado")
+                Log.e("FragmentInspeccionEquipo", "No hay libro Google Sheets configurado")
                 return
             }
             
@@ -1689,36 +1786,38 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 return
             }
             
-            // Leer cabeceras de la hoja FLOTA (fila 2)
+            // Leer cabeceras de la hoja (fila 2)
             val headerResponse = sheetsManager.sheetsServicePublic.spreadsheets().values()
                 .get(libroId, "$hoja!A2:ZZ2")
                 .execute()
             val headerRow = headerResponse.getValues()?.firstOrNull() ?: emptyList()
             
-            Log.d("FragmentInspeccionEquipo", "Cabeceras encontradas en FLOTA: ${headerRow.joinToString(", ")}")
+            Log.d("FragmentInspeccionEquipo", "Cabeceras encontradas: ${headerRow.joinToString(", ")}")
             
-            // Leer datos desde la hoja FLOTA (desde fila 3)
+            // Leer datos desde la hoja (desde fila 3, después de las cabeceras en fila 2)
             val dataResponse = sheetsManager.sheetsServicePublic.spreadsheets().values()
                 .get(libroId, "$hoja!A3:ZZ")
                 .execute()
             val dataRows = dataResponse.getValues() ?: emptyList()
             
             if (dataRows.isEmpty()) {
-                Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja FLOTA")
+                Log.w("FragmentInspeccionEquipo", "No se encontraron datos en la hoja")
                 return
             }
             
-            Log.d("FragmentInspeccionEquipo", "Datos obtenidos desde FLOTA: ${dataRows.size} filas con ${headerRow.size} columnas")
+            Log.d("FragmentInspeccionEquipo", "Datos obtenidos: ${dataRows.size} filas con ${headerRow.size} columnas")
             
             // Procesar datos para crear equipos usando el mapeo de columnas
-            val equiposFLOTA = mutableListOf<Equipo>()
+            val equiposGS = mutableListOf<Equipo>()
             
             // Cargar mapeo de columnas desde assets
             val mapeoJson = requireContext().assets.open("mapeo_columnas.json").bufferedReader().use { it.readText() }
             val mapeoColumnas = JSONObject(mapeoJson)
             
-            // Leer fila 2 para obtener números de inspección
-            val fila2 = dataRows[0] // Fila 2 (índice 0 en dataRows)
+            // Leer fila 2 (cabeceras) para obtener números de inspección
+            // dataRows[0] corresponde a la fila 3 del spreadsheet, pero necesitamos la fila 2 (cabeceras)
+            // Vamos a leer la fila 2 directamente desde headerRow que ya tenemos
+            val fila2 = headerRow // Fila 2 (cabeceras) ya la tenemos en headerRow
             val numerosConIndices = mutableMapOf<Int, Int>() // número -> índice
             
             for (i in fila2.indices) {
@@ -1790,14 +1889,15 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                 val inspeccionesOrdenadas = numerosConIndices.keys.sortedDescending()
                 
                 for (numeroInspeccionActual in inspeccionesOrdenadas) {
-                    val indiceInspeccionActual = numerosConIndices[numeroInspeccionActual] ?: continue
-                    val columnaBase = indiceInspeccionActual + 1
+                    val indiceEstado = numerosConIndices[numeroInspeccionActual] ?: continue
+                    // Las columnas están en orden: ESTADO, FECHA, INSPECTOR, DETECTOR, NOTA
+                    // Entonces: ESTADO = indiceEstado, FECHA = indiceEstado + 1, INSPECTOR = indiceEstado + 2, DETECTOR = indiceEstado + 3, NOTA = indiceEstado + 4
                     
-                    val estado = fila.getOrNull(columnaBase)?.toString()?.trim() ?: ""
-                    val fecha = fila.getOrNull(columnaBase + 1)?.toString()?.trim() ?: ""
-                    val nota = fila.getOrNull(columnaBase + 2)?.toString()?.trim() ?: ""
-                    val inspector = fila.getOrNull(columnaBase + 3)?.toString()?.trim() ?: ""
-                    val detector = fila.getOrNull(columnaBase + 4)?.toString()?.trim() ?: ""
+                    val estado = fila.getOrNull(indiceEstado)?.toString()?.trim() ?: ""
+                    val fecha = fila.getOrNull(indiceEstado + 1)?.toString()?.trim() ?: ""
+                    val inspector = fila.getOrNull(indiceEstado + 2)?.toString()?.trim() ?: ""
+                    val detector = fila.getOrNull(indiceEstado + 3)?.toString()?.trim() ?: ""
+                    val nota = fila.getOrNull(indiceEstado + 4)?.toString()?.trim() ?: ""
                     
                     // Si encontramos datos en esta inspección, los usamos
                     if (estado.isNotBlank() || fecha.isNotBlank() || nota.isNotBlank()) {
@@ -1840,6 +1940,7 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                     servicio = "", // No está en el mapeo actual
                     ubicacion = ubicacion,
                     estado = estadoLimpio,
+                    flota = null, // FLOTA se obtiene de la columna FLOTA en la importación
                     fechaInspeccion = fechaLimpia,
                     nota = notaLimpia,
                     identidadInspector = inspectorLimpio,
@@ -1857,18 +1958,18 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
                     urlFotosExtra = null
                 )
                 
-                equiposFLOTA.add(equipo)
+                equiposGS.add(equipo)
             }
             
             // Actualizar la lista de equipos
             equipos.clear()
-            equipos.addAll(equiposFLOTA)
+            equipos.addAll(equiposGS)
             estadosUnicos = equipos.mapNotNull { it.estado }.distinct().sorted()
             
-            Log.d("FragmentInspeccionEquipo", "Equipos cargados desde FLOTA: ${equipos.size}")
+            Log.d("FragmentInspeccionEquipo", "Equipos cargados desde Google Sheets: ${equipos.size}")
             
         } catch (e: Exception) {
-            Log.e("FragmentInspeccionEquipo", "Error cargando equipos desde FLOTA: ${e.message}", e)
+            Log.e("FragmentInspeccionEquipo", "Error cargando equipos desde Google Sheets: ${e.message}", e)
         }
     }
     
@@ -2266,11 +2367,23 @@ class FragmentInspeccionEquipo : Fragment(), MiniGaleriaFragment.OnFotoActualiza
     private fun configurarListenersBasicos() {
         Log.d("SpinnerDebug", "Configurando listeners básicos...")
         
-        // Listener básico para instalación
+        // Listener para instalación - activar/desactivar nombre de manifold
         spinnerInstalacion.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
                 val instalacionSeleccionada = parent?.getItemAtPosition(position)?.toString() ?: ""
                 Log.d("SpinnerDebug", "Instalación seleccionada: '$instalacionSeleccionada'")
+                
+                // Activar campo de nombre de manifold solo si es MANIFOLD VAPOR o MANIFOLD CONDENSADO
+                val esManifold = instalacionSeleccionada == "MANIFOLD VAPOR" || instalacionSeleccionada == "MANIFOLD CONDENSADO"
+                etNombreManifold.isEnabled = esManifold
+                etNombreManifold.alpha = if (esManifold) 1.0f else 0.5f // Indicador visual
+                
+                if (!esManifold) {
+                    // Limpiar el campo si no es manifold
+                    etNombreManifold.setText("")
+                }
+                
+                Log.d("SpinnerDebug", "Nombre de manifold ${if (esManifold) "activado" else "desactivado"}")
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }

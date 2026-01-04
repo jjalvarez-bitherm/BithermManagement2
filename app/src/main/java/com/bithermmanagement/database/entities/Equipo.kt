@@ -29,6 +29,7 @@ data class Equipo(
     val servicio: String?,
     var ubicacion: String?,
     var estado: String?,
+    @ColumnInfo(name = "status") var flota: String?,
     @ColumnInfo(name = "fecha_inspeccion") val fechaInspeccion: String?,
     var nota: String?,
     @ColumnInfo(name = "identidad_inspector") val identidadInspector: String?,

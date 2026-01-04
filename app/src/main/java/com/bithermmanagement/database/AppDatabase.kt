@@ -32,6 +32,7 @@ import com.bithermmanagement.ausencias.models.AbsenceRequest
 import com.bithermmanagement.ausencias.models.AbsenceLog
 import com.bithermmanagement.database.entities.FotoEquipoEntity
 import com.bithermmanagement.database.dao.FotoEquipoDao
+import android.util.Log
 
 @Database(
     entities = [
@@ -47,7 +48,7 @@ import com.bithermmanagement.database.dao.FotoEquipoDao
         AbsenceLog::class,
         FotoEquipoEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, Converters::class)
@@ -509,6 +510,17 @@ abstract class AppDatabase : RoomDatabase() {
                     } catch (e2: Exception) {
                         // Si todo falla, continuar
                     }
+                }
+            }
+        }
+
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                try {
+                    // Añadir columna status a la tabla equipos
+                    database.execSQL("ALTER TABLE equipos ADD COLUMN status TEXT")
+                } catch (e: Exception) {
+                    Log.e("AppDatabase", "Error en migración 23->24: ${e.message}", e)
                 }
             }
         }

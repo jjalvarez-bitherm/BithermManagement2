@@ -1,0 +1,65 @@
+{
+  "preset_name": "Java Configuration Lock",
+  "version": "1.0.0",
+  "created_date": "2025-11-15",
+  "status": "ACTIVE",
+  "lock_java_updates": true,
+  
+  "java_configuration": {
+    "version": "21",
+    "vendor": "Eclipse Adoptium",
+    "full_version": "OpenJDK 21.0.9+10-LTS",
+    "installation_path": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.9.10-hotspot\\",
+    "locked": true,
+    "last_verified": "2025-11-15"
+  },
+
+  "build_configurations": {
+    "app_module": {
+      "sourceCompatibility": "VERSION_21",
+      "targetCompatibility": "VERSION_21",
+      "kotlinJvmTarget": "21",
+      "jvmToolchain": 21,
+      "locked": true
+    },
+    "core_module": {
+      "sourceCompatibility": "VERSION_21", 
+      "targetCompatibility": "VERSION_21",
+      "kotlinJvmTarget": "21",
+      "jvmToolchain": 21,
+      "locked": true
+    },
+    "navigation_module": {
+      "sourceCompatibility": "VERSION_21",
+      "targetCompatibility": "VERSION_21", 
+      "kotlinJvmTarget": "21",
+      "jvmToolchain": 21,
+      "locked": true
+    }
+  },
+
+  "forbidden_actions": [
+    "java_version_upgrade",
+    "java_version_downgrade", 
+    "jvm_target_change",
+    "toolchain_modification",
+    "compatibility_level_change"
+  ],
+
+  "allowed_operations": [
+    "dependency_updates_compatible_with_java21",
+    "code_optimization_without_java_changes",
+    "bug_fixes_maintaining_current_java",
+    "feature_additions_compatible_with_java21"
+  ],
+
+  "warnings": {
+    "on_java_update_attempt": "BLOCKED: User explicitly forbidden Java updates",
+    "on_version_modification": "REJECTED: Java configuration is locked by user preset",
+    "on_compatibility_change": "DENIED: Maintain Java 21 compatibility only"
+  },
+
+  "user_directive": "Usuario estableció explícitamente: NO quiere actualizaciones de Java en esta aplicación",
+  "enforcement_level": "STRICT",
+  "override_permission": false
+}

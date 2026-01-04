@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapeo de Datos - Bitherm Management</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        tr:hover {
+            background: #e3f2fd;
+        }
+        .ok {
+            background: #c8e6c9 !important;
+            color: #2e7d32;
+            font-weight: bold;
+        }
+        .problema {
+            background: #ffcdd2 !important;
+            color: #c62828;
+            font-weight: bold;
+        }
+        .critico {
+            background: #ff5252 !important;
+            color: white;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        .huérfano {
+            background: #fff9c4 !important;
+            color: #f57f17;
+            font-weight: bold;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .badge-ok {
+            background: #4caf50;
+            color: white;
+        }
+        .badge-problema {
+            background: #ff9800;
+            color: white;
+        }
+        .badge-critico {
+            background: #f44336;
+            color: white;
+        }
+        .badge-huerfano {
+            background: #ffc107;
+            color: #333;
+        }
+        .legend {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 5px 15px;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .summary-box {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-item {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid;
+        }
+        .summary-critico {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .summary-problema {
+            border-left-color: #ff9800;
+            background: #fff3e0;
+        }
+        .summary-ok {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .campo-nombre {
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .columna-sheets {
+            font-family: 'Courier New', monospace;
+            background: #e3f2fd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .campo-bd {
+            font-family: 'Courier New', monospace;
+            background: #f3e5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Análisis de Mapeo de Datos - Bitherm Management</h1>
+    
+    <div class="legend">
+        <h3>Leyenda de Estados:</h3>
+        <span class="legend-item badge-ok">✅ OK - Funciona correctamente</span>
+        <span class="legend-item badge-problema">⚠️ PROBLEMA - Necesita corrección</span>
+        <span class="legend-item badge-critico">🔴 CRÍTICO - Causa fallos graves</span>
+        <span class="legend-item badge-huerfano">🟡 HUÉRFANO - Campo en BD pero no en EquipoView</span>
+    </div>
+
+    <div class="summary-box">
+        <h2>📊 Resumen de Problemas</h2>
+        <div class="summary-item summary-ok">
+            <strong>✅ CORREGIDO:</strong> Campo <code>status</code> ahora se mapea correctamente desde columna <code>FLOTA</code> a EquipoView
+        </div>
+        <div class="summary-item summary-ok">
+            <strong>✅ CORREGIDOS:</strong> Campos huérfanos agregados a EquipoView (gpsAcc, periodicidad, byPass)
+        </div>
+        <div class="summary-item summary-problema">
+            <strong>⚠️ PENDIENTES:</strong> Fotos adicionales (urlFotoUbicacion, urlFotoManifold, urlFotosExtra) - No críticos para funcionalidad básica
+        </div>
+        <div class="summary-item summary-ok">
+            <strong>✅ CORREGIDOS:</strong> Mapeos agregados en mapeo_columnas.json (servicio, incidencias, periodicidad)
+        </div>
+    </div>
+
+    <h2>📋 Tabla de Mapeo Completo</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Campo Interno</th>
+                    <th>Columna Google Sheets</th>
+                    <th>Campo Equipo (BD)</th>
+                    <th>Campo EquipoView</th>
+                    <th>FragmentInspeccionEquipo (UI)</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="ok">
+                    <td>1</td>
+                    <td class="campo-nombre">id</td>
+                    <td class="columna-sheets">TAG</td>
+                    <td class="campo-bd">id (PK)</td>
+                    <td>id</td>
+                    <td>tvIdEquipoFixed, tvIdEquipo</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>2</td>
+                    <td class="campo-nombre">status</td>
+                    <td class="columna-sheets">FLOTA</td>
+                    <td class="campo-bd">status</td>
+                    <td>status</td>
+                    <td>tvStatus</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>3</td>
+                    <td class="campo-nombre">estado</td>
+                    <td class="columna-sheets">ESTADO N (dinámico)</td>
+                    <td class="campo-bd">estado</td>
+                    <td>estado</td>
+                    <td>spinnerEstado</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>4</td>
+                    <td class="campo-nombre">area</td>
+                    <td class="columna-sheets">AREA</td>
+                    <td class="campo-bd">area</td>
+                    <td>area</td>
+                    <td>spinnerArea</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>5</td>
+                    <td class="campo-nombre">unidad</td>
+                    <td class="columna-sheets">UNIDAD</td>
+                    <td class="campo-bd">unidad</td>
+                    <td>unidad</td>
+                    <td>spinnerUnidad</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>6</td>
+                    <td class="campo-nombre">instalacion</td>
+                    <td class="columna-sheets">Instalacion</td>
+                    <td class="campo-bd">instalacion</td>
+                    <td>instalacion</td>
+                    <td>spinnerInstalacion</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>7</td>
+                    <td class="campo-nombre">linea</td>
+                    <td class="columna-sheets">LINEA/EQUIPO</td>
+                    <td class="campo-bd">linea</td>
+                    <td>linea</td>
+                    <td>etLinea</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>8</td>
+                    <td class="campo-nombre">ubicacion</td>
+                    <td class="columna-sheets">UBICACIÓN</td>
+                    <td class="campo-bd">ubicacion</td>
+                    <td>ubicacion</td>
+                    <td>etUbicacion</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>9</td>
+                    <td class="campo-nombre">gpsCoord</td>
+                    <td class="columna-sheets">GPS_COORD</td>
+                    <td class="campo-bd">gpsCoord</td>
+                    <td>gps</td>
+                    <td>tvGpsCoord</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="huérfano">
+                    <td>10</td>
+                    <td class="campo-nombre">gpsAcc</td>
+                    <td class="columna-sheets">GPS_ACC</td>
+                    <td class="campo-bd">gpsAcc</td>
+                    <td><strong>❌ HUÉRFANO</strong></td>
+                    <td>tvGpsAcc</td>
+                    <td><span class="status-badge badge-huerfano">🟡 HUÉRFANO</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>11</td>
+                    <td class="campo-nombre">marca</td>
+                    <td class="columna-sheets">MARCA</td>
+                    <td class="campo-bd">marca</td>
+                    <td>marca</td>
+                    <td>spinnerMarca, textView</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>12</td>
+                    <td class="campo-nombre">modelo</td>
+                    <td class="columna-sheets">MODELO</td>
+                    <td class="campo-bd">modelo</td>
+                    <td>modelo</td>
+                    <td>spinnerModelo, textView</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>13</td>
+                    <td class="campo-nombre">tipo</td>
+                    <td class="columna-sheets">TIPO</td>
+                    <td class="campo-bd">tipo</td>
+                    <td>tipo</td>
+                    <td>spinnerTipo</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>14</td>
+                    <td class="campo-nombre">diametro</td>
+                    <td class="columna-sheets">DIAM.</td>
+                    <td class="campo-bd">diametro</td>
+                    <td>diametro</td>
+                    <td>spinnerDiametro, textView</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>15</td>
+                    <td class="campo-nombre">conexion</td>
+                    <td class="columna-sheets">CONEX</td>
+                    <td class="campo-bd">conexion</td>
+                    <td>conexion</td>
+                    <td>spinnerConexion, textView</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>16</td>
+                    <td class="campo-nombre">presEntrada</td>
+                    <td class="columna-sheets">P.IN</td>
+                    <td class="campo-bd">presEntrada</td>
+                    <td>presEntrada</td>
+                    <td>spinnerPIN</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>17</td>
+                    <td class="campo-nombre">presSalida</td>
+                    <td class="columna-sheets">P.OUT</td>
+                    <td class="campo-bd">presSalida</td>
+                    <td>presSalida</td>
+                    <td>spinnerPOUT</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="huérfano">
+                    <td>18</td>
+                    <td class="campo-nombre">byPass</td>
+                    <td class="columna-sheets">BY-PASS</td>
+                    <td class="campo-bd">byPass (Boolean)</td>
+                    <td><strong>❌ HUÉRFANO</strong></td>
+                    <td>❌ No se muestra</td>
+                    <td><span class="status-badge badge-huerfano">🟡 HUÉRFANO</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>19</td>
+                    <td class="campo-nombre">aislamiento</td>
+                    <td class="columna-sheets">AISLAMIENTO / BLOQUEO</td>
+                    <td class="campo-bd">aislamiento</td>
+                    <td>aislamiento</td>
+                    <td>spinnerAislamiento</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>20</td>
+                    <td class="campo-nombre">descarga</td>
+                    <td class="columna-sheets">DESCARGA</td>
+                    <td class="campo-bd">descarga</td>
+                    <td>descarga</td>
+                    <td>spinnerDescarga</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>21</td>
+                    <td class="campo-nombre">aplicacion</td>
+                    <td class="columna-sheets">APLICACIÓN</td>
+                    <td class="campo-bd">aplicacion</td>
+                    <td>aplicacion</td>
+                    <td>spinnerAplicacion</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="problema">
+                    <td>22</td>
+                    <td class="campo-nombre">servicio</td>
+                    <td class="columna-sheets"><strong>❌ NO MAPEADO</strong></td>
+                    <td class="campo-bd">servicio</td>
+                    <td>servicio</td>
+                    <td>spinnerServicio</td>
+                    <td><span class="status-badge badge-problema">⚠️ PROBLEMA</span></td>
+                </tr>
+                <tr class="huérfano">
+                    <td>23</td>
+                    <td class="campo-nombre">periodicidad</td>
+                    <td class="columna-sheets">P (usa 'p')</td>
+                    <td class="campo-bd">periodicidad</td>
+                    <td><strong>❌ HUÉRFANO</strong></td>
+                    <td>spinnerPeriodicidad</td>
+                    <td><span class="status-badge badge-huerfano">🟡 HUÉRFANO</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>24</td>
+                    <td class="campo-nombre">fechaInspeccion</td>
+                    <td class="columna-sheets">FECHA N (dinámico)</td>
+                    <td class="campo-bd">fechaInspeccion</td>
+                    <td>fechasteado</td>
+                    <td>tvInspectorFecha</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>25</td>
+                    <td class="campo-nombre">identidadInspector</td>
+                    <td class="columna-sheets">INSPECTOR N (dinámico)</td>
+                    <td class="campo-bd">identidadInspector</td>
+                    <td>inspector</td>
+                    <td>tvInspectorFecha</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>26</td>
+                    <td class="campo-nombre">detectorUtilizado</td>
+                    <td class="columna-sheets">DETECTOR N (dinámico)</td>
+                    <td class="campo-bd">detectorUtilizado</td>
+                    <td>detector</td>
+                    <td>tvInspectorFecha</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>27</td>
+                    <td class="campo-nombre">nota</td>
+                    <td class="columna-sheets">NOTA N (dinámico)</td>
+                    <td class="campo-bd">nota</td>
+                    <td>nota</td>
+                    <td>etObservaciones</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="problema">
+                    <td>28</td>
+                    <td class="campo-nombre">incidencias</td>
+                    <td class="columna-sheets"><strong>❌ NO MAPEADO</strong></td>
+                    <td class="campo-bd">incidencias</td>
+                    <td>incidencias</td>
+                    <td>etIncidencias</td>
+                    <td><span class="status-badge badge-problema">⚠️ PROBLEMA</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>29</td>
+                    <td class="campo-nombre">urlFotoEquipo</td>
+                    <td class="columna-sheets">FOTO</td>
+                    <td class="campo-bd">urlFotoEquipo</td>
+                    <td>foto</td>
+                    <td>miniGaleriaFragment</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+                <tr class="huérfano">
+                    <td>30</td>
+                    <td class="campo-nombre">urlFotoUbicacion</td>
+                    <td class="columna-sheets">FOTO_UBIC</td>
+                    <td class="campo-bd">urlFotoUbicacion</td>
+                    <td><strong>❌ HUÉRFANO</strong></td>
+                    <td>miniGaleriaFragment</td>
+                    <td><span class="status-badge badge-huerfano">🟡 HUÉRFANO</span></td>
+                </tr>
+                <tr class="huérfano">
+                    <td>31</td>
+                    <td class="campo-nombre">urlFotoManifold</td>
+                    <td class="columna-sheets">FOTO_MF</td>
+                    <td class="campo-bd">urlFotoManifold</td>
+                    <td><strong>❌ HUÉRFANO</strong></td>
+                    <td>miniGaleriaFragment</td>
+                    <td><span class="status-badge badge-huerfano">🟡 HUÉRFANO</span></td>
+                </tr>
+                <tr class="huérfano">
+                    <td>32</td>
+                    <td class="campo-nombre">urlFotosExtra</td>
+                    <td class="columna-sheets">FOTO_EXTRA</td>
+                    <td class="campo-bd">urlFotosExtra</td>
+                    <td><strong>❌ HUÉRFANO</strong></td>
+                    <td>miniGaleriaFragment</td>
+                    <td><span class="status-badge badge-huerfano">🟡 HUÉRFANO</span></td>
+                </tr>
+                <tr class="ok">
+                    <td>33</td>
+                    <td class="campo-nombre">orden</td>
+                    <td class="columna-sheets">ORDEN / ORDEN_JUAN / etc.</td>
+                    <td class="campo-bd">orden (Double)</td>
+                    <td>orden</td>
+                    <td>❌ No se muestra</td>
+                    <td><span class="status-badge badge-ok">✅ OK</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary-box">
+        <h2>🔄 Flujo de Datos</h2>
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <strong>1. Importación desde Google Sheets:</strong><br>
+            <code>Google Sheets → getRow("campo") → Equipo (BD)</code>
+        </div>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <strong>2. Carga en Lista (FragmentInspeccionActual):</strong><br>
+            <code>Equipo (BD) → EquipoView → EquipoAdapter → Cards</code><br>
+            <span style="color: #4caf50;">✅ CORREGIDO: status ahora se copia correctamente</span>
+        </div>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <strong>3. Carga en Detalle (FragmentInspeccionEquipo):</strong><br>
+            <code>Equipo (BD) → mostrarEquipo() → UI Components</code>
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <h2>📝 Estado de Campos</h2>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <h3>✅ Campos Corregidos (ahora en EquipoView):</h3>
+            <ul style="line-height: 2;">
+                <li><strong style="color: #4caf50;">status</strong> ✅ - Ahora se mapea desde columna <code>FLOTA</code></li>
+                <li><strong>gpsAcc</strong> ✅ - Precisión GPS disponible</li>
+                <li><strong>periodicidad</strong> ✅ - Disponible para filtrado</li>
+                <li><strong>byPass</strong> ✅ - Información de bypass disponible</li>
+            </ul>
+        </div>
+        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 10px 0;">
+            <h3>⚠️ Campos Pendientes (no críticos):</h3>
+            <ul style="line-height: 2;">
+                <li><strong>urlFotoUbicacion</strong> - Fotos adicionales (no crítico para funcionalidad básica)</li>
+                <li><strong>urlFotoManifold</strong> - Fotos adicionales (no crítico para funcionalidad básica)</li>
+                <li><strong>urlFotosExtra</strong> - Fotos adicionales (no crítico para funcionalidad básica)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="summary-box">
+        <h2>🔧 Correcciones Aplicadas</h2>
+        <ul style="line-height: 2;">
+            <li>✅ <strong>Actualizado mapeo:</strong> Columna <code>STATUS</code> → <code>FLOTA</code> en <code>mapeo_columnas.json</code></li>
+            <li>✅ <strong>Actualizado mapeo:</strong> Columna <code>MANIFOLD</code> → <code>Instalacion</code> en <code>mapeo_columnas.json</code></li>
+            <li>✅ <strong>Corregido spinner de estado:</strong> Ahora carga estados de inspección desde <code>estados_colores.json</code> en lugar de valores de <code>status</code> del equipo</li>
+            <li>✅ Agregado <code>status</code> a <code>EquipoView</code> (mapeado desde columna FLOTA)</li>
+            <li>✅ Agregados campos huérfanos: <code>gpsAcc</code>, <code>periodicidad</code>, <code>byPass</code></li>
+            <li>✅ Actualizado mapeo en <code>FragmentInspeccionActual.kt</code> para copiar todos los campos</li>
+            <li>✅ Actualizado <code>EquipoDao.getAllEquiposView()</code> para incluir nuevos campos</li>
+            <li>✅ Agregados mapeos faltantes en <code>mapeo_columnas.json</code> (servicio, incidencias, periodicidad)</li>
+            <li>✅ Mejorado <code>EquipoAdapter</code> para usar <code>status</code> como fallback de <code>estado</code></li>
+        </ul>
+    </div>
+</body>
+</html>
+

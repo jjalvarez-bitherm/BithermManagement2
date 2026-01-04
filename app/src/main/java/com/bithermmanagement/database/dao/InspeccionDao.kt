@@ -81,7 +81,8 @@ interface InspeccionDao {
     @Query("""
         SELECT 
             id, 
-            estado, 
+            estado,
+            status,
             area, 
             unidad,
             instalacion,

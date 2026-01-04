@@ -16,11 +16,13 @@ interface EquipoDao {
         SELECT 
             id, 
             estado, 
+            status,
             area, 
             unidad,
             instalacion,
             linea,
             aislamiento, 
+            periodicidad,
             marca, 
             modelo, 
             tipo, 
@@ -28,6 +30,7 @@ interface EquipoDao {
             conexion, 
             pres_entrada AS presEntrada, 
             pres_salida AS presSalida, 
+            by_pass AS byPass,
             descarga, 
             aplicacion, 
             servicio, 
@@ -38,6 +41,7 @@ interface EquipoDao {
             detector_utilizado AS detector, 
             incidencias, 
             gps_coord AS gps, 
+            gps_acc AS gpsAcc,
             url_foto_equipo AS foto, 
             orden
         FROM equipos
@@ -49,11 +53,13 @@ interface EquipoDao {
         SELECT 
             id, 
             estado, 
+            status,
             area, 
             unidad,
             instalacion,
             linea,
             aislamiento, 
+            periodicidad,
             marca, 
             modelo, 
             tipo, 
@@ -61,6 +67,7 @@ interface EquipoDao {
             conexion, 
             pres_entrada AS presEntrada, 
             pres_salida AS presSalida, 
+            by_pass AS byPass,
             descarga, 
             aplicacion, 
             servicio, 
@@ -71,6 +78,7 @@ interface EquipoDao {
             detector_utilizado AS detector, 
             incidencias, 
             gps_coord AS gps, 
+            gps_acc AS gpsAcc,
             url_foto_equipo AS foto, 
             orden
         FROM equipos 

@@ -860,20 +860,26 @@ class GoogleSheetsManager(
                     try {
                         val equipo = com.bithermmanagement.database.entities.Equipo(
                             id = id,
-                            estado = getValue(row, EquipoColumnMapping.ESTADO).takeIf { it.isNotEmpty() },
-                            area = getValue(row, EquipoColumnMapping.AREA).takeIf { it.isNotEmpty() },
+                            instalacion = getValue(row, EquipoColumnMapping.INSTALACION_TYPE).takeIf { it.isNotEmpty() },
                             unidad = getValue(row, EquipoColumnMapping.UNIDAD).takeIf { it.isNotEmpty() },
+                            area = getValue(row, EquipoColumnMapping.AREA).takeIf { it.isNotEmpty() },
+                            linea = getValue(row, EquipoColumnMapping.INSTALACION_LINE).takeIf { it.isNotEmpty() },
                             marca = getValue(row, EquipoColumnMapping.MARCA).takeIf { it.isNotEmpty() },
                             modelo = getValue(row, EquipoColumnMapping.MODELO).takeIf { it.isNotEmpty() },
                             tipo = getValue(row, EquipoColumnMapping.TIPO).takeIf { it.isNotEmpty() },
+                            periodicidad = getValue(row, EquipoColumnMapping.PERIODICIDAD).takeIf { it.isNotEmpty() },
                             diametro = getValue(row, EquipoColumnMapping.DIAMETRO).takeIf { it.isNotEmpty() },
                             conexion = getValue(row, EquipoColumnMapping.CONEXION).takeIf { it.isNotEmpty() },
+                            aislamiento = getValue(row, EquipoColumnMapping.AISLAMIENTO).takeIf { it.isNotEmpty() },
                             presEntrada = getValue(row, EquipoColumnMapping.PRES_ENTRADA).takeIf { it.isNotEmpty() },
                             presSalida = getValue(row, EquipoColumnMapping.PRES_SALIDA).takeIf { it.isNotEmpty() },
+                            byPass = getValue(row, EquipoColumnMapping.BY_PASS).equals("true", ignoreCase = true),
                             descarga = getValue(row, EquipoColumnMapping.DESCARGA).takeIf { it.isNotEmpty() },
                             aplicacion = getValue(row, EquipoColumnMapping.APLICACION).takeIf { it.isNotEmpty() },
                             servicio = getValue(row, EquipoColumnMapping.SERVICIO).takeIf { it.isNotEmpty() },
                             ubicacion = getValue(row, EquipoColumnMapping.UBICACION).takeIf { it.isNotEmpty() },
+                            estado = getValue(row, EquipoColumnMapping.ESTADO).takeIf { it.isNotEmpty() },
+                            flota = null, // FLOTA se obtiene de la columna FLOTA en la importación
                             fechaInspeccion = getValue(row, EquipoColumnMapping.FECHA_ESTADO).takeIf { it.isNotEmpty() },
                             nota = getValue(row, EquipoColumnMapping.NOTA).takeIf { it.isNotEmpty() },
                             identidadInspector = getValue(row, EquipoColumnMapping.IDENTIDAD_INSPECTOR).takeIf { it.isNotEmpty() },
@@ -886,11 +892,6 @@ class GoogleSheetsManager(
                             gpsAcc = getValue(row, EquipoColumnMapping.GPS_ACC).takeIf { it.isNotEmpty() },
                             extra = null,
                             modificadoLocal = false,
-                            instalacion = getValue(row, EquipoColumnMapping.INSTALACION_TYPE).takeIf { it.isNotEmpty() },
-                            linea = getValue(row, EquipoColumnMapping.INSTALACION_LINE).takeIf { it.isNotEmpty() },
-                            aislamiento = getValue(row, EquipoColumnMapping.AISLAMIENTO).takeIf { it.isNotEmpty() },
-                            periodicidad = getValue(row, EquipoColumnMapping.PERIODICIDAD).takeIf { it.isNotEmpty() },
-                            byPass = getValue(row, EquipoColumnMapping.BY_PASS).equals("true", ignoreCase = true),
                             instalacionMf = getValue(row, EquipoColumnMapping.INSTALACION_MF).takeIf { it.isNotEmpty() },
                             urlFotoManifold = getValue(row, EquipoColumnMapping.FOTO_MF).takeIf { it.isNotEmpty() },
                             urlFotosExtra = getValue(row, EquipoColumnMapping.FOTO_EXTRA).takeIf { it.isNotEmpty() }
@@ -1028,9 +1029,9 @@ class GoogleSheetsManager(
             Log.d(TAG, "Spreadsheet: $spreadsheetId")
             Log.d(TAG, "Hoja: $sheetName")
             
-            // Primero leer las cabeceras para encontrar las columnas
+            // Primero leer las cabeceras para encontrar las columnas (fila 2, donde están las cabeceras reales)
             val headerResponse = sheetsService.spreadsheets().values()
-                .get(spreadsheetId, "$sheetName!A1:ZZ1")
+                .get(spreadsheetId, "$sheetName!A2:ZZ2")
                 .execute()
             val headerRow = headerResponse.getValues()?.firstOrNull() ?: emptyList()
             
@@ -1070,11 +1071,11 @@ class GoogleSheetsManager(
                 "$primeraLetra$segundaLetra"
             }
             
-            Log.d(TAG, "Rango de datos: A2:$ultimaColumna")
+            Log.d(TAG, "Rango de datos: A3:$ultimaColumna")
             
-            // Leer datos de colores desde Google Sheets
+            // Leer datos de colores desde Google Sheets (desde fila 3, después de las cabeceras en fila 2)
             val response = sheetsService.spreadsheets().values()
-                .get(spreadsheetId, "$sheetName!A2:$ultimaColumna")
+                .get(spreadsheetId, "$sheetName!A3:$ultimaColumna")
                 .execute()
             val values = response.getValues()
             
@@ -1160,7 +1161,11 @@ class GoogleSheetsManager(
             "CICLO CORTO" to "#e1664c",
             "INACCESIBLE" to "#a7a7a7",
             "ANULADO" to "#a7a7a7",
-            "NO ENCONTRADO" to "#a7a7a7"
+            "NO ENCONTRADO" to "#a7a7a7",
+            "ACTIVO" to "#99CC99",
+            "MONITORIZADO" to "#99CCFF",
+            "AFS" to "#FFFF99",
+            "ELIMINADO" to "#e1664c"
         )
         
         coloresPorDefecto.forEach { (estado, color) ->
@@ -1208,4 +1213,66 @@ class GoogleSheetsManager(
     }
     
     data class HojaInfo(val id: String, val name: String, val index: Int)
+    
+    // Data classes para configuración de cámara
+    data class ProyectoCamara(val nombre: String, val color: String)
+    data class TipoDenuncia(val tipo: String, val color: String)
+    data class CameraConfig(
+        val proyectos: List<ProyectoCamara>,
+        val tiposDenuncia: List<TipoDenuncia>
+    )
+    
+    /**
+     * Lee la configuración de cámara desde G.MENU a partir de la línea 45
+     * Columnas A-B: PROYECTOS CÁMARA (columna A = nombre, columna B = color)
+     * Columnas D-E: TIPOS DE DENUNCIAS (columna D = tipo, columna E = color)
+     */
+    suspend fun getCameraConfigFromSheet(): CameraConfig? = withContext(Dispatchers.IO) {
+        try {
+            // Leer desde línea 45 hasta línea 100 (ajustable)
+            val menuRange = "G.MENU!A45:E100"
+            val response = sheetsService.spreadsheets().values()
+                .get(spreadsheetId, menuRange)
+                .execute()
+            val values = response.getValues() ?: return@withContext null
+            
+            val proyectos = mutableListOf<ProyectoCamara>()
+            val tiposDenuncia = mutableListOf<TipoDenuncia>()
+            
+            for ((index, row) in values.withIndex()) {
+                // Proyectos: Columna A (índice 0) = nombre, Columna B (índice 1) = color
+                val proyectoNombre = row.getOrNull(0)?.toString()?.trim()
+                val proyectoColor = row.getOrNull(1)?.toString()?.trim() ?: ""
+                
+                // Tipos de denuncia: Columna D (índice 3) = tipo, Columna E (índice 4) = color
+                val tipoDenuncia = row.getOrNull(3)?.toString()?.trim()
+                val tipoDenunciaColor = row.getOrNull(4)?.toString()?.trim() ?: ""
+                
+                Log.d(TAG, "Fila ${index + 45}: A='$proyectoNombre', B='$proyectoColor', D='$tipoDenuncia', E='$tipoDenunciaColor'")
+                
+                // Añadir proyecto si existe y no es un encabezado
+                if (proyectoNombre != null && proyectoNombre.isNotBlank() && 
+                    proyectoNombre != "PROYECTOS CÁMARA" && proyectoNombre != "GESTIÓN CÁMARA" &&
+                    !proyectoNombre.startsWith("#")) { // Ignorar si es un color hex
+                    proyectos.add(ProyectoCamara(proyectoNombre, proyectoColor))
+                    Log.d(TAG, "  → Proyecto añadido: $proyectoNombre (color: $proyectoColor)")
+                }
+                
+                // Añadir tipo de denuncia si existe y no es un encabezado
+                // Verificar que no sea un color hex (empieza con #)
+                if (tipoDenuncia != null && tipoDenuncia.isNotBlank() && 
+                    tipoDenuncia != "TIPOS DE DENUNCIAS" &&
+                    !tipoDenuncia.startsWith("#")) { // Ignorar si es un color hex
+                    tiposDenuncia.add(TipoDenuncia(tipoDenuncia, tipoDenunciaColor))
+                    Log.d(TAG, "  → Tipo denuncia añadido: $tipoDenuncia (color: $tipoDenunciaColor)")
+                }
+            }
+            
+            Log.d(TAG, "Configuración de cámara leída: ${proyectos.size} proyectos, ${tiposDenuncia.size} tipos de denuncia")
+            return@withContext CameraConfig(proyectos, tiposDenuncia)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error leyendo configuración de cámara desde G.MENU", e)
+            return@withContext null
+        }
+    }
 } 

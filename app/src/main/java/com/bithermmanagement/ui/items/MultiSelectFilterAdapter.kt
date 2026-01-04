@@ -25,6 +25,8 @@ class MultiSelectFilterAdapter(
 
     fun getOriginalSelection(): Set<String> = seleccionOriginal
 
+    fun getSelectedItems(): Set<String> = HashSet(seleccionados)
+
     fun setMostrarMarcarCoincidentes(valor: Boolean) { mostrarMarcarCoincidentes = valor }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): OpcionViewHolder {

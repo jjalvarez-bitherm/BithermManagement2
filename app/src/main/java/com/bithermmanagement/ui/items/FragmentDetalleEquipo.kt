@@ -60,6 +60,7 @@ class FragmentDetalleEquipo : Fragment() {
     private lateinit var spinnerDiametro: MaterialAutoCompleteTextView
     private lateinit var spinnerConexion: MaterialAutoCompleteTextView
     private lateinit var spinnerInstalacion: MaterialAutoCompleteTextView
+    private lateinit var spinnerFlota: MaterialAutoCompleteTextView
     private lateinit var spinnerAislamiento: MaterialAutoCompleteTextView
     private lateinit var spinnerPresEntrada: MaterialAutoCompleteTextView
     private lateinit var spinnerPresSalida: MaterialAutoCompleteTextView
@@ -241,6 +242,7 @@ class FragmentDetalleEquipo : Fragment() {
         spinnerDiametro = requireView().findViewById(R.id.spinnerDiametro)
         spinnerConexion = requireView().findViewById(R.id.spinnerConexion)
         spinnerInstalacion = requireView().findViewById(R.id.spinnerInstalacion)
+        spinnerFlota = requireView().findViewById(R.id.spinnerFlota)
         spinnerAislamiento = requireView().findViewById(R.id.spinnerAislamiento)
         spinnerPresEntrada = requireView().findViewById(R.id.spinnerPIN)
         spinnerPresSalida = requireView().findViewById(R.id.spinnerPOUT)
@@ -260,27 +262,31 @@ class FragmentDetalleEquipo : Fragment() {
         tvIdEquipo = requireView().findViewById(R.id.tvIdEquipo)
         autoEstado = requireView().findViewById(R.id.spinnerEstado)
         
-        // Configurar spinners
+        // Configurar spinners y poblar datos del equipo
+        lifecycleScope.launch {
         configurarSpinners()
-        
-        // Poblar datos del equipo
         poblarDatosEquipo()
+        }
     }
 
-    private fun configurarSpinners() {
+    private suspend fun configurarSpinners() {
         Log.d("FragmentDetalleEquipo", "Configurando spinners (inicio)")
         
         try {
-            // Configurar spinners con valores por defecto
-            val areas = listOf("AREA 1", "AREA 2", "AREA 3", "AREA 4", "AREA 5")
-            val unidades = listOf("UNIDAD A", "UNIDAD B", "UNIDAD C", "UNIDAD D")
-            val marcas = listOf("MARCA 1", "MARCA 2", "MARCA 3", "MARCA 4")
-            val modelos = listOf("MODELO A", "MODELO B", "MODELO C", "MODELO D")
-            val tipos = listOf("TIPO 1", "TIPO 2", "TIPO 3", "TIPO 4")
-            val diametros = listOf("1/2\"", "3/4\"", "1\"", "1 1/4\"", "1 1/2\"", "2\"")
-            val conexiones = listOf("ROSCADA", "BRIDADA", "SOLDADA", "HEMBRA")
-            val aplicaciones = listOf("VAPOR", "CONDENSADO", "AIRE", "AGUA")
-            val servicios = listOf("BIEN", "MAL", "FUERA DE SERVICIO", "BAJA TEMPERATURA")
+            // Cargar datos desde la BD (igual que FragmentInspeccionEquipo)
+            val areas = inspeccionDao.getAreasUnicas().ifEmpty { listOf("PQ", "PT", "PS", "PU", "PV", "PW", "PX", "PY", "PZ") }
+            val unidades = inspeccionDao.getUnidadesUnicas().ifEmpty { listOf("U1", "U2", "U3", "U4", "U5") }
+            val marcas = inspeccionDao.getMarcasUnicas().ifEmpty { listOf("SPIRAX SARCO", "ARMSTRONG", "GESTRA", "OTROS") }
+            val modelos = inspeccionDao.getModelosUnicos().ifEmpty { listOf("Modelo 1", "Modelo 2", "Modelo 3") }
+            val tipos = inspeccionDao.getTiposUnicos().ifEmpty { listOf("Tipo 1", "Tipo 2", "Tipo 3") }
+            val diametros = inspeccionDao.getDiametrosUnicos().ifEmpty { listOf("DN15", "DN20", "DN25", "DN32", "DN40", "DN50") }
+            val conexiones = inspeccionDao.getConexionesUnicas().ifEmpty { listOf("Rosca", "Brida", "Soldadura") }
+            val aplicaciones = inspeccionDao.getAplicacionesUnicas().ifEmpty { listOf("VAPOR", "CONDENSADO", "AIRE", "AGUA") }
+            val servicios = inspeccionDao.getServiciosUnicos().ifEmpty { listOf("Vapor", "Agua", "Aire") }
+            
+            // Cargar estados de inspección desde colores_estados.json
+            val estadosInspeccion = coloresEstados.keys.toList()
+            Log.d("FragmentDetalleEquipo", "Estados de inspección cargados: $estadosInspeccion")
             
             // Configurar adapters
             spinnerArea.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, areas))
@@ -291,13 +297,20 @@ class FragmentDetalleEquipo : Fragment() {
             spinnerDiametro.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, diametros))
             spinnerConexion.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, conexiones))
             spinnerInstalacion.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, valoresInstalacionPorDefecto))
+            
+            // Configurar spinner de FLOTA con valores fijos
+            val valoresFlota = listOf("ACTIVO", "MONITORIZADO", "AFS", "ELIMINADO")
+            spinnerFlota.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, valoresFlota))
+            Log.d("FragmentDetalleEquipo", "Spinner FLOTA configurado con valores: $valoresFlota")
+            
             spinnerAislamiento.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, valoresAislamientoPorDefecto))
             spinnerPresEntrada.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")))
             spinnerPresSalida.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, listOf("0", "1", "2", "3", "4", "5")))
             spinnerDescarga.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, listOf("CONTINUA", "INTERMITENTE", "NULA")))
             spinnerAplicacion.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, aplicaciones))
             spinnerServicio.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, servicios))
-            autoEstado.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, servicios))
+            // Usar estados de inspección del JSON en lugar de valores hardcodeados
+            autoEstado.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, estadosInspeccion))
             
             Log.d("FragmentDetalleEquipo", "Spinners configurados correctamente")
             
@@ -332,7 +345,9 @@ class FragmentDetalleEquipo : Fragment() {
     }
 
     private fun poblarDatosEquipo() {
+        Log.d("FragmentDetalleEquipo", "poblarDatosEquipo: equipo es ${if (equipo == null) "NULL" else "NO NULL"}")
         equipo?.let { eq ->
+            Log.d("FragmentDetalleEquipo", "Datos del equipo: id=${eq.id}, area=${eq.area}, unidad=${eq.unidad}, ubicacion=${eq.ubicacion}, estado=${eq.estado}")
             tvIdEquipo.text = eq.id
             
             // Poblar spinners con datos del equipo
@@ -344,6 +359,7 @@ class FragmentDetalleEquipo : Fragment() {
             spinnerDiametro.setText(eq.diametro ?: "")
             spinnerConexion.setText(eq.conexion ?: "")
             spinnerInstalacion.setText(eq.instalacion ?: "")
+            spinnerFlota.setText(eq.flota ?: "")
             spinnerAislamiento.setText(eq.aislamiento ?: "")
             spinnerPresEntrada.setText(eq.presEntrada ?: "")
             spinnerPresSalida.setText(eq.presSalida ?: "")
@@ -357,6 +373,8 @@ class FragmentDetalleEquipo : Fragment() {
             etNota.setText(eq.nota ?: "")
             etIncidencias.setText(eq.incidencias ?: "")
             etLinea.setText(eq.linea ?: "")
+            
+            Log.d("FragmentDetalleEquipo", "Datos poblados: unidad=${spinnerUnidad.text}, ubicacion=${etUbicacion.text}")
             
             // Configurar GPS
             if (!eq.gpsCoord.isNullOrEmpty()) {

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@android:color/white">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Filtro de visualización"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Spinner Visualizar -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Visualizar:"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="8dp" />
+
+    <Spinner
+        android:id="@+id/spinnerVisualizar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Espacio en blanco -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <!-- Checkbox MOSTRAR AFS -->
+    <CheckBox
+        android:id="@+id/checkboxMostrarAFS"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MOSTRAR AFS"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:checked="false"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Checkbox MOSTRAR ELIM. -->
+    <CheckBox
+        android:id="@+id/checkboxMostrarELIM"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MOSTRAR ELIM."
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:checked="false"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Checkbox MOSTRAR MONIT. -->
+    <CheckBox
+        android:id="@+id/checkboxMostrarMONIT"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MOSTRAR MONIT."
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:checked="false"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Botón OK -->
+    <Button
+        android:id="@+id/btnOK"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="OK"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:backgroundTint="@color/purple_bitherm"
+        android:textColor="@android:color/white"
+        android:layout_marginTop="10dp" />
+
+</LinearLayout>
+

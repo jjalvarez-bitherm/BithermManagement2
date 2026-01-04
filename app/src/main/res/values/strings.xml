@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bitherm Management</string>
-    <string name="home">Inicio</string>
+    <string name="menuUser">Usuario</string>
     <string name="logout">Cerrar Sesión</string>
     <string name="action_settings">Configuración</string>
     <string name="menu_home">Inicio</string>

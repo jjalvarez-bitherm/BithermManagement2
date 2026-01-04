@@ -32,12 +32,20 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        // Establecer la fecha y hora de compilación
-        val buildTime = BuildConfig.BUILD_TIME
-        val buildDate = Date(buildTime)
-        val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
-        findViewById<android.widget.TextView>(R.id.tvBuildInfo).text = "Compilado: ${format.format(buildDate)}"
-
+        // Establecer la fecha y hora de compilación de forma segura
+        try {
+            val buildInfoTextView = findViewById<android.widget.TextView>(R.id.tvBuildInfo)
+            if (buildInfoTextView != null) {
+                val buildTime = BuildConfig.BUILD_TIME
+                val buildDate = Date(buildTime)
+                val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+                buildInfoTextView.text = "Compilado: ${format.format(buildDate)}"
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SplashActivity", "Error al establecer la fecha de compilación: ${e.message}")
+        }
+        
+        // Iniciar navegación después del splash
         lifecycleScope.launch {
             delay(3000)
             checkSessionAndNavigate()
@@ -45,6 +53,13 @@ class SplashActivity : AppCompatActivity() {
     }
 
     private suspend fun checkSessionAndNavigate() {
+        // Verificar que la inyección se haya completado
+        if (!::sessionManager.isInitialized || !::loginRepository.isInitialized) {
+            Log.e("SplashActivity", "Dependencias no inicializadas, navegando a login")
+            navigateToLogin()
+            return
+        }
+        
         if (sessionManager.shouldRememberMe()) {
             val (user, pass) = sessionManager.getCredentials()
             if (user != null && pass != null) {

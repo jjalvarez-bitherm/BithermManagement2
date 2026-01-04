@@ -1,0 +1,1024 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bitherm_gradient"
+    android:clipToPadding="false"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:paddingBottom="120dp">
+        <!-- Layout principal -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:paddingBottom="80dp">
+
+            <!-- Título principal -->
+            <TextView
+                android:id="@+id/txtTitulo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Configuración de Inspección"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                android:gravity="center"
+                android:ellipsize="end"
+                android:singleLine="true"
+                android:layout_marginBottom="18dp"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="14sp"
+                android:autoSizeMaxTextSize="22sp"
+                android:autoSizeStepGranularity="1sp" />
+
+            <!-- FECHA Y NÚMERO DE INSPECCIÓN -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="24dp"
+                android:background="@drawable/bg_field"
+                android:padding="16dp">
+                
+                <!-- FECHA -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Fecha"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/txtFecha"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2024-12-20"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+                
+                <!-- NÚMERO DE INSPECCIÓN -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nº Inspección"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="4dp" />
+                    <TextView
+                        android:id="@+id/txtNumeroInspeccion"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="25"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- SELECTOR DE MODO -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_field"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Modo de Trabajo"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="12dp" />
+                
+                <RadioGroup
+                    android:id="@+id/radioGroupModo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    
+                    <RadioButton
+                        android:id="@+id/radioDatosUnicos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Datos Únicos (FLOTA + 1 Inspección)"
+                        android:textSize="14sp"
+                        android:checked="true" />
+                    
+                    <RadioButton
+                        android:id="@+id/radioDatosMasivos"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Datos Masivos (2 Libros: Actual + Historial)"
+                        android:textSize="14sp" />
+                    
+                    <RadioButton
+                        android:id="@+id/radioConfiguracionTradicional"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Configuración Tradicional"
+                        android:textSize="14sp" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- CONFIGURACIÓN DATOS ÚNICOS -->
+            <LinearLayout
+                android:id="@+id/layoutDatosUnicos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"
+                android:visibility="visible">
+                
+                <TextView
+                    android:id="@+id/lblInspeccionActual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📋 CONFIGURACIÓN - DATOS ÚNICOS"
+                    android:textStyle="bold"
+                    android:textColor="@color/primary"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_resumen_transparente"
+                    android:padding="12dp"
+                    android:layout_marginBottom="16dp" />
+                
+                <!-- Selector de Libro para datos únicos -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_field"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Libro (contiene FLOTA + Inspecciones)"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="LIBRO:"
+                            android:textColor="@android:color/white"
+                            android:gravity="end|center_vertical"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="8dp" />
+                        <Spinner
+                            android:id="@+id/spinnerLibroUnicos"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="0.75"
+                            android:background="@drawable/bg_field"
+                            android:padding="10dp"
+                            android:spinnerMode="dropdown" />
+                    </LinearLayout>
+                </LinearLayout>
+                    
+                <!-- Selector FLOTA para datos únicos -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_field"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Hoja FLOTA (Datos permanentes)"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="FLOTA:"
+                            android:textColor="@android:color/white"
+                            android:gravity="end|center_vertical"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="8dp" />
+                        <Spinner
+                            android:id="@+id/spinnerHojaFlotaUnicos"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="0.75"
+                            android:background="@drawable/bg_field"
+                            android:padding="10dp"
+                            android:spinnerMode="dropdown" />
+                    </LinearLayout>
+                </LinearLayout>
+                
+                <!-- Selector Hoja Inspección para datos únicos -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_field"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Hoja de Inspección (Número de inspección)"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="HOJA:"
+                            android:textColor="@android:color/white"
+                            android:gravity="end|center_vertical"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="8dp" />
+                        <Spinner
+                            android:id="@+id/spinnerHojaInspeccionUnicos"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="0.75"
+                            android:background="@drawable/bg_field"
+                            android:padding="10dp"
+                            android:spinnerMode="dropdown" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- CONFIGURACIÓN DATOS MASIVOS -->
+            <LinearLayout
+                android:id="@+id/layoutDatosMasivos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📚 CONFIGURACIÓN - DATOS MASIVOS"
+                    android:textStyle="bold"
+                    android:textColor="@color/secondary"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_resumen_transparente"
+                    android:padding="12dp"
+                    android:layout_marginBottom="16dp" />
+                
+                <!-- Selector de Libro para datos masivos -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_field"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Libro (contiene FLOTA + Inspecciones masivas)"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="LIBRO:"
+                            android:textColor="@android:color/white"
+                            android:gravity="end|center_vertical"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="8dp" />
+                        <Spinner
+                            android:id="@+id/spinnerLibroActualMasivos"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="0.75"
+                            android:background="@drawable/bg_field"
+                            android:padding="10dp"
+                            android:spinnerMode="dropdown" />
+                    </LinearLayout>
+                </LinearLayout>
+                
+                <!-- Selector FLOTA para datos masivos -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_field"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Hoja FLOTA (Datos permanentes)"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="FLOTA:"
+                            android:textColor="@android:color/white"
+                            android:gravity="end|center_vertical"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="8dp" />
+                        <Spinner
+                            android:id="@+id/spinnerHojaFlotaMasivos"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="0.75"
+                            android:background="@drawable/bg_field"
+                            android:padding="10dp"
+                            android:spinnerMode="dropdown" />
+                    </LinearLayout>
+                </LinearLayout>
+                
+                <!-- Selector Hoja Masiva de Inspecciones -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_field"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Hoja Masiva (Todas las inspecciones anteriores)"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="HOJA:"
+                            android:textColor="@android:color/white"
+                            android:gravity="end|center_vertical"
+                            android:textStyle="bold"
+                            android:layout_marginEnd="8dp" />
+                        <Spinner
+                            android:id="@+id/spinnerHojaActualMasivos"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="0.75"
+                            android:background="@drawable/bg_field"
+                            android:padding="10dp"
+                            android:spinnerMode="dropdown" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- CONFIGURACIÓN TRADICIONAL -->
+            <LinearLayout
+                android:id="@+id/layoutConfiguracionTradicional"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️ CONFIGURACIÓN TRADICIONAL"
+                    android:textStyle="bold"
+                    android:textColor="@color/secondary"
+                    android:textSize="18sp"
+                    android:gravity="center"
+                    android:background="@drawable/bg_resumen_transparente"
+                    android:padding="12dp"
+                    android:layout_marginBottom="16dp" />
+            
+            <!-- PRIMERA LÍNEA: FECHA | NºINSP -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <!-- FECHA -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="FECHA:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <TextView
+                        android:id="@+id/txtFechaOriginal"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:textColor="@android:color/black"
+                        android:textSize="15sp"
+                        android:gravity="start|center_vertical"
+                        android:textStyle="normal"
+                        android:fontFamily="sans-serif"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Seleccionar fecha" />
+                </LinearLayout>
+                <!-- NºINSP -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="NºINSP:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerNumeroInspeccion"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- SEGUNDA LÍNEA: LIBRO | HOJA -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <!-- LIBRO -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="LIBRO:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerLibro"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+                <!-- HOJA -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="HOJA:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerHoja"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ESPACIO VACÍO -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="16dp" />
+
+            <!-- TERCERA LÍNEA: DB -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.25"
+                    android:text="DB:"
+                    android:textColor="@android:color/white"
+                    android:gravity="end|center_vertical"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="3dp" />
+                <Spinner
+                    android:id="@+id/spinnerDb"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="0.75"
+                    android:background="@drawable/bg_field"
+                    android:padding="10dp"
+                    android:spinnerMode="dropdown" />
+            </LinearLayout>
+
+            <!-- CUARTA LÍNEA: INSP | REP -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="18dp">
+                <!-- INSP -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:layout_marginEnd="8dp">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="INSP:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerInspecciones"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+                <!-- REP -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.3"
+                        android:text="REP:"
+                        android:textColor="@android:color/white"
+                        android:gravity="end|center_vertical"
+                        android:textStyle="bold"
+                        android:layout_marginEnd="3dp" />
+                    <Spinner
+                        android:id="@+id/spinnerReparaciones"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="0.7"
+                        android:background="@drawable/bg_field"
+                        android:padding="10dp"
+                        android:spinnerMode="dropdown" />
+                </LinearLayout>
+            </LinearLayout>
+            </LinearLayout>
+            <!-- Fin CONFIGURACIÓN TRADICIONAL -->
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gestión de datos:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Botones gestión de datos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="18dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDescargar"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.48"
+                    android:text="DESCARGAR"
+                    app:icon="@drawable/ic_download"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <ImageView
+                    android:id="@+id/imgBorrar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_delete"
+                    android:contentDescription="Borrar"
+                    android:padding="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:backgroundTint="@color/md_theme_errorContainer" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnActualizar"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.48"
+                    android:text="ACTUALIZAR"
+                    app:icon="@drawable/ic_update"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gestión de fotos:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Botones gestión de fotos -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="18dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDescargarFotos"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="DESCARGAR"
+                    app:icon="@drawable/ic_download"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnActualizarFotos"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="ACTUALIZAR"
+                    app:icon="@drawable/ic_update"
+                    app:iconGravity="textStart"
+                    app:iconPadding="4dp"
+                    android:textSize="12sp"
+                    android:singleLine="true"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+
+            <!-- SEPARADOR -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@color/primary"
+                android:layout_marginVertical="24dp" />
+
+            <!-- LABEL: FLOTA HISTÓRICA -->
+            <TextView
+                android:id="@+id/lblFlotaHistorica"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📚 FLOTA HISTÓRICA"
+                android:textStyle="bold"
+                android:textColor="@color/secondary"
+                android:textSize="18sp"
+                android:gravity="center"
+                android:background="@drawable/bg_resumen_transparente"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp" />
+
+            <!-- CONFIGURACIÓN FLOTA HISTÓRICA -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_field"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <!-- Libro y Hoja FLOTA -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+                    
+                    <!-- Libro FLOTA -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginEnd="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Libro FLOTA"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="4dp" />
+                        <Spinner
+                            android:id="@+id/spinnerLibroFlota"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_field" />
+                    </LinearLayout>
+                    
+                    <!-- Hoja FLOTA -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="8dp">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Hoja FLOTA"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="4dp" />
+                        <Spinner
+                            android:id="@+id/spinnerHojaFlota"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_field" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Botones FLOTA -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDescargarFlota"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.5"
+                        android:text="DESCARGAR FLOTA"
+                        app:icon="@drawable/ic_download"
+                        app:iconGravity="textStart"
+                        app:iconPadding="4dp"
+                        android:textSize="12sp"
+                        android:singleLine="true"
+                        android:layout_marginEnd="4dp"
+                        android:letterSpacing="-0.07"
+                        android:paddingHorizontal="4dp"
+                        android:paddingVertical="4dp" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnActualizarFlota"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="0.5"
+                        android:text="ACTUALIZAR FLOTA"
+                        app:icon="@drawable/ic_update"
+                        app:iconGravity="textStart"
+                        app:iconPadding="4dp"
+                        android:textSize="12sp"
+                        android:singleLine="true"
+                        android:letterSpacing="-0.07"
+                        android:paddingHorizontal="4dp"
+                        android:paddingVertical="4dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Resumen de la base de datos:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Caja resumen -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_resumen_transparente"
+                android:padding="16dp"
+                android:layout_marginBottom="18dp">
+                <TextView
+                    android:id="@+id/txtTotalEquipos"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Total equipos: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtInspeccionados"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Equipos inspeccionados: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtModificados"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Equipos modificados: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtFotosDrive"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fotos en Drive: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtFotosNuevas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fotos nuevas: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+                <TextView
+                    android:id="@+id/txtFotosPendientes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Fotos pendientes de subir: 0"
+                    android:textColor="@android:color/white"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <!-- Título sección -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Opciones avanzadas:"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Botones opciones avanzadas -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingTop="24dp"
+                android:paddingBottom="24dp">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopiarDB"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="COPIAR\nDB"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCalibrarPantalla"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="CALIBRAR\nPANTALLA"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBuscarActualizaciones"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.5"
+                    android:text="BUSCAR\nACTUALIZACIONES"
+                    android:textSize="12sp"
+                    android:singleLine="false"
+                    android:layout_marginEnd="4dp"
+                    android:letterSpacing="-0.07"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="4dp" />
+            </LinearLayout>
+
+            <!-- NOTA: Tras ejecutar borrar, descargar, actualizar o fotos, se debe actualizar el resumen -->
+
+        </LinearLayout>
+        <!-- Barra de carga -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView> 

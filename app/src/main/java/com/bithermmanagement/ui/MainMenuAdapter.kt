@@ -37,7 +37,7 @@ class MainMenuAdapter(
         try {
             holder.card.setCardBackgroundColor(Color.parseColor(menu.colorHex))
         } catch (e: Exception) {
-            holder.card.setCardBackgroundColor(ContextCompat.getColor(holder.card.context, R.color.menuUser))
+            holder.card.setCardBackgroundColor(ContextCompat.getColor(holder.card.context, R.color.primary))
         }
         holder.card.setOnClickListener {
             val activity = holder.card.context as? FragmentActivity
@@ -94,7 +94,7 @@ class MainMenuAdapter(
             try {
                 holder.card.setCardBackgroundColor(Color.parseColor(item.colorHex))
             } catch (e: Exception) {
-                holder.card.setCardBackgroundColor(ContextCompat.getColor(holder.card.context, R.color.menuUser))
+                holder.card.setCardBackgroundColor(ContextCompat.getColor(holder.card.context, R.color.primary))
             }
             holder.card.setOnClickListener {
                 val activity = holder.card.context as? FragmentActivity

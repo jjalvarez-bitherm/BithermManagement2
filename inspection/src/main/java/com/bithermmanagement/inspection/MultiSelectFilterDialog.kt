@@ -34,10 +34,11 @@ class MultiSelectFilterDialog(
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.dialog_multi_select_filter)
 
-        // Ajustar ancho del diálogo
+        // Ajustar ancho y alto del diálogo - ancho 100%, alto 95%
         val displayMetrics = context.resources.displayMetrics
-        val width = displayMetrics.widthPixels - 20 // 10px de margen a cada lado
-        window?.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT)
+        val width = displayMetrics.widthPixels
+        val height = (displayMetrics.heightPixels * 0.95).toInt()
+        window?.setLayout(width, height)
 
         inicializarVistas()
         setupRecyclerView()

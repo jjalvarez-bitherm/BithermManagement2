@@ -359,8 +359,13 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
+                            android:orientation="horizontal"
                             android:layout_marginBottom="8dp">
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -377,6 +382,32 @@
                                 android:gravity="left|center_vertical"
                                 android:paddingLeft="8dp"
                                 android:background="@drawable/bg_spinner_rounded_dark" />
+                        </LinearLayout>
+                            <Space
+                                android:layout_width="8dp"
+                                android:layout_height="wrap_content" />
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Flota"
+                                    android:textColor="#BBBBBB"
+                                    android:textSize="12sp"
+                                    android:layout_marginBottom="2dp" />
+                                <Spinner
+                                    android:id="@+id/spinnerFlota"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="56dp"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="16sp"
+                                    android:gravity="left|center_vertical"
+                                    android:paddingLeft="8dp"
+                                    android:background="@drawable/bg_spinner_rounded_dark" />
+                            </LinearLayout>
                         </LinearLayout>
                         <LinearLayout
                             android:layout_width="match_parent"

@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btn_cancelar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="←"
+                android:textSize="20sp"
+                android:background="@drawable/button_secondary"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Mi Perfil"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:gravity="center" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="48dp" />
+
+        </LinearLayout>
+
+        <!-- Información Básica -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Información Básica"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Nombre -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <EditText
+                android:id="@+id/et_nombre"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Nombre completo"
+                android:background="@drawable/edittext_background"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_nombre_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Edad -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <EditText
+                android:id="@+id/et_edad"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Edad"
+                android:inputType="number"
+                android:background="@drawable/edittext_background"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_edad_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Obligatorio"
+                android:textSize="12sp"
+                android:enabled="false" />
+
+        </LinearLayout>
+
+        <!-- Sexo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <Spinner
+                android:id="@+id/sp_sexo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_sexo_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Obligatorio"
+                android:textSize="12sp"
+                android:enabled="false" />
+
+        </LinearLayout>
+
+        <!-- Fotos -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Fotos de perfil"
+                android:textSize="16sp"
+                android:textColor="@color/text_primary"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_fotos_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Bio -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <EditText
+                android:id="@+id/et_bio"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Cuéntanos sobre ti"
+                android:background="@drawable/edittext_background"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp"
+                android:inputType="textMultiLine"
+                android:lines="3" />
+
+            <Switch
+                android:id="@+id/sw_bio_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Información Adicional -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Información Adicional"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Ocupación -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <EditText
+                android:id="@+id/et_ocupacion"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Ocupación"
+                android:background="@drawable/edittext_background"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_ocupacion_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Estudios -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <EditText
+                android:id="@+id/et_estudios"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Estudios"
+                android:background="@drawable/edittext_background"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_estudios_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Altura -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <EditText
+                android:id="@+id/et_altura"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Altura (cm)"
+                android:inputType="number"
+                android:background="@drawable/edittext_background"
+                android:padding="12dp"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_altura_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Signo Zodiacal -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <Spinner
+                android:id="@+id/sp_signo_zodiacal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_signo_zodiacal_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Intereses -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Intereses"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/rv_intereses"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Los intereses son obligatorios en lugares"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary" />
+
+            <Switch
+                android:id="@+id/sw_intereses_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Obligatorio"
+                android:textSize="12sp"
+                android:enabled="false" />
+
+        </LinearLayout>
+
+        <!-- Hobbies -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hobbies"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/rv_hobbies"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Tus hobbies favoritos"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary" />
+
+            <Switch
+                android:id="@+id/sw_hobbies_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Idiomas -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Idiomas"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/rv_idiomas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:orientation="vertical" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Idiomas que hablas"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary" />
+
+            <Switch
+                android:id="@+id/sw_idiomas_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Visible en lugares"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- ¿Qué buscas? -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <Spinner
+                android:id="@+id/sp_que_busca"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp" />
+
+            <Switch
+                android:id="@+id/sw_que_busca_visible"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Obligatorio"
+                android:textSize="12sp"
+                android:enabled="false" />
+
+        </LinearLayout>
+
+        <!-- Botones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btn_cancelar_bottom"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="Cancelar"
+                android:textSize="16sp"
+                android:background="@drawable/button_secondary"
+                android:textColor="@color/white"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btn_guardar"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="Guardar Perfil"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/button_primary"
+                android:textColor="@color/white"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

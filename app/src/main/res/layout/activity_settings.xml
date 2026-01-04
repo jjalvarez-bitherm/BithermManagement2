@@ -253,6 +253,60 @@
 
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Nombre de la aplicación de cámara -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilCameraAppName"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:hint="Nombre de la aplicación de cámara">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etCameraAppName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:text="BithermCAM" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Nombre del sistema de gestión -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilManagementSystemName"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:hint="Nombre del sistema de gestión">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etManagementSystemName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:text="Bitherm Management" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Nombre del chat -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilChatAppName"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:hint="Nombre del sistema de chat">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etChatAppName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:text="Bitherm Chat" />
+
+                    </com.google.android.material.textfield.TextInputLayout>
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnUploadLogo"
                         android:layout_width="match_parent"

@@ -1,5 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'dagger.hilt.android.plugin'
 
 android {
     namespace 'com.bithermmanagement.multimedia'
@@ -38,4 +40,15 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    
+    // Hilt
+    implementation 'com.google.dagger:hilt-android:2.48'
+    kapt 'com.google.dagger:hilt-android-compiler:2.48'
+    
+    // Room (necesario para acceder a AppDatabase)
+    implementation 'androidx.room:room-runtime:2.5.0'
+    implementation 'androidx.room:room-ktx:2.5.0'
+    
+    // Core module (contiene AppDatabase)
+    implementation project(':core')
 } 

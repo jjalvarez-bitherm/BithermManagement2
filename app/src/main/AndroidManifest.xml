@@ -71,6 +71,37 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.BithermManagement.Navigation" />
+
+        <!-- ConnectVenue Activities -->
+        <activity
+            android:name=".ConnectVenueActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BithermManagement.Navigation" />
+
+        <activity
+            android:name=".ui.cercania.ModoCercaniaActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BithermManagement.Navigation" />
+
+        <activity
+            android:name=".ui.estancia.ModoEstanciaActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BithermManagement.Navigation" />
+
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BithermManagement.Navigation" />
+            
+        <activity
+            android:name=".ui.activities.ImageViewerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.BithermManagement.FullScreen" />
             
         <service
             android:name=".chat.services.ChatNotificationService"

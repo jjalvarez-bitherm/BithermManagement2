@@ -13,13 +13,6 @@
         android:orientation="vertical"
         android:padding="16dp"
         android:paddingBottom="120dp">
-        <!-- Layout principal -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:paddingBottom="80dp">
 
             <!-- Título principal -->
             <TextView
@@ -31,220 +24,183 @@
                 android:textColor="@android:color/white"
                 android:textSize="22sp"
                 android:gravity="center"
-                android:ellipsize="end"
-                android:singleLine="true"
-                android:layout_marginBottom="18dp"
-                android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="14sp"
-                android:autoSizeMaxTextSize="22sp"
-                android:autoSizeStepGranularity="1sp" />
+            android:layout_marginBottom="18dp" />
 
-            <!-- PRIMERA LÍNEA: FECHA | NºINSP -->
+        <!-- FECHA Y NÚMERO DE INSPECCIÓN -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
-                <!-- FECHA -->
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/bg_field"
+            android:padding="16dp">
+            
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="horizontal"
+                android:orientation="vertical"
                     android:layout_marginEnd="8dp">
                     <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.3"
-                        android:text="FECHA:"
-                        android:textColor="@android:color/white"
-                        android:gravity="end|center_vertical"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="3dp" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Fecha"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="4dp" />
                     <TextView
                         android:id="@+id/txtFecha"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.7"
-                        android:background="@drawable/bg_field"
-                        android:padding="10dp"
-                        android:textColor="@android:color/black"
-                        android:textSize="15sp"
-                        android:gravity="start|center_vertical"
-                        android:textStyle="normal"
-                        android:fontFamily="sans-serif"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:text="Seleccionar fecha" />
-                </LinearLayout>
-                <!-- NºINSP -->
-                <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.3"
-                        android:text="NºINSP:"
-                        android:textColor="@android:color/white"
-                        android:gravity="end|center_vertical"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="3dp" />
-                    <Spinner
-                        android:id="@+id/spinnerNumeroInspeccion"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.7"
-                        android:background="@drawable/bg_field"
-                        android:padding="10dp"
-                        android:spinnerMode="dropdown" />
-                </LinearLayout>
+                    android:text="2024-12-20"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- SEGUNDA LÍNEA: LIBRO | HOJA -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
-                <!-- LIBRO -->
-                <LinearLayout
-                    android:layout_width="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:text="Nº Inspección"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:layout_marginBottom="4dp" />
+                <TextView
+                    android:id="@+id/txtNumeroInspeccion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- CONFIGURACIÓN SIMPLIFICADA -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📋 Configuración de Datos"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:textSize="18sp"
+            android:gravity="center"
+            android:background="@drawable/bg_resumen_transparente"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Selector de Libro -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginEnd="8dp">
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical">
                     <TextView
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.3"
-                        android:text="LIBRO:"
-                        android:textColor="@android:color/white"
-                        android:gravity="end|center_vertical"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:text="Libro de trabajo:"
+                android:textColor="#333333"
+                android:textSize="14sp"
                         android:textStyle="bold"
-                        android:layout_marginEnd="3dp" />
+                android:gravity="start|center_vertical" />
                     <Spinner
                         android:id="@+id/spinnerLibro"
                         android:layout_width="0dp"
                         android:layout_height="48dp"
-                        android:layout_weight="0.7"
-                        android:background="@drawable/bg_field"
-                        android:padding="10dp"
+                android:layout_weight="0.5"
+                android:background="@drawable/bg_spinner_rounded"
+                android:padding="8dp"
                         android:spinnerMode="dropdown" />
                 </LinearLayout>
-                <!-- HOJA -->
+
+        <!-- Selector Hoja FLOTA -->
                 <LinearLayout
-                    android:layout_width="0dp"
+            android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical">
                     <TextView
                         android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.3"
-                        android:text="HOJA:"
-                        android:textColor="@android:color/white"
-                        android:gravity="end|center_vertical"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:text="Hoja de Flota:"
+                android:textColor="#333333"
+                android:textSize="14sp"
                         android:textStyle="bold"
-                        android:layout_marginEnd="3dp" />
+                android:gravity="start|center_vertical" />
                     <Spinner
-                        android:id="@+id/spinnerHoja"
+                android:id="@+id/spinnerHojaFlota"
                         android:layout_width="0dp"
                         android:layout_height="48dp"
-                        android:layout_weight="0.7"
-                        android:background="@drawable/bg_field"
-                        android:padding="10dp"
+                android:layout_weight="0.5"
+                android:background="@drawable/bg_spinner_rounded"
+                android:padding="8dp"
                         android:spinnerMode="dropdown" />
-                </LinearLayout>
             </LinearLayout>
 
-            <!-- ESPACIO VACÍO -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="16dp" />
-
-            <!-- TERCERA LÍNEA: DB -->
+        <!-- Selector Hoja Inspección Actual -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+            android:padding="12dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical">
                 <TextView
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
-                    android:layout_weight="0.25"
-                    android:text="DB:"
-                    android:textColor="@android:color/white"
-                    android:gravity="end|center_vertical"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:text="Hoja Inspección:"
+                android:textColor="#333333"
+                android:textSize="14sp"
                     android:textStyle="bold"
-                    android:layout_marginEnd="3dp" />
+                android:gravity="start|center_vertical" />
                 <Spinner
-                    android:id="@+id/spinnerDb"
+                android:id="@+id/spinnerHojaInspeccion"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
-                    android:layout_weight="0.75"
-                    android:background="@drawable/bg_field"
-                    android:padding="10dp"
+                android:layout_weight="0.5"
+                android:background="@drawable/bg_spinner_rounded"
+                android:padding="8dp"
                     android:spinnerMode="dropdown" />
             </LinearLayout>
 
-            <!-- CUARTA LÍNEA: INSP | REP -->
+        <!-- Selector Hoja Reparaciones -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="18dp">
-                <!-- INSP -->
-                <LinearLayout
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center_vertical">
+                    <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal"
-                    android:layout_marginEnd="8dp">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.3"
-                        android:text="INSP:"
-                        android:textColor="@android:color/white"
-                        android:gravity="end|center_vertical"
+                android:layout_weight="0.5"
+                android:text="Hoja Reparaciones:"
+                android:textColor="#333333"
+                android:textSize="14sp"
                         android:textStyle="bold"
-                        android:layout_marginEnd="3dp" />
+                android:gravity="start|center_vertical" />
                     <Spinner
-                        android:id="@+id/spinnerInspecciones"
+                android:id="@+id/spinnerHojaReparaciones"
                         android:layout_width="0dp"
                         android:layout_height="48dp"
-                        android:layout_weight="0.7"
-                        android:background="@drawable/bg_field"
-                        android:padding="10dp"
+                android:layout_weight="0.5"
+                android:background="@drawable/bg_spinner_rounded"
+                android:padding="8dp"
                         android:spinnerMode="dropdown" />
-                </LinearLayout>
-                <!-- REP -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.3"
-                        android:text="REP:"
-                        android:textColor="@android:color/white"
-                        android:gravity="end|center_vertical"
-                        android:textStyle="bold"
-                        android:layout_marginEnd="3dp" />
-                    <Spinner
-                        android:id="@+id/spinnerReparaciones"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_weight="0.7"
-                        android:background="@drawable/bg_field"
-                        android:padding="10dp"
-                        android:spinnerMode="dropdown" />
-                </LinearLayout>
             </LinearLayout>
 
             <!-- Título sección -->
@@ -328,8 +284,8 @@
                     style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.5"
-                    android:text="DESCARGAR"
+                android:layout_weight="0.48"
+                android:text="CARGAR"
                     app:icon="@drawable/ic_download"
                     app:iconGravity="textStart"
                     app:iconPadding="4dp"
@@ -339,12 +295,21 @@
                     android:letterSpacing="-0.07"
                     android:paddingHorizontal="4dp"
                     android:paddingVertical="4dp" />
+            <ImageView
+                android:id="@+id/imgBorrarFotos"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_delete"
+                android:contentDescription="Borrar fotos"
+                android:padding="4dp"
+                android:layout_marginEnd="4dp"
+                android:backgroundTint="@color/md_theme_errorContainer" />
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnActualizarFotos"
                     style="@style/Widget.MaterialComponents.Button"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="0.5"
+                android:layout_weight="0.48"
                     android:text="ACTUALIZAR"
                     app:icon="@drawable/ic_update"
                     app:iconGravity="textStart"
@@ -366,14 +331,14 @@
                 android:textSize="16sp"
                 android:layout_marginBottom="8dp" />
 
-            <!-- Caja resumen -->
+        <!-- Primer cuadro: Resumen base de datos -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/bg_resumen_transparente"
                 android:padding="16dp"
-                android:layout_marginBottom="18dp">
+            android:layout_marginBottom="12dp">
                 <TextView
                     android:id="@+id/txtTotalEquipos"
                     android:layout_width="match_parent"
@@ -395,25 +360,84 @@
                     android:text="Equipos modificados: 0"
                     android:textColor="@android:color/white"
                     android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Segundo cuadro: Resumen de los datos en la hoja FLOTA -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Resumen de los datos en la hoja FLOTA:"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_resumen_transparente"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:id="@+id/txtActivos"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Equipos activos: 0"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+            <TextView
+                android:id="@+id/txtMonitorizados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Equipos monitorizados: 0"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+            <TextView
+                android:id="@+id/txtAfsEliminados"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Equipos AFS/Eliminados: 0"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <!-- Tercer cuadro: Resumen de Drive -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Resumen de Drive:"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_resumen_transparente"
+            android:padding="16dp"
+            android:layout_marginBottom="18dp">
                 <TextView
                     android:id="@+id/txtFotosDrive"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Fotos en Drive: 0"
+                android:text="Fotos en Google Drive: 0"
                     android:textColor="@android:color/white"
                     android:textSize="15sp" />
                 <TextView
                     android:id="@+id/txtFotosNuevas"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Fotos nuevas: 0"
+                android:text="Fotos en móvil: 0"
                     android:textColor="@android:color/white"
                     android:textSize="15sp" />
                 <TextView
                     android:id="@+id/txtFotosPendientes"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Fotos pendientes de subir: 0"
+                android:text="Fotos pte. de subir: 0"
                     android:textColor="@android:color/white"
                     android:textSize="15sp" />
             </LinearLayout>
@@ -476,9 +500,6 @@
                     android:paddingVertical="4dp" />
             </LinearLayout>
 
-            <!-- NOTA: Tras ejecutar borrar, descargar, actualizar o fotos, se debe actualizar el resumen -->
-
-        </LinearLayout>
         <!-- Barra de carga -->
         <ProgressBar
             android:id="@+id/progressBar"
