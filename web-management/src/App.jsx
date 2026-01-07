@@ -6,7 +6,7 @@ import {
   Check, ArrowRight, ArrowLeft, ChevronLeft, MapPinned,
   Crosshair, X, Signal, SignalHigh, HelpCircle, Calendar, Plus,
   Minus, Save, Info, Users, Edit2, Trash2, CheckCircle, XCircle,
-  Search, Filter, ChevronUp, ChevronDown, ListFilter, Calendar as CalendarIcon, RefreshCw
+  Search, Filter, ChevronUp, ChevronDown, ListFilter, Calendar as CalendarIcon, RefreshCw, Archive, CheckCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -536,8 +536,11 @@ const App = () => {
         <nav className="flex-1 space-y-3">
           <NavItem icon={<LayoutDashboard size={22} />} label="Control Horario" active={activeTab === 'dashboard'} color={config.primaryColor} onClick={() => setActiveTab('dashboard')} />
           <NavItem icon={<Calendar size={22} />} label="Control Vacaciones" active={activeTab === 'vacations'} color={config.primaryColor} onClick={() => setActiveTab('vacations')} />
-          <NavItem icon={<ClipboardCheck size={22} />} label="Inspecciones" active={activeTab === 'inspections'} color={config.primaryColor} onClick={() => setActiveTab('inspections')} />
-          <NavItem icon={<History size={22} />} label="Historial" active={activeTab === 'history'} color={config.primaryColor} onClick={() => setActiveTab('history')} />
+          {/* Botón temporalmente oculto: Inspecciones */}
+          {/* <NavItem icon={<ClipboardCheck size={22} />} label="Inspecciones" active={activeTab === 'inspections'} color={config.primaryColor} onClick={() => setActiveTab('inspections')} /> */}
+          {/* Botón temporalmente oculto: Historial */}
+          {/* <NavItem icon={<History size={22} />} label="Historial" active={activeTab === 'history'} color={config.primaryColor} onClick={() => setActiveTab('history')} /> */}
+          <NavItem icon={<User size={22} />} label="Mi perfil" active={activeTab === 'profile'} color={config.primaryColor} onClick={() => setActiveTab('profile')} />
           <NavItem icon={<Settings size={22} />} label="Configuración" active={activeTab === 'settings'} color={config.primaryColor} onClick={() => setActiveTab('settings')} />
         </nav>
         <div className="pt-8 border-t border-slate-700">
@@ -730,6 +733,10 @@ const App = () => {
             teams={teams}
             festivos={festivos}
           />
+        ) : activeTab === 'profile' ? (
+          (user.role === 'ADMIN' || user.role === 'SUPERADMIN')
+            ? <AdminProfileTabs user={user} config={config} onLogout={() => setUser(null)} />
+            : <ProfileView user={user} config={config} onLogout={() => setUser(null)} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
             <Settings size={48} className="animate-spin-slow" />
@@ -886,6 +893,7 @@ const CalendarView = ({ logs, teams, festivos }) => {
               </div>
             )}
           </div>
+          
           <button onClick={() => setCurrentDate(new Date())} className="absolute right-6 px-4 py-2 bg-white border border-slate-200 text-[9px] font-black uppercase tracking-widest hover:bg-slate-50 rounded-none">Hoy</button>
         </div>
 
@@ -1024,6 +1032,435 @@ const CalendarView = ({ logs, teams, festivos }) => {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const ProfileView = ({ user, config, onLogout }) => {
+  const [profile, setProfile] = useState({ groups: {} });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const initial = (user?.name || '').trim().charAt(0).toUpperCase() || 'U';
+
+  useEffect(() => {
+    if (!user) {
+      setError('No hay usuario autenticado');
+      setLoading(false);
+      return;
+    }
+    
+    const load = async () => {
+      setLoading(true);
+      setError('');
+      
+      try {
+        if (!user.username) {
+          setError('❌ Usuario sin identificador (username ausente)');
+          setLoading(false);
+          return;
+        }
+        
+        const url = `${API_BASE}/profile/${user.username}`;
+        console.log('📡 Fetching profile from:', url);
+        console.log('📝 User object:', user);
+        
+        const res = await fetch(url);
+        console.log('✓ Response status:', res.status);
+        
+        const data = await res.json();
+        console.log('✓ Response data:', data);
+        
+        if (res.ok) {
+          setProfile(data);
+        } else {
+          setError(`❌ ${data.message || 'Error cargando perfil'}`);
+        }
+      } catch (e) { 
+        console.error('❌ ProfileView fetch error:', e);
+        console.error('Error details:', { 
+          message: e.message, 
+          stack: e.stack,
+          name: e.name 
+        });
+        setError(`❌ ${e.message || 'Conexión rechazada'}`); 
+      }
+      finally { 
+        setLoading(false); 
+      }
+    };
+    
+    // Pequeño retardo para asegurar que el DOM está listo
+    const timer = setTimeout(load, 100);
+    return () => clearTimeout(timer);
+  }, [user]);
+
+  const isEditable = (groupName, item) => {
+    const g = (groupName || '').toLowerCase();
+    if (g.includes('personal') || g.includes('contacto')) return true;
+    return false;
+  };
+
+  const [editModal, setEditModal] = useState({ show: false, item: null });
+
+  const handleEditClick = (item) => {
+    setEditModal({ show: true, item });
+  };
+
+  const handleModalSave = (updatedValue) => {
+    if (!editModal.item) return;
+    setProfile(prev => ({
+      ...prev,
+      groups: Object.fromEntries(Object.entries(prev.groups).map(([g, items]) => [g, items.map(i => i.field === editModal.item.field ? { ...i, value: updatedValue } : i)]))
+    }));
+    setEditModal({ show: false, item: null });
+  };
+
+  if (!user) return null;
+  return (
+    <div className="mx-auto space-y-10 animate-in fade-in duration-300 px-8 ml-0 md:ml-80">
+      <header className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-black text-2xl shadow-lg" style={{ backgroundColor: config.primaryColor }}>
+            {initial}
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-slate-800 tracking-tight">Mi perfil</h2>
+            <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Gestión de cuenta</p>
+          </div>
+        </div>
+        <button onClick={onLogout} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all flex items-center space-x-2">
+          <LogOut size={18} />
+          <span className="text-xs font-black uppercase tracking-widest">Cerrar sesión</span>
+        </button>
+      </header>
+
+      {loading ? (
+        <div className="flex items-center space-x-3 text-slate-400"><Loader2 className="animate-spin" size={18} /><span className="font-bold text-sm">Cargando perfil...</span></div>
+      ) : error ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold text-sm">{error}</div>
+      ) : (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {Object.entries(profile.groups || {}).map(([groupName, items]) => (
+            <div key={groupName} className="rounded-2xl p-8 border-8 border-slate-100 shadow-lg backdrop-blur-sm bg-white/50 hover:shadow-xl hover:border-slate-200 transition-all">
+              <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600 flex items-center space-x-2">
+                {groupName.toLowerCase().includes('personal') ? <User size={18} className="text-blue-600" /> : <Info size={18} className="text-blue-600" />}
+                <span>{groupName}</span>
+              </h3>
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <div key={`${groupName}-${item.field}`} className="flex items-center justify-between">
+                    <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{item.label}</span>
+                    <div className="flex items-center space-x-3">
+                      <span className="font-bold text-slate-800">{item.value || '-'}</span>
+                      {isEditable(groupName, item) && (
+                        <button onClick={() => handleEditClick(item)} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Editar">
+                          <Edit2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <AnimatePresence>
+        {editModal.show && editModal.item && (
+          <EditProfileModal item={editModal.item} user={user} onClose={() => setEditModal({ show: false, item: null })} onSave={handleModalSave} />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Tabs de admins: Mi perfil, Cambios pendientes, Editar trabajador
+const AdminProfileTabs = ({ user, config, onLogout }) => {
+  const [tab, setTab] = useState('mi-perfil');
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        {[
+          { id: 'mi-perfil', label: 'Mi perfil' },
+          { id: 'cambios', label: 'Cambios pendientes' },
+          { id: 'editar', label: 'Editar trabajador' }
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest border transition-all ${tab === t.id ? 'bg-blue-600 text-white border-blue-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300 hover:text-blue-700'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'mi-perfil' && <ProfileView user={user} config={config} onLogout={onLogout} />}
+      {tab === 'cambios' && <PendingChangesTab />}
+      {tab === 'editar' && <EditWorkerTab config={config} currentUser={user} />}
+    </div>
+  );
+};
+
+const PendingChangesTab = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [pendientes, setPendientes] = useState([]);
+  const [archivados, setArchivados] = useState([]);
+  const [showArchivados, setShowArchivados] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/cambios-pendientes`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al cargar');
+      setPendientes(data.pendientes || []);
+      setArchivados(data.archivados || []);
+    } catch (e) {
+      setError(e.message || 'Servidor fuera de línea');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const updateEstado = async (changeId, nuevoEstado) => {
+    const endpoint = nuevoEstado === 'archivado' ? 'archivar' : 'aceptar';
+    await fetch(`${API_BASE}/cambios-pendientes/${endpoint}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ changeId })
+    });
+    setPendientes(prev => prev.filter(c => c.id !== changeId));
+    if (nuevoEstado === 'archivado') {
+      const archivedItem = pendientes.find(c => c.id === changeId);
+      if (archivedItem) setArchivados(prev => [...prev, { ...archivedItem, estado: 'archivado' }]);
+    }
+  };
+
+  return (
+    <div className="mx-auto space-y-6 animate-in fade-in duration-300">
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Cambios pendientes</h2>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Visor de cambios realizados por usuarios</p>
+        </div>
+        <button onClick={load} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center space-x-2 text-xs font-black uppercase tracking-widest">
+          <RefreshCw size={16} />
+          <span>Refrescar</span>
+        </button>
+      </header>
+
+      {loading ? (
+        <div className="flex items-center space-x-3 text-slate-400"><Loader2 className="animate-spin" size={18} /><span className="font-bold text-sm">Cargando cambios...</span></div>
+      ) : error ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold text-sm">{error}</div>
+      ) : (
+        <div className="space-y-6">
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-slate-600 font-black text-sm uppercase tracking-widest">Pendientes ({pendientes.length})</h3>
+            </div>
+            {pendientes.length === 0 ? (
+              <div className="p-6 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest">Sin cambios pendientes</div>
+            ) : (
+              <div className="space-y-2">
+                {pendientes.map(c => (
+                  <div key={c.id} className="rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors p-3 flex items-center gap-4">
+                    <div className="flex-shrink-0 w-40">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Usuario</div>
+                      <div className="text-xs font-bold text-slate-700 truncate">{c.usuarioCambio}</div>
+                    </div>
+                    <div className="flex-shrink-0 w-20">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Campo</div>
+                      <div className="text-[10px] font-bold text-slate-600 truncate">{c.campo}</div>
+                    </div>
+                    <div className="flex-shrink-0 w-32">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fecha</div>
+                      <div className="text-[10px] font-bold text-slate-500">{c.fechaCambio}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Valor anterior</div>
+                      <div className="text-xs font-bold text-slate-600 line-through bg-slate-100 px-2 py-1 rounded inline-block max-w-full truncate">{c.valorAnterior || 'vacío'}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Valor nuevo</div>
+                      <div className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded inline-block max-w-full truncate">{c.valorNuevo || 'vacío'}</div>
+                    </div>
+                    <div className="flex-shrink-0 flex gap-2">
+                      <button onClick={() => updateEstado(c.id, 'aceptado')} className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 transition-colors" title="Aceptar">
+                        <Check size={16} />
+                      </button>
+                      <button onClick={() => updateEstado(c.id, 'archivado')} className="p-2 rounded-lg bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 transition-colors" title="Archivar">
+                        <CheckCheck size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <button onClick={() => setShowArchivados(!showArchivados)} className="flex items-center space-x-2 text-slate-500 font-black text-xs uppercase tracking-widest hover:text-slate-700 transition-colors">
+              <ChevronDown className={`${showArchivados ? 'rotate-180' : ''} transition-transform`} size={14} />
+              <span>Cambios archivados ({archivados.length})</span>
+            </button>
+            {showArchivados && (
+              archivados.length === 0 ? (
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 text-xs font-bold uppercase tracking-widest">Sin cambios archivados</div>
+              ) : (
+                <div className="space-y-2">
+                  {archivados.map(c => (
+                    <div key={c.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center gap-4 opacity-75">
+                      <div className="flex-shrink-0 w-40">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Usuario</div>
+                        <div className="text-xs font-bold text-slate-700 truncate">{c.usuarioCambio}</div>
+                      </div>
+                      <div className="flex-shrink-0 w-20">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Campo</div>
+                        <div className="text-[10px] font-bold text-slate-600 truncate">{c.campo}</div>
+                      </div>
+                      <div className="flex-shrink-0 w-32">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Fecha</div>
+                        <div className="text-[10px] font-bold text-slate-500">{c.fechaCambio}</div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Valor anterior</div>
+                        <div className="text-xs font-bold text-slate-600 line-through bg-slate-100 px-2 py-1 rounded inline-block max-w-full truncate">{c.valorAnterior || 'vacío'}</div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Valor nuevo</div>
+                        <div className="text-xs font-bold text-slate-600 bg-slate-200 px-2 py-1 rounded inline-block max-w-full truncate">{c.valorNuevo || 'vacío'}</div>
+                      </div>
+                      <div className="flex-shrink-0 w-16 text-center">
+                        <Archive size={16} className="text-slate-400 mx-auto" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </section>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const EditWorkerTab = ({ config, currentUser }) => {
+  const [workers, setWorkers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [profile, setProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [error, setError] = useState('');
+  const [editModal, setEditModal] = useState({ show: false, item: null });
+
+  useEffect(() => {
+    const loadWorkers = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/workers`);
+        const data = await res.json();
+        setWorkers(data || []);
+      } catch (e) {
+        setError('No se pudieron cargar trabajadores');
+      }
+    };
+    loadWorkers();
+  }, []);
+
+  const fetchProfile = async (username) => {
+    if (!username) return;
+    setLoadingProfile(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_BASE}/profile/${username}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Error al cargar perfil');
+      setProfile(data);
+    } catch (e) {
+      setError(e.message);
+      setProfile(null);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
+
+  const isEditable = () => true;
+
+  const handleEditClick = (item) => setEditModal({ show: true, item });
+  const handleModalSave = (updatedValue) => {
+    if (!editModal.item) return;
+    setProfile(prev => ({
+      ...prev,
+      groups: Object.fromEntries(Object.entries(prev.groups).map(([g, items]) => [g, items.map(i => i.field === editModal.item.field ? { ...i, value: updatedValue } : i)]))
+    }));
+    setEditModal({ show: false, item: null });
+  };
+
+  return (
+    <div className="mx-auto space-y-8 animate-in fade-in duration-300">
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Editar trabajador</h2>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Selecciona un trabajador y edita cualquier campo</p>
+        </div>
+        <button onClick={() => fetchProfile(selectedUser)} disabled={!selectedUser} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all text-xs font-black uppercase tracking-widest">
+          Recargar perfil
+        </button>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-1">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Trabajador</label>
+          <select value={selectedUser} onChange={(e) => { setSelectedUser(e.target.value); fetchProfile(e.target.value); }} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-700 font-bold">
+            <option value="">Selecciona...</option>
+            {workers.map(w => (
+              <option key={w.username} value={w.username}>{w.name} ({w.username})</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {loadingProfile ? (
+        <div className="flex items-center space-x-3 text-slate-400"><Loader2 className="animate-spin" size={18} /><span className="font-bold text-sm">Cargando perfil...</span></div>
+      ) : error ? (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold text-sm">{error}</div>
+      ) : !profile ? (
+        <div className="p-6 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-xs uppercase tracking-widest">Selecciona un trabajador para ver su perfil</div>
+      ) : (
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {Object.entries(profile.groups || {}).map(([groupName, items]) => (
+            <div key={groupName} className="rounded-2xl p-8 border-8 border-slate-100 shadow-lg backdrop-blur-sm bg-white/50 hover:shadow-xl hover:border-slate-200 transition-all">
+              <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600 flex items-center space-x-2">
+                <Info size={18} className="text-blue-600" />
+                <span>{groupName}</span>
+              </h3>
+              <div className="space-y-4">
+                {items.map((item) => (
+                  <div key={`${groupName}-${item.field}`} className="flex items-center justify-between">
+                    <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{item.label}</span>
+                    <div className="flex items-center space-x-3">
+                      <span className="font-bold text-slate-800">{item.value || '-'}</span>
+                      <button onClick={() => handleEditClick(item)} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Editar">
+                        <Edit2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <AnimatePresence>
+        {editModal.show && editModal.item && (
+          <EditProfileModal item={editModal.item} user={currentUser} targetUsername={selectedUser} onClose={() => setEditModal({ show: false, item: null })} onSave={handleModalSave} />
         )}
       </AnimatePresence>
     </div>
@@ -1890,17 +2327,17 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
 
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-              className="bg-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] max-w-5xl rounded-xl overflow-hidden flex flex-col border border-slate-200 h-auto max-h-[95vh]"
+              className="bg-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] max-w-5xl overflow-hidden flex flex-col border border-slate-200 h-auto max-h-[95vh]"
             >
               {/* HEADER CON GRADIENTE */}
               <div className="px-12 pt-10 pb-8 flex justify-between items-center text-white bg-gradient-to-r from-blue-600 to-blue-700">
                 <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                  <div className="w-14 h-14 bg-white/20 flex items-center justify-center">
                     <Calendar size={28} />
                   </div>
                   <h2 className="text-3xl font-bold">{isEditing ? 'Editar solicitud' : 'Solicitar ausencia'}</h2>
                 </div>
-                <button onClick={() => setShowModal(false)} className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                <button onClick={() => setShowModal(false)} className="w-12 h-12 bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-all">
                   <X size={24} />
                 </button>
               </div>
@@ -1911,10 +2348,10 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                 {/* CARD DE INFORMACIÓN PRINCIPAL */}
                 {/* SECCIÓN 1: SOLICITANTE */}
                 {!isEditing && (
-                  <div className="flex items-center justify-start rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#fee2e2' }}>
+                  <div className="flex items-center justify-start border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#fee2e2' }}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-5">
-                        <div className="w-16 h-16 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                        <div className="w-16 h-16 bg-blue-100 flex items_center justify-center text-blue-600">
                           <Users size={28} />
                         </div>
                         <div>
@@ -1941,10 +2378,11 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                   </div>
                 )}
                 {/* SECCIÓN 2: CARDS (TIPO + CONSUMO + PENDIENTES) */}
-                <div className="flex items-center justify-center rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#dbeafe' }}>
-                  <div className="grid grid-cols-3 gap-4">
+                <div className="flex items-center justify_center border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#dbeafe' }}>
+                  <div className="p-[5px] border-2 w-full" style={{ borderColor: '#dbeafe' }}>
+                  <div className="grid grid-cols-3 gap-[8px]">
                     {/* Category */}
-                    <div className="p-4 bg-white rounded-xl border border-gray-200">
+                    <div className="p-4 bg-white border border-gray-200">
                       <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Tipo de ausencia</p>
                       <select value={newRequest.type} onChange={e => setNewRequest({ ...newRequest, type: e.target.value })}
                         className="bg-transparent font-bold text-slate-900 focus:outline-none cursor-pointer border-none p-0 w-full"
@@ -1955,7 +2393,7 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                     </div>
 
                     {/* Consumo - Tabla de tipos vs años */}
-                    <div className="p-4 bg-white rounded-xl border border-gray-200">
+                    <div className="p-4 bg-white border border-gray-200">
                       <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">Consumo</p>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -2003,7 +2441,7 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                     </div>
 
                     {/* Vacaciones Pendientes - Tabla de años vs estadísticas */}
-                    <div className="p-4 bg-white rounded-xl border border-gray-200">
+                    <div className="p-4 bg-white border border-gray-200">
                       <p className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-3">Vacaciones Pendientes</p>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -2033,13 +2471,15 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                       </div>
                     </div>
                   </div>
+                  </div>
                 </div>
 
                 {/* SECCIÓN 3: PERÍODO DE AUSENCIA */}
-                <div className="flex items-center justify-start rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#fed7aa' }}>
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-4">Período de ausencia</label>
-                    <div className="flex items-center space-x-4 bg-orange-50/50 rounded-xl border border-orange-100 p-4">
-                      <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
+                <div className="flex items-center justify-start border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#fed7aa' }}>
+                  <div className="p-[5px] border-2 w-full flex flex-col gap-4" style={{ borderColor: '#fed7aa' }}>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-4">Período de ausencia</label>
+                  <div className="flex items-center space-x-4 bg-orange-50/50 border border-orange-100 p-4">
+                      <div className="w-12 h-12 bg-orange-100 flex items-center justify-center text-orange-600 flex-shrink-0">
                         <Clock size={24} />
                       </div>
                       <div className="flex-1 flex items-center space-x-3">
@@ -2047,36 +2487,41 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                           console.log('📅 DEBUG: Cambiando FECHA INICIO:', e.target.value);
                           setNewRequest({ ...newRequest, startDate: e.target.value });
                         }}
-                          className="flex-1 bg-white border border-orange-200 rounded-lg px-4 py-2 font-bold text-slate-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-sm" />
+                          className="flex-1 bg-white border border-orange-200 px-4 py-2 font-bold text-slate-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-sm" />
                         <span className="text-slate-400 font-bold">—</span>
                         <input type="date" value={newRequest.endDate} onChange={e => {
                           console.log('📅 DEBUG: Cambiando FECHA FIN:', e.target.value);
                           setNewRequest({ ...newRequest, endDate: e.target.value });
                         }}
-                          className="flex-1 bg-white border border-orange-200 rounded-lg px-4 py-2 font-bold text-slate-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-sm" />
+                          className="flex-1 bg-white border border-orange-200 px-4 py-2 font-bold text-slate-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-sm" />
                       </div>
                     </div>
                   </div>
+                  </div>
 
                 {/* SECCIÓN 4: MOTIVO/JUSTIFICACIÓN */}
-                <div className="flex items-center justify-center rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#dcfce7' }}>
+                <div className="flex items-center justify-center border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#dcfce7' }}>
+                  <div className="p-[5px] border-2 w-full flex flex-col gap-3" style={{ borderColor: '#dcfce7' }}>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block">Motivo o justificación</label>
                   
                   <textarea value={newRequest.description} onChange={e => setNewRequest({ ...newRequest, description: e.target.value })}
-                    className="w-full p-6 rounded-xl bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all min-h-[140px] resize-none text-base placeholder-slate-400"
+                    className="w-full p-6 bg-white border border-slate-200 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all min-h-[140px] resize-none text-base placeholder-slate-400"
                     placeholder="Describe los detalles de tu solicitud..." />
                   <p className="text-xs text-slate-500 text-right">
                     {newRequest.description.length} / 500 caracteres
                   </p>
+                  </div>
                 </div>
 
                 {/* SECCIÓN 5: NOTA DE CAMBIO (solo en edición) */}
                 {isEditing && (
-                  <div className="flex items-center justify-center rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#cffafe' }}>
+                  <div className="flex items-center justify-center border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#cffafe' }}>
+                    <div className="p-[5px] border-2 w-full flex flex-col gap-3" style={{ borderColor: '#cffafe' }}>
                     <label className="text-xs font-bold text-blue-600 uppercase tracking-wider block">Nota del cambio</label>
                     <input type="text" placeholder="Describe qué has modificado (ej: Cambio de fechas)"
                       value={newRequest.editNote || ''} onChange={e => setNewRequest({ ...newRequest, editNote: e.target.value })}
-                      className="w-full px-5 py-3 rounded-lg bg-white border border-blue-200 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-base transition-all" />
+                      className="w-full px-5 py-3 bg-white border border-blue-200 text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-base transition-all" />
+                    </div>
                   </div>
                 )}
 
@@ -2100,14 +2545,16 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                   
                   if (conflicts.length === 0) {
                     return (
-                      <div className="flex items-center justify-center rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#dcfce7' }}>
+                      <div className="flex items-center justify-center border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#dcfce7' }}>
+                        <div className="p-[5px] border-2 w-full flex flex-col gap-3" style={{ borderColor: '#dcfce7' }}>
                         <div className="flex items-center space-x-4 mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                          <div className="w-12 h-12 bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
                             <CheckCircle size={24} />
                           </div>
                           <h3 className="text-base font-bold text-emerald-900">Superposiciones del equipo</h3>
                         </div>
                         <p className="text-base text-emerald-700 ml-16">✓ No hay compañeros de vacaciones en estas fechas</p>
+                        </div>
                       </div>
                     );
                   } else {
@@ -2119,9 +2566,10 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                                       userTeam?.team === 'iot' ? 'IoT' : 
                                       userTeam?.team || 'Sin equipo');
                     return (
-                      <div className="flex items-center justify-center rounded-xl border-2 border-transparent p-6 h-auto" style={{ backgroundColor: '#fef3c7' }}>
+                      <div className="flex items-center justify-center border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#fef3c7' }}>
+                        <div className="p-[5px] border-2 w-full flex flex-col gap-3" style={{ borderColor: '#fef3c7' }}>
                         <div className="flex items-center space-x-4 mb-4">
-                          <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
+                          <div className="w-12 h-12 bg-amber-100 flex items-center justify-center text-amber-600 flex-shrink-0">
                             <span className="text-2xl">⚠️</span>
                           </div>
                           <h3 className="text-base font-bold text-amber-900">Conflicto de equipo detectado</h3>
@@ -2136,6 +2584,7 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                             </li>
                           ))}
                         </ul>
+                        </div>
                       </div>
                     );
                   }
@@ -2143,9 +2592,10 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
 
                 {/* BOTONES DE ACCIÓN */}
                 {console.log('🔴🔴🔴 RENDERIZANDO BOTONES - newRequest:', newRequest, 'disabled:', isLoading || !newRequest.startDate || !newRequest.endDate || !newRequest.type)}
-                <div className="flex items-center justify-end gap-4 pt-8 rounded-xl border-2 border-transparent p-6 h-auto">
+                <div className="flex items-center justify-end gap-[8px] pt-8 border-[12px] border-transparent p-6 h-auto" style={{ backgroundColor: '#f3e8ff' }}>
+                  <div className="p-[5px] border-2 w-full flex items-center justify-end gap-[8px]" style={{ borderColor: '#f3e8ff' }}>
                   <button onClick={() => setShowModal(false)}
-                    className="w-[21%] min-w-[150px] py-5 rounded-lg text-slate-700 font-bold text-base uppercase tracking-wider bg-slate-100 hover:bg-slate-200 transition-all border border-slate-300">
+                    className="w-[21%] min-w-[150px] py-5 text-slate-700 font-bold text-base uppercase tracking-wider bg-slate-100 hover:bg-slate-200 transition-all border border-slate-300">
                     Cancelar
                   </button>
                   <button 
@@ -2161,19 +2611,21 @@ const AbsenceManagement = ({ user, config, showReloadModal, setShowReloadModal, 
                     style={{ 
                       backgroundColor: (isLoading || !newRequest.startDate || !newRequest.endDate || !newRequest.type) ? '#cbd5e1' : '#22c55e'
                     }}
-                    className="w-[21%] min-w-[150px] py-5 rounded-lg text-white font-bold text-base uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
+                    className="w-[21%] min-w-[150px] py-5 text-white font-bold text-base uppercase tracking-wider shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:cursor-not-allowed"
                   >
                     {isLoading ?
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white animate-spin" /> :
                       <><span>{isEditing ? 'Actualizar' : 'Confirmar'}</span><ChevronRight size={20} /></>
                     }
                   </button>
-                </div>
                   </div>
-                  {/* FIN CONTENEDOR CON PADDING */}
+                </div>
+                {/* FIN CONTENEDOR CON PADDING */}
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -2436,6 +2888,88 @@ const HourDistributionModal = ({ elapsedTime, availableOTs, config, onClose, onS
                   <ChevronRight size={16} />
                 </>
               )}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const EditProfileModal = ({ item, user, targetUsername, onClose, onSave }) => {
+  const [value, setValue] = useState(item.value || '');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const validateInput = () => {
+    const lowerLabel = (item.label || '').toLowerCase();
+    if (lowerLabel.includes('email')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (value && !emailRegex.test(value)) {
+        setError('Email inválido. Ej: usuario@empresa.com');
+        return false;
+      }
+    } else if (lowerLabel.includes('teléfono')) {
+      const phoneRegex = /^[\d\s\-\+\(\)]{6,}$/;
+      if (value && !phoneRegex.test(value)) {
+        setError('Teléfono inválido. Debe tener al menos 6 dígitos.');
+        return false;
+      }
+    }
+    setError('');
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!validateInput()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_BASE}/profile/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: targetUsername || user.username, field: item.field, value, actor: user.username })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        onSave(value);
+      } else {
+        setError(data.message || 'Error al guardar');
+      }
+    } catch (e) {
+      setError('Servidor fuera de línea');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl border border-slate-200">
+        <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Editar {item.label}</h3>
+        <p className="text-slate-400 text-sm font-bold mb-6 uppercase tracking-widest">Valor actual: {item.value || 'vacío'}</p>
+
+        <div className="space-y-4">
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => { setValue(e.target.value); setError(''); }}
+            placeholder={`Nuevo ${item.label.toLowerCase()}`}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-bold">
+              {error}
+            </div>
+          )}
+
+          <div className="flex space-x-3 pt-4">
+            <button onClick={onClose} disabled={saving} className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all disabled:opacity-50">
+              Cancelar
+            </button>
+            <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
+              {saving ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+              <span>{saving ? 'Guardando...' : 'Guardar'}</span>
             </button>
           </div>
         </div>

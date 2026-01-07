@@ -16,8 +16,21 @@ function formatDateWithZeros(dateStr) {
 }
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
+// Headers de seguridad relajados para desarrollo
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    next();
+});
 
 const SPREADSHEET_ID = '1IyWGyxYDDTWY5SHh2xLBxtakSZX_xhZFo2jta4JeSW4';
 const CREDENTIALS_PATH = path.join(__dirname, '../../app/src/main/assets/credentials_default.json');
@@ -103,10 +116,14 @@ app.post('/api/login', async (req, res) => {
         );
 
         if (userRow) {
+            const username = userRow[appIndex] ? userRow[appIndex].toString().trim() : null;
+            if (!username) {
+                return res.status(400).json({ success: false, message: 'Usuario sin identificador APP' });
+            }
             res.json({
                 success: true,
                 user: {
-                    username: userRow[appIndex].trim(),
+                    username: username,
                     name: `${userRow[headers.indexOf('NOMBRE')] || ''} ${userRow[headers.indexOf('APELLIDOS')] || ''}`.trim(),
                     role: userRow[headers.indexOf('ROL')] || 'Operario'
                 }
@@ -339,6 +356,198 @@ app.get('/api/stats/:username', async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// 3b. PERFIL DE USUARIO (lectura)
+// DEBUG: Listar todos los usuarios
+app.get('/api/debug/users', async (req, res) => {
+    try {
+        const sheets = await getSheetsService();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'TRABAJADORES!A1:C500',
+        });
+        const rows = response.data.values || [];
+        let headIdx = rows.findIndex(r => r.includes('APP'));
+        if (headIdx === -1) headIdx = 0;
+        const headers = rows[headIdx];
+        const appIdx = headers.indexOf('APP');
+        const users = rows.slice(headIdx + 1).filter(r => r[appIdx]).map(r => r[appIdx]).slice(0, 10);
+        res.json({ users, totalRows: rows.length, headerIndex: headIdx });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/api/profile/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+        console.log(`[Profile] Requesting profile for user: ${username}`);
+        const sheets = await getSheetsService();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'TRABAJADORES!A1:Z500',
+        });
+        const rows = response.data.values || [];
+        if (!rows || rows.length < 2) return res.status(404).json({ message: 'Sin datos' });
+
+        // Buscar la fila de cabeceras (contiene APP)
+        let headIdx = rows.findIndex(r => r.includes('APP'));
+        if (headIdx === -1) headIdx = 0;
+        const headers = rows[headIdx];
+        const dataRows = rows.slice(headIdx + 1);
+
+        // Encontrar fila del usuario por columna APP
+        const appIndex = headers.indexOf('APP');
+        if (appIndex === -1) return res.status(400).json({ message: 'Hoja TRABAJADORES sin columna APP' });
+        const userRow = dataRows.find(r => (r[appIndex] || '').toString().trim().toLowerCase() === username.trim().toLowerCase());
+        if (!userRow) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+        // Helper seguro para leer valor por columna
+        const val = (col) => {
+            const idx = headers.indexOf(col);
+            return idx !== -1 && userRow.length > idx ? (userRow[idx] || '') : '';
+        };
+
+        // Mapeo de grupos a campos
+        const groups = {
+            'Datos Personales': [
+                { label: 'ID', field: 'COD', value: val('COD') },
+                { label: 'DNI', field: 'DNI', value: val('DNI') },
+                { label: 'Nombre', field: 'NOMBRE', value: val('NOMBRE') },
+                { label: 'Apellidos', field: 'APELLIDOS', value: val('APELLIDOS') },
+                { label: 'Fecha nacimiento', field: 'FECHA_NAC', value: val('FECHA_NAC') },
+                { label: 'Usuario APP', field: 'APP', value: val('APP') },
+                { label: 'Apodo', field: 'APODO', value: val('APODO') },
+                { label: 'Nº Cuenta', field: 'N_CUENTA', value: val('N_CUENTA') },
+            ],
+            'Información Laboral': [
+                { label: 'Categoría', field: 'CATEGORIA', value: val('CATEGORIA') },
+                { label: 'Alta empresa', field: 'ALTA_EMP', value: val('ALTA_EMP') },
+                { label: 'Baja empresa', field: 'BAJA_EMP', value: val('BAJA_EMP') },
+                { label: 'Equipo asignado', field: 'EQUIPO_ASIGN', value: val('EQUIPO_ASIGN') },
+                { label: 'Rol', field: 'ROL', value: val('ROL') },
+                { label: 'SW Web', field: 'SW WEB', value: val('SW WEB') },
+            ],
+            'Datos de contacto': [
+                { label: 'Teléfono empresa', field: 'TELF_EMP', value: val('TELF_EMP') },
+                { label: 'Email empresa', field: 'EMAIL_EMP', value: val('EMAIL_EMP') },
+                { label: 'Teléfono personal', field: 'TELF_PERS', value: val('TELF_PERS') },
+                { label: 'Email personal', field: 'EMAIL_PERS', value: val('EMAIL_PERS') },
+            ],
+            'Caducidades / Otros': [
+                { label: 'Reconocimiento médico', field: 'R.MEDICO', value: val('R.MEDICO') },
+                { label: 'Control de acceso', field: 'C.ACCESO', value: val('C.ACCESO') },
+                { label: 'Supervisor ejecución', field: 'SUP.EJEC', value: val('SUP.EJEC') },
+                { label: 'Fecha calibración', field: 'FECHA_CAL', value: val('FECHA_CAL') },
+                { label: 'Test', field: 'TEST', value: val('TEST') },
+                { label: 'Test2', field: 'TEST2', value: val('TEST2') },
+            ],
+        };
+
+        // NO filtrar - incluir todos los campos, incluso vacíos
+        res.json({ username, groups });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// 3c. PERFIL DE USUARIO (actualización de campo)
+app.post('/api/profile/update', async (req, res) => {
+    try {
+        const { username, field, value, actor } = req.body || {};
+        if (!username || !field) return res.status(400).json({ message: 'Parámetros inválidos' });
+
+        const sheets = await getSheetsService();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'TRABAJADORES!A1:Z500',
+        });
+
+        const rows = response.data.values || [];
+        let headIdx = rows.findIndex(r => r.includes('APP'));
+        if (headIdx === -1) headIdx = 0;
+        const headers = rows[headIdx];
+        const appIndex = headers.indexOf('APP');
+        const fieldIndex = headers.indexOf(field);
+        if (appIndex === -1 || fieldIndex === -1) return res.status(400).json({ message: 'Campo no encontrado en cabeceras' });
+
+        const dataRows = rows.slice(headIdx + 1);
+        const rowIdx = dataRows.findIndex(r => (r[appIndex] || '').toString().trim().toLowerCase() === username.trim().toLowerCase());
+        if (rowIdx === -1) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+        // Calcular rango de celda a actualizar (sumar 2 por cabecera + 1-indexed)
+        const targetRow = headIdx + 2 + rowIdx;
+        const colLetter = (n) => {
+            let s = '';
+            n = n + 1;
+            while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
+            return s;
+        };
+        const targetCol = colLetter(fieldIndex);
+        const range = `TRABAJADORES!${targetCol}${targetRow}:${targetCol}${targetRow}`;
+
+        const oldValue = (dataRows[rowIdx][fieldIndex] || '').toString();
+
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [[value || '']] }
+        });
+
+        // Registrar cambio en la hoja CAMBIOS_PENDIENTES
+        try {
+            // Crear hoja si no existe
+            const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+            const exists = (meta.data.sheets || []).some(s => s.properties?.title === 'CAMBIOS_PENDIENTES');
+            if (!exists) {
+                await sheets.spreadsheets.batchUpdate({
+                    spreadsheetId: SPREADSHEET_ID,
+                    requestBody: { requests: [{ addSheet: { properties: { title: 'CAMBIOS_PENDIENTES' } } }] }
+                });
+            }
+
+            const changeRange = 'CAMBIOS_PENDIENTES!A:H';
+            const changeLog = await sheets.spreadsheets.values.get({
+                spreadsheetId: SPREADSHEET_ID,
+                range: changeRange
+            }).catch(() => ({ data: { values: [] } }));
+
+            const hasHeader = changeLog.data.values && changeLog.data.values.length > 0;
+            if (!hasHeader) {
+                await sheets.spreadsheets.values.append({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: changeRange,
+                    valueInputOption: 'USER_ENTERED',
+                    requestBody: {
+                        values: [['ID', 'USUARIO_CAMBIO', 'CAMPO', 'VALOR_ANTERIOR', 'VALOR_NUEVO', 'FECHA_CAMBIO', 'ESTADO', 'USUARIO_AFECTADO']]
+                    }
+                });
+            }
+
+            const now = new Date();
+            const fechaCambio = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            const changeId = `${Date.now()}`;
+            const actorUser = (actor && actor.toString().trim()) ? actor.toString().trim() : username;
+            const usuarioCambio = actorUser !== username ? `${actorUser} (admin)` : actorUser;
+
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID,
+                range: changeRange,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: {
+                    values: [[changeId, usuarioCambio, field, oldValue, value || '', fechaCambio, 'pendiente', username]]
+                }
+            });
+        } catch (logErr) {
+            console.log('Error registrando cambio en CAMBIOS_PENDIENTES:', logErr.message);
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
@@ -576,8 +785,126 @@ app.get('/api/absences/logs', async (req, res) => {
             headers.forEach((h, i) => obj[h] = row[i] || '');
             return obj;
         });
-        res.json(data);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+        
+        // Obtener festivos para agrupación
+        const festivosRes = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'AUSENCIAS-LOG!A:M',
+        });
+        const festivosRows = festivosRes.data.values || [];
+        const festivosDates = new Set();
+        for (let i = 1; i < festivosRows.length; i++) {
+            if (festivosRows[i] && festivosRows[i][3] === 'FESTIVO') {
+                festivosDates.add(festivosRows[i][4]); // FECHA INICIO
+            }
+        }
+        
+        // Función para agrupar ausencias consecutivas
+        const groupConsecutiveAbsences = (absences) => {
+            const parseDate = (dateStr) => {
+                const [day, month, year] = dateStr.split('/');
+                return new Date(year, month - 1, day);
+            };
+            
+            const isWeekend = (date) => {
+                const day = date.getDay();
+                return day === 0 || day === 6; // Domingo o Sábado
+            };
+            
+            const isFestivo = (date) => {
+                const dateStr = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+                return festivosDates.has(dateStr);
+            };
+            
+            const areDatesConnected = (date1, date2) => {
+                const current = new Date(date1);
+                current.setDate(current.getDate() + 1);
+                
+                while (current < date2) {
+                    if (!isWeekend(current) && !isFestivo(current)) {
+                        return false; // Hay un día laborable en medio
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
+                return true;
+            };
+            
+            const calculateWorkDays = (startDate, endDate) => {
+                let count = 0;
+                const current = new Date(startDate);
+                while (current <= endDate) {
+                    if (!isWeekend(current) && !isFestivo(current)) {
+                        count++;
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
+                return count;
+            };
+            
+            // Agrupar por usuario + tipo
+            const groups = {};
+            absences.forEach(absence => {
+                const key = `${absence.USUARIO}_${absence.TIPO}`;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(absence);
+            });
+            
+            const grouped = [];
+            
+            Object.values(groups).forEach(group => {
+                // Ordenar por fecha de inicio
+                group.sort((a, b) => parseDate(a["FECHA INICIO"]) - parseDate(b["FECHA INICIO"]));
+                
+                let current = null;
+                
+                group.forEach(absence => {
+                    const start = parseDate(absence["FECHA INICIO"]);
+                    const end = parseDate(absence["FECHA FIN"]);
+                    
+                    if (!current) {
+                        current = { ...absence, _startDate: start, _endDate: end, _ids: [absence.ID] };
+                    } else {
+                        // Verificar si está conectada con la ausencia actual
+                        if (areDatesConnected(current._endDate, start)) {
+                            // Extender el periodo actual
+                            current._endDate = end;
+                            current["FECHA FIN"] = absence["FECHA FIN"];
+                            current._ids.push(absence.ID);
+                            
+                            // Recalcular días
+                            const totalDays = Math.ceil((current._endDate - current._startDate) / (1000 * 60 * 60 * 24)) + 1;
+                            const workDays = calculateWorkDays(current._startDate, current._endDate);
+                            current["DIA NAT"] = totalDays.toString();
+                            current["DIA LAB"] = workDays.toString();
+                            current.ID = current._ids.join(','); // IDs combinados
+                        } else {
+                            // No están conectadas, guardar la actual y empezar una nueva
+                            delete current._startDate;
+                            delete current._endDate;
+                            delete current._ids;
+                            grouped.push(current);
+                            current = { ...absence, _startDate: start, _endDate: end, _ids: [absence.ID] };
+                        }
+                    }
+                });
+                
+                if (current) {
+                    delete current._startDate;
+                    delete current._endDate;
+                    delete current._ids;
+                    grouped.push(current);
+                }
+            });
+            
+            return grouped;
+        };
+        
+        const groupedData = groupConsecutiveAbsences(data);
+        res.json(groupedData);
+    } catch (e) { 
+        console.error('Error fetching absence logs:', e);
+        res.status(500).json({ error: e.message }); 
+    }
 });
 
 app.get('/api/absences/cuadro', async (req, res) => {
@@ -726,6 +1053,36 @@ app.get('/api/festivos/:bookId/:sheetName', async (req, res) => {
     }
 });
 
+// Endpoint para obtener festivos guardados en AUSENCIAS-LOG
+app.get('/api/festivos/saved', async (req, res) => {
+    try {
+        const sheets = await getSheetsService();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'AUSENCIAS-LOG!A:M',
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length === 0) return res.json([]);
+
+        const festivos = [];
+        // Saltar header (row 0) y buscar TIPO = "FESTIVO"
+        for (let i = 1; i < rows.length; i++) {
+            if (rows[i] && rows[i][3] === 'FESTIVO') {
+                festivos.push({
+                    fecha: rows[i][4] || rows[i][5], // FECHA INICIO o FECHA FIN (son iguales para festivos)
+                    descripcion: rows[i][2] || 'FESTIVO' // NOMBRE COMPLETO
+                });
+            }
+        }
+
+        res.json(festivos);
+    } catch (e) {
+        console.error('Error obteniendo festivos guardados:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // Endpoint para guardar festivos como ausencias especiales en AUSENCIAS-LOG
 app.post('/api/festivos/save', async (req, res) => {
     try {
@@ -737,47 +1094,36 @@ app.post('/api/festivos/save', async (req, res) => {
 
         const sheets = await getSheetsService();
         
-        // Primero, limpiar festivos antiguos de AUSENCIAS-LOG
+        // Leer festivos existentes de AUSENCIAS-LOG
         const logRes = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
             range: 'AUSENCIAS-LOG!A:M',
         });
         
         const logRows = logRes.data.values || [];
-        const festivoRowIndices = [];
+        const existingFestivos = new Set();
         
-        // Encontrar filas de festivos existentes
-        for (let i = 1; i < logRows.length; i++) { // Empezar desde 1 para saltarse header
+        // Recolectar fechas de festivos ya existentes
+        for (let i = 1; i < logRows.length; i++) {
             if (logRows[i] && logRows[i][3] === 'FESTIVO') {
-                festivoRowIndices.push(i);
+                const fecha = logRows[i][4]; // FECHA INICIO
+                if (fecha) existingFestivos.add(fecha);
             }
         }
 
-        // Eliminar filas de festivos antiguos (de atrás para adelante para no cambiar índices)
-        for (let i = festivoRowIndices.length - 1; i >= 0; i--) {
-            const rowIdx = festivoRowIndices[i];
-            await sheets.spreadsheets.batchUpdate({
-                spreadsheetId: SPREADSHEET_ID,
-                requestBody: {
-                    requests: [{
-                        deleteDimension: {
-                            range: {
-                                sheetId: 0, // Ajustar si es necesario
-                                dimension: 'ROWS',
-                                startIndex: rowIdx,
-                                endIndex: rowIdx + 1
-                            }
-                        }
-                    }]
-                }
-            });
+        // Filtrar solo festivos nuevos (que no existan ya)
+        const festivosNuevos = festivos.filter(f => !existingFestivos.has(f));
+        
+        if (festivosNuevos.length === 0) {
+            console.log('No hay festivos nuevos para agregar');
+            return res.json({ success: true, saved: 0, message: 'Todos los festivos ya existen' });
         }
 
-        // Ahora agregar festivos nuevos
+        // Agregar festivos nuevos
         const hoy = new Date();
         const today = `${safePad(hoy.getDate())}/${safePad(hoy.getMonth() + 1)}/${hoy.getFullYear()} ${safePad(hoy.getHours())}:${safePad(hoy.getMinutes())}`;
         
-        const rowsToAdd = festivos.map((dateStr, idx) => {
+        const rowsToAdd = festivosNuevos.map((dateStr) => {
             const festivoId = `FES-${dateStr.replace(/\//g, '')}-${Date.now().toString().slice(-4)}`;
             return [
                 festivoId,      // ID
@@ -788,7 +1134,7 @@ app.post('/api/festivos/save', async (req, res) => {
                 dateStr,         // FECHA FIN
                 '0',             // DIA LAB (no laborable)
                 '1',             // DIA NAT
-                '',              // DESCRIPCION
+                'Día festivo',   // DESCRIPCION
                 today,           // FECHA SOLICITUD
                 'Aprobada',      // ESTADO (automático)
                 '',              // COMENTARIOS
@@ -804,9 +1150,10 @@ app.post('/api/festivos/save', async (req, res) => {
                 valueInputOption: 'USER_ENTERED',
                 requestBody: { values: rowsToAdd },
             });
+            console.log(`✅ ${rowsToAdd.length} festivos guardados en AUSENCIAS-LOG`);
         }
 
-        res.json({ success: true, saved: rowsToAdd.length });
+        res.json({ success: true, saved: rowsToAdd.length, skipped: festivos.length - rowsToAdd.length });
     } catch (e) {
         console.error('Error guardando festivos:', e);
         res.status(500).json({ error: e.message });
@@ -1150,10 +1497,29 @@ app.post('/api/reload-quadrants', async (req, res) => {
 
         const sheets = await getSheetsService();
 
-        // 1. Leer cuadrante origen (expandido hasta columna ZZ para cubrir todo el año)
+        // 1. Primero obtener metadata para determinar el rango real de datos
+        const metadataResponse = await sheets.spreadsheets.get({
+            spreadsheetId: sourceBookId,
+            ranges: [sourceSheet],
+            includeGridData: false
+        });
+        
+        // Encontrar la hoja específica
+        const sheetData = metadataResponse.data.sheets.find(s => s.properties.title === sourceSheet);
+        let maxColumn = 'ZZ'; // Fallback por defecto
+        
+        if (sheetData && sheetData.properties.gridProperties) {
+            const columnCount = sheetData.properties.gridProperties.columnCount;
+            // Convertir número de columnas a letra (A, B, ..., Z, AA, AB, etc.)
+            maxColumn = numberToColumn(columnCount - 1);
+        }
+        
+        console.log(`✓ Detectadas ${maxColumn} como última columna del cuadrante ${sourceSheet}`);
+
+        // 2. Leer cuadrante origen con el rango dinámico
         const sourceResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: sourceBookId,
-            range: `${sourceSheet}!A:ZZ`,
+            range: `${sourceSheet}!A:${maxColumn}`,
         });
         const quadrant = sourceResponse.data.values || [];
 
@@ -1271,6 +1637,8 @@ app.post('/api/reload-quadrants', async (req, res) => {
 
         // 3. Procesar ausencias por fila (cada fila = un usuario)
         const absences = [];
+        const festivosToSave = []; // Array para guardar festivos encontrados
+        
         for (let rowIdx = 0; rowIdx < dataRows.length; rowIdx++) {
             const row = dataRows[rowIdx];
             
@@ -1278,7 +1646,21 @@ app.post('/api/reload-quadrants', async (req, res) => {
             const userName = (row[userColIdx] || '').toString().trim();
             const fullName = nameColIdx !== -1 ? (row[nameColIdx] || '').toString().trim() : userName;
             
-            if (!userName || userName.toUpperCase() === 'FESTIVOS') continue; // Skip filas vacías o festivos
+            // Procesar fila de FESTIVOS por separado
+            if (userName.toUpperCase() === 'FESTIVOS') {
+                // Procesar cada fecha marcada con F
+                for (let dateIdx = 0; dateIdx < dates.length; dateIdx++) {
+                    const { col: dateCol, date } = dates[dateIdx];
+                    const cellValue = (row[dateCol] || '').toString().toUpperCase().trim();
+                    
+                    if (cellValue === 'F' || cellValue === 'FS') {
+                        festivosToSave.push(date);
+                    }
+                }
+                continue; // No procesar como usuario normal
+            }
+            
+            if (!userName) continue; // Skip filas vacías
 
             let i = 0;
             while (i < dates.length) {
@@ -1372,8 +1754,9 @@ app.post('/api/reload-quadrants', async (req, res) => {
         }
 
         console.log(`✓ ${absences.length} ausencias encontradas`);
+        console.log(`✓ ${festivosToSave.length} festivos encontrados`);
 
-        // 4. Guardar en hoja destino
+        // 4. Guardar ausencias en hoja destino
         const rows = absences.map(a => [
             a.id, // ID único generado: AAMMDD-USER-TIPO-DURACION
             a.username,
@@ -1401,13 +1784,172 @@ app.post('/api/reload-quadrants', async (req, res) => {
             });
         }
 
+        // 5. Guardar festivos en hoja destino (evitando duplicados)
+        let festivosSaved = 0;
+        if (festivosToSave.length > 0) {
+            // Leer festivos existentes para evitar duplicados
+            const logResponse = await sheets.spreadsheets.values.get({
+                spreadsheetId: destBookId,
+                range: `${destSheet}!A:M`
+            });
+            const logRows = logResponse.data.values || [];
+            
+            const existingFestivos = new Set();
+            for (let i = 1; i < logRows.length; i++) {
+                if (logRows[i] && logRows[i][3] === 'FESTIVO') {
+                    existingFestivos.add(logRows[i][4]); // FECHA INICIO
+                }
+            }
+            
+            const festivosNuevos = festivosToSave.filter(f => !existingFestivos.has(f));
+            
+            if (festivosNuevos.length > 0) {
+                const festivosRows = festivosNuevos.map(fecha => {
+                    const [day, month, year] = fecha.split('/').map(Number);
+                    const id = `${safePad(year % 100)}${safePad(month)}${safePad(day)}-FESTIVO`;
+                    
+                    return [
+                        id,                                    // ID
+                        'SISTEMA',                              // USUARIO
+                        'FESTIVO',                              // NOMBRE COMPLETO
+                        'FESTIVO',                              // TIPO
+                        fecha,                                  // FECHA INICIO
+                        fecha,                                  // FECHA FIN
+                        1,                                      // DIA NAT
+                        0,                                      // DIA LAB
+                        `Festivo importado de ${sourceSheet}`, // MOTIVO
+                        new Date().toLocaleDateString('es-ES'), // FECHA SOLICITUD
+                        'Aprobada',                             // ESTADO
+                        '',                                     // Vacío
+                        ''                                      // Vacío
+                    ];
+                });
+                
+                await sheets.spreadsheets.values.append({
+                    spreadsheetId: destBookId,
+                    range: `${destSheet}!A:M`,
+                    valueInputOption: 'USER_ENTERED',
+                    requestBody: {
+                        values: festivosRows
+                    }
+                });
+                
+                festivosSaved = festivosNuevos.length;
+            }
+        }
+
         res.json({ 
             success: true, 
-            message: `${absences.length} ausencias procesadas y guardadas en ${destSheet}` 
+            message: `${absences.length} ausencias y ${festivosSaved} festivos guardados en ${destSheet}` 
         });
     } catch (e) { 
         console.error(e);
         res.status(500).json({ error: e.message }); 
+    }
+});
+
+// ===== ENDPOINTS PARA CAMBIOS PENDIENTES (ADMIN) =====
+app.get('/api/cambios-pendientes', async (req, res) => {
+    try {
+        const sheets = await getSheetsService();
+        const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+        const exists = (meta.data.sheets || []).some(s => s.properties?.title === 'CAMBIOS_PENDIENTES');
+        if (!exists) return res.json({ pendientes: [], archivados: [] });
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'CAMBIOS_PENDIENTES!A1:H500'
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length < 2) return res.json({ pendientes: [], archivados: [] });
+
+        const dataRows = rows.slice(1);
+        const pendientes = [];
+        const archivados = [];
+
+        dataRows.forEach(row => {
+            if (!row[0]) return;
+            const cambio = {
+                id: row[0],
+                usuarioCambio: row[1] || '',
+                campo: row[2] || '',
+                valorAnterior: row[3] || '',
+                valorNuevo: row[4] || '',
+                fechaCambio: row[5] || '',
+                estado: row[6] || 'pendiente',
+                usuarioAfectado: row[7] || ''
+            };
+            if (cambio.estado === 'archivado') archivados.push(cambio);
+            else if (cambio.estado === 'pendiente') pendientes.push(cambio);
+            // Los cambios con estado 'aceptado' se ignoran (no se muestran en ninguna lista)
+        });
+
+        res.json({ pendientes, archivados });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/cambios-pendientes/aceptar', async (req, res) => {
+    try {
+        const { changeId } = req.body || {};
+        if (!changeId) return res.status(400).json({ error: 'changeId requerido' });
+
+        const sheets = await getSheetsService();
+        const meta = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+        const exists = (meta.data.sheets || []).some(s => s.properties?.title === 'CAMBIOS_PENDIENTES');
+        if (!exists) return res.status(404).json({ error: 'Hoja CAMBIOS_PENDIENTES no existe' });
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'CAMBIOS_PENDIENTES!A1:H500'
+        });
+
+        const rows = response.data.values || [];
+        const rowIdx = rows.findIndex((r, i) => i > 0 && r[0] === changeId);
+        if (rowIdx === -1) return res.status(404).json({ error: 'Cambio no encontrado' });
+
+        const range = `CAMBIOS_PENDIENTES!G${rowIdx + 1}`;
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [['aceptado']] }
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/cambios-pendientes/archivar', async (req, res) => {
+    try {
+        const { changeId } = req.body || {};
+        if (!changeId) return res.status(400).json({ error: 'changeId requerido' });
+
+        const sheets = await getSheetsService();
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'CAMBIOS_PENDIENTES!A1:H500'
+        });
+
+        const rows = response.data.values || [];
+        const rowIdx = rows.findIndex((r, i) => i > 0 && r[0] === changeId);
+        if (rowIdx === -1) return res.status(404).json({ error: 'Cambio no encontrado' });
+
+        const range = `CAMBIOS_PENDIENTES!G${rowIdx + 1}`;
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [['archivado']] }
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
