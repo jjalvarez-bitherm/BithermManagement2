@@ -552,22 +552,24 @@ const App = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f3f4f6]">
-      <aside className="w-72 bg-[#0f172a] text-white flex flex-col p-8 space-y-10 z-20">
+      <aside className="w-72 text-white flex flex-col p-8 space-y-10 z-20" style={{ backgroundColor: config.sidebarBg || '#0f172a', color: config.sidebarText || '#ffffff' }}>
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-lg" style={{ backgroundColor: config.primaryColor }}>{config.logoText}</div>
           <span className="font-bold text-xl tracking-tight">{config.appName}</span>
         </div>
         <nav className="flex-1 space-y-3">
-          <NavItem icon={<LayoutDashboard size={22} />} label="Control Horario" active={activeTab === 'dashboard'} color={config.primaryColor} onClick={() => setActiveTab('dashboard')} />
-          <NavItem icon={<Calendar size={22} />} label="Control Vacaciones" active={activeTab === 'vacations'} color={config.primaryColor} onClick={() => setActiveTab('vacations')} />
-          {/* Botón temporalmente oculto: Inspecciones */}
-          {/* <NavItem icon={<ClipboardCheck size={22} />} label="Inspecciones" active={activeTab === 'inspections'} color={config.primaryColor} onClick={() => setActiveTab('inspections')} /> */}
-          {/* Botón temporalmente oculto: Historial */}
-          {/* <NavItem icon={<History size={22} />} label="Historial" active={activeTab === 'history'} color={config.primaryColor} onClick={() => setActiveTab('history')} /> */}
-          <NavItem icon={<User size={22} />} label="Mi perfil" active={activeTab === 'profile'} color={config.primaryColor} onClick={() => setActiveTab('profile')} />
-          {user.role === 'SUPERADMIN' && (
-            <NavItem icon={<Settings size={22} />} label="Configuración" active={activeTab === 'settings'} color={config.primaryColor} onClick={() => setActiveTab('settings')} />
-          )}
+          {(config.menuSections || []).map(section => {
+            if (section.superadminOnly && user.role !== 'SUPERADMIN') return null;
+            const IconComponent = section.icon === 'LayoutDashboard' ? LayoutDashboard :
+              section.icon === 'Calendar' ? Calendar :
+              section.icon === 'ClipboardCheck' ? ClipboardCheck :
+              section.icon === 'History' ? History :
+              section.icon === 'User' ? User :
+              section.icon === 'Settings' ? Settings : LayoutDashboard;
+            return (
+              <NavItem key={section.id} icon={<IconComponent size={22} />} label={section.label} active={activeTab === section.id} color={config.secondaryColor || config.primaryColor} onClick={() => setActiveTab(section.id)} />
+            );
+          })}
         </nav>
         <div className="pt-8 border-t border-slate-700">
           <div className="flex items-center space-x-4 bg-slate-800/40 p-4 rounded-xl">
@@ -2950,7 +2952,7 @@ const HourDistributionModal = ({ elapsedTime, availableOTs, config, onClose, onS
 };
 
 const ConfigurationView = ({ config, setConfig }) => {
-  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', logoText: '', menuSections: [] });
+  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', secondaryColor: '', sidebarBg: '', sidebarText: '', logoText: '', menuSections: [] });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -2962,6 +2964,9 @@ const ConfigurationView = ({ config, setConfig }) => {
         setLocalConfig({
           appName: data.appName || '',
           primaryColor: data.primaryColor || '#3b82f6',
+          secondaryColor: data.secondaryColor || '#ef4444',
+          sidebarBg: data.sidebarBg || '#0f172a',
+          sidebarText: data.sidebarText || '#ffffff',
           logoText: data.logoText || 'B',
           menuSections: data.menuSections || []
         });
@@ -2984,7 +2989,16 @@ const ConfigurationView = ({ config, setConfig }) => {
       const data = await res.json();
       if (data.success) {
         // Actualizar config global inmediatamente
-        setConfig({ ...config, appName: localConfig.appName, primaryColor: localConfig.primaryColor, logoText: localConfig.logoText });
+        setConfig({ 
+          ...config, 
+          appName: localConfig.appName, 
+          primaryColor: localConfig.primaryColor,
+          secondaryColor: localConfig.secondaryColor,
+          sidebarBg: localConfig.sidebarBg,
+          sidebarText: localConfig.sidebarText,
+          logoText: localConfig.logoText,
+          menuSections: localConfig.menuSections
+        });
         setMessage('✅ Configuración guardada y aplicada correctamente.');
       } else {
         setMessage('❌ Error al guardar: ' + (data.error || 'desconocido'));
@@ -3034,11 +3048,38 @@ const ConfigurationView = ({ config, setConfig }) => {
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Icono del logo (1 letra)</label>
             <input type="text" maxLength="1" value={localConfig.logoText} onChange={(e) => setLocalConfig({ ...localConfig, logoText: e.target.value.toUpperCase() })} className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700 text-center text-2xl" placeholder="B" />
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl p-8 border-8 border-slate-100 shadow-lg bg-white">
+        <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600">Colores</h3>
+        <div className="space-y-6">
           <div>
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Color primario</label>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Color primario (botones, login)</label>
             <div className="flex items-center space-x-4">
               <input type="color" value={localConfig.primaryColor} onChange={(e) => setLocalConfig({ ...localConfig, primaryColor: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
               <input type="text" value={localConfig.primaryColor} onChange={(e) => setLocalConfig({ ...localConfig, primaryColor: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Color secundario (item seleccionado)</label>
+            <div className="flex items-center space-x-4">
+              <input type="color" value={localConfig.secondaryColor} onChange={(e) => setLocalConfig({ ...localConfig, secondaryColor: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
+              <input type="text" value={localConfig.secondaryColor} onChange={(e) => setLocalConfig({ ...localConfig, secondaryColor: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Fondo barra lateral</label>
+            <div className="flex items-center space-x-4">
+              <input type="color" value={localConfig.sidebarBg} onChange={(e) => setLocalConfig({ ...localConfig, sidebarBg: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
+              <input type="text" value={localConfig.sidebarBg} onChange={(e) => setLocalConfig({ ...localConfig, sidebarBg: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Texto barra lateral</label>
+            <div className="flex items-center space-x-4">
+              <input type="color" value={localConfig.sidebarText} onChange={(e) => setLocalConfig({ ...localConfig, sidebarText: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
+              <input type="text" value={localConfig.sidebarText} onChange={(e) => setLocalConfig({ ...localConfig, sidebarText: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
             </div>
           </div>
         </div>

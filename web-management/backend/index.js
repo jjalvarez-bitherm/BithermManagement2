@@ -80,7 +80,10 @@ app.get('/api/config', (req, res) => {
         const vars = JSON.parse(fs.readFileSync(VARIABLES_PATH, 'utf8'));
         res.json({
             appName: vars.app_config?.app_name || 'Bitherm Admin',
-            primaryColor: vars.login_module?.login_screen?.primary_color || '#3b82f6',
+            primaryColor: vars.ui_config?.primary_color || '#3b82f6',
+            secondaryColor: vars.ui_config?.secondary_color || '#ef4444',
+            sidebarBg: vars.ui_config?.sidebar_bg || '#0f172a',
+            sidebarText: vars.ui_config?.sidebar_text || '#ffffff',
             logoText: vars.ui_config?.logo_text || 'B',
             version: vars.app_config?.version_name || '1.0',
             menuSections: vars.ui_config?.menu_sections || [
@@ -91,14 +94,14 @@ app.get('/api/config', (req, res) => {
             ]
         });
     } catch (e) {
-        res.json({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', logoText: 'B', menuSections: [] });
+        res.json({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', secondaryColor: '#ef4444', sidebarBg: '#0f172a', sidebarText: '#ffffff', logoText: 'B', menuSections: [] });
     }
 });
 
 // 0b. GUARDAR CONFIGURACIÓN DE UI (solo SUPERADMIN)
 app.post('/api/config', (req, res) => {
     try {
-        const { appName, primaryColor, logoText, menuSections } = req.body;
+        const { appName, primaryColor, secondaryColor, sidebarBg, sidebarText, logoText, menuSections } = req.body;
         let vars = {};
         try {
             vars = JSON.parse(fs.readFileSync(VARIABLES_PATH, 'utf8'));
@@ -107,12 +110,16 @@ app.post('/api/config', (req, res) => {
         }
         
         if (appName) vars.app_config.app_name = appName;
+        if (!vars.ui_config) vars.ui_config = {};
+        if (primaryColor) vars.ui_config.primary_color = primaryColor;
+        if (secondaryColor) vars.ui_config.secondary_color = secondaryColor;
+        if (sidebarBg) vars.ui_config.sidebar_bg = sidebarBg;
+        if (sidebarText) vars.ui_config.sidebar_text = sidebarText;
+        if (logoText !== undefined) vars.ui_config.logo_text = logoText;
+        if (menuSections) vars.ui_config.menu_sections = menuSections;
+        
+        // Mantener compatibilidad con login_module
         if (primaryColor) vars.login_module.login_screen.primary_color = primaryColor;
-        if (logoText !== undefined) {
-            if (!vars.ui_config) vars.ui_config = {};
-            vars.ui_config.logo_text = logoText;
-        }
-        if (menuSections) vars.ui_config = { ...vars.ui_config, menu_sections: menuSections };
         
         fs.writeFileSync(VARIABLES_PATH, JSON.stringify(vars, null, 2), 'utf8');
         res.json({ success: true });
