@@ -873,7 +873,7 @@ const App = () => {
 const NavItem = ({ icon, label, active = false, color, itemColor, onClick }) => (
   <div onClick={onClick} className={`flex items-center space-x-4 p-4 rounded-xl cursor-pointer transition-all ${active ? 'text-white shadow-xl translate-x-1' : 'hover:text-white hover:bg-slate-800'
     }`} style={active ? { backgroundColor: color, color: '#ffffff' } : { color: itemColor }}>
-    {icon} <span className="font-bold whitespace-pre-line">{label}</span>
+    {icon} <span className="font-bold overflow-hidden text-ellipsis whitespace-nowrap">{label}</span>
   </div>
 );
 
@@ -3171,10 +3171,10 @@ const ConfigurationView = ({ config, setConfig }) => {
         <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600">Menú lateral</h3>
         <div className="space-y-4">
           {localConfig.menuSections.map((section, idx) => (
-            <div key={idx} className="flex items-start space-x-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
+            <div key={idx} className="flex items-center space-x-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
               <div className="flex-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Etiqueta (presiona Enter para salto de línea)</label>
-                <textarea value={section.label} onChange={(e) => updateSection(idx, 'label', e.target.value)} rows="2" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 resize-none" />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Etiqueta</label>
+                <input type="text" value={section.label} onChange={(e) => updateSection(idx, 'label', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700" />
               </div>
               <div className="w-48">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Icono</label>
