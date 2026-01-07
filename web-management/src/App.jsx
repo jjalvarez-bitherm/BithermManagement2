@@ -2950,7 +2950,7 @@ const HourDistributionModal = ({ elapsedTime, availableOTs, config, onClose, onS
 };
 
 const ConfigurationView = ({ config, setConfig }) => {
-  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', menuSections: [] });
+  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', logoText: '', menuSections: [] });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -2962,6 +2962,7 @@ const ConfigurationView = ({ config, setConfig }) => {
         setLocalConfig({
           appName: data.appName || '',
           primaryColor: data.primaryColor || '#3b82f6',
+          logoText: data.logoText || 'B',
           menuSections: data.menuSections || []
         });
       } catch (e) {
@@ -2982,8 +2983,9 @@ const ConfigurationView = ({ config, setConfig }) => {
       });
       const data = await res.json();
       if (data.success) {
-        setConfig({ ...config, ...localConfig });
-        setMessage('✅ Configuración guardada. Los cambios se aplicarán al recargar.');
+        // Actualizar config global inmediatamente
+        setConfig({ ...config, appName: localConfig.appName, primaryColor: localConfig.primaryColor, logoText: localConfig.logoText });
+        setMessage('✅ Configuración guardada y aplicada correctamente.');
       } else {
         setMessage('❌ Error al guardar: ' + (data.error || 'desconocido'));
       }
@@ -3027,6 +3029,10 @@ const ConfigurationView = ({ config, setConfig }) => {
           <div>
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nombre de la aplicación</label>
             <input type="text" value={localConfig.appName} onChange={(e) => setLocalConfig({ ...localConfig, appName: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700" />
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Icono del logo (1 letra)</label>
+            <input type="text" maxLength="1" value={localConfig.logoText} onChange={(e) => setLocalConfig({ ...localConfig, logoText: e.target.value.toUpperCase() })} className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700 text-center text-2xl" placeholder="B" />
           </div>
           <div>
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Color primario</label>

@@ -81,7 +81,7 @@ app.get('/api/config', (req, res) => {
         res.json({
             appName: vars.app_config?.app_name || 'Bitherm Admin',
             primaryColor: vars.login_module?.login_screen?.primary_color || '#3b82f6',
-            logoText: 'B',
+            logoText: vars.ui_config?.logo_text || 'B',
             version: vars.app_config?.version_name || '1.0',
             menuSections: vars.ui_config?.menu_sections || [
                 { id: 'dashboard', label: 'Control Horario', icon: 'LayoutDashboard' },
@@ -108,6 +108,10 @@ app.post('/api/config', (req, res) => {
         
         if (appName) vars.app_config.app_name = appName;
         if (primaryColor) vars.login_module.login_screen.primary_color = primaryColor;
+        if (logoText !== undefined) {
+            if (!vars.ui_config) vars.ui_config = {};
+            vars.ui_config.logo_text = logoText;
+        }
         if (menuSections) vars.ui_config = { ...vars.ui_config, menu_sections: menuSections };
         
         fs.writeFileSync(VARIABLES_PATH, JSON.stringify(vars, null, 2), 'utf8');
