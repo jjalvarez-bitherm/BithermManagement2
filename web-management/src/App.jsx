@@ -125,14 +125,19 @@ const App = () => {
   // Aplicar favicon cuando cambie en config
   useEffect(() => {
     if (config && config.faviconUrl) {
+      const href = new URL(config.faviconUrl, window.location.origin).href;
+      // rel="icon"
       let link = document.querySelector("link[rel='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'icon';
-        document.head.appendChild(link);
-      }
+      if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
       link.type = 'image/png';
-      link.href = config.faviconUrl;
+      link.sizes = '32x32';
+      link.href = href;
+
+      // rel="shortcut icon" for broader compatibility
+      let link2 = document.querySelector("link[rel='shortcut icon']");
+      if (!link2) { link2 = document.createElement('link'); link2.rel = 'shortcut icon'; document.head.appendChild(link2); }
+      link2.type = 'image/png';
+      link2.href = href;
     }
   }, [config?.faviconUrl]);
 
@@ -530,7 +535,7 @@ const App = () => {
     return (
       <div className="auth-container">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="login-card">
-          <div className="logo-badge" style={{ backgroundColor: config.primaryColor }}>
+          <div className="logo-badge" style={{ backgroundColor: config.logoImageUrl ? 'transparent' : config.primaryColor }}>
             {config.logoImageUrl ? (
               <img src={config.logoImageUrl} alt="logo" className="w-10 h-10 object-cover rounded-lg" />
             ) : (
@@ -574,7 +579,7 @@ const App = () => {
     <div className="flex h-screen overflow-hidden bg-[#f3f4f6]">
       <aside className="w-72 text-white flex flex-col p-8 space-y-10 z-20" style={{ backgroundColor: config.sidebarBg || '#0f172a', color: config.sidebarText || '#ffffff' }}>
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-lg overflow-hidden" style={{ backgroundColor: config.primaryColor }}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-lg overflow-hidden" style={{ backgroundColor: config.logoImageUrl ? 'transparent' : config.primaryColor }}>
             {config.logoImageUrl ? (
               <img src={config.logoImageUrl} alt="logo" className="w-full h-full object-cover" />
             ) : (
