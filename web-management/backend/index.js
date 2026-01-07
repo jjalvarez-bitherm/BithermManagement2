@@ -23,6 +23,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+// Aumentar límite de tamaño para subir imágenes base64
+app.use(express.json({ limit: '10mb' }));
 
 // Headers de seguridad relajados para desarrollo
 app.use((req, res, next) => {
@@ -86,6 +88,8 @@ app.get('/api/config', (req, res) => {
             sidebarText: vars.ui_config?.sidebar_text || '#ffffff',
             sidebarItemText: vars.ui_config?.sidebar_item_text || '#94a3b8',
             logoText: vars.ui_config?.logo_text || 'B',
+            logoImageUrl: vars.ui_config?.logo_image_url || '',
+            faviconUrl: vars.ui_config?.favicon_url || '',
             version: vars.app_config?.version_name || '1.0',
             menuSections: vars.ui_config?.menu_sections || [
                 { id: 'dashboard', label: 'Control Horario', icon: 'LayoutDashboard' },
@@ -95,14 +99,14 @@ app.get('/api/config', (req, res) => {
             ]
         });
     } catch (e) {
-        res.json({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', secondaryColor: '#ef4444', sidebarBg: '#0f172a', sidebarText: '#ffffff', sidebarItemText: '#94a3b8', logoText: 'B', menuSections: [] });
+        res.json({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', secondaryColor: '#ef4444', sidebarBg: '#0f172a', sidebarText: '#ffffff', sidebarItemText: '#94a3b8', logoText: 'B', logoImageUrl: '', faviconUrl: '', menuSections: [] });
     }
 });
 
 // 0b. GUARDAR CONFIGURACIÓN DE UI (solo SUPERADMIN)
 app.post('/api/config', (req, res) => {
     try {
-        const { appName, primaryColor, secondaryColor, sidebarBg, sidebarText, sidebarItemText, logoText, menuSections } = req.body;
+        const { appName, primaryColor, secondaryColor, sidebarBg, sidebarText, sidebarItemText, logoText, logoImageUrl, faviconUrl, menuSections } = req.body;
         let vars = {};
         try {
             vars = JSON.parse(fs.readFileSync(VARIABLES_PATH, 'utf8'));
@@ -118,6 +122,8 @@ app.post('/api/config', (req, res) => {
         if (sidebarText) vars.ui_config.sidebar_text = sidebarText;
         if (sidebarItemText) vars.ui_config.sidebar_item_text = sidebarItemText;
         if (logoText !== undefined) vars.ui_config.logo_text = logoText;
+        if (logoImageUrl !== undefined) vars.ui_config.logo_image_url = logoImageUrl;
+        if (faviconUrl !== undefined) vars.ui_config.favicon_url = faviconUrl;
         if (menuSections) vars.ui_config.menu_sections = menuSections;
         
         // Mantener compatibilidad con login_module
@@ -127,6 +133,30 @@ app.post('/api/config', (req, res) => {
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ error: e.message });
+    }
+});
+
+// 0c. SUBIR IMAGEN (logo o favicon) en base64
+app.post('/api/upload', (req, res) => {
+    try {
+        const { type, data } = req.body;
+        if (!type || !data || !/^data:image\/(png|jpeg);base64,/.test(data)) {
+            return res.status(400).json({ success: false, message: 'Formato inválido. Enviar data:image/png;base64,...' });
+        }
+
+        const base64Data = data.split(',')[1];
+        const buffer = Buffer.from(base64Data, 'base64');
+        const fileName = type === 'favicon' ? 'favicon.png' : 'logo.png';
+        const saveDir = path.join(__dirname, '../public/uploaded');
+        if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir, { recursive: true });
+        const savePath = path.join(saveDir, fileName);
+        fs.writeFileSync(savePath, buffer);
+
+        // URL relativa para servir desde Vite (public)
+        const url = `/uploaded/${fileName}?ts=${Date.now()}`;
+        res.json({ success: true, url });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
     }
 });
 

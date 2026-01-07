@@ -49,7 +49,7 @@ const caducityStatus = (value) => {
 
 const App = () => {
   const [user, setUser] = useState(null);
-  const [config, setConfig] = useState({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', secondaryColor: '#ef4444', sidebarBg: '#0f172a', sidebarText: '#ffffff', sidebarItemText: '#94a3b8', logoText: 'B' });
+  const [config, setConfig] = useState({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', secondaryColor: '#ef4444', sidebarBg: '#0f172a', sidebarText: '#ffffff', sidebarItemText: '#94a3b8', logoText: 'B', logoImageUrl: '', faviconUrl: '' });
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -121,6 +121,20 @@ const App = () => {
     fetch(`${API_BASE}/locations`).then(res => res.json()).then(setLocations).catch(console.error);
     fetchTeams();
   }, []);
+
+  // Aplicar favicon cuando cambie en config
+  useEffect(() => {
+    if (config && config.faviconUrl) {
+      let link = document.querySelector("link[rel='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.type = 'image/png';
+      link.href = config.faviconUrl;
+    }
+  }, [config?.faviconUrl]);
 
   useEffect(() => {
     let interval = null;
@@ -516,9 +530,15 @@ const App = () => {
     return (
       <div className="auth-container">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="login-card">
-          <div className="logo-badge" style={{ backgroundColor: config.primaryColor }}>{config.logoText}</div>
+          <div className="logo-badge" style={{ backgroundColor: config.primaryColor }}>
+            {config.logoImageUrl ? (
+              <img src={config.logoImageUrl} alt="logo" className="w-10 h-10 object-cover rounded-lg" />
+            ) : (
+              <span className="text-white font-black text-2xl">{config.logoText}</span>
+            )}
+          </div>
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">{config.appName}</h1>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight whitespace-pre-line">{config.appName}</h1>
             <p className="text-slate-500 font-medium mt-2">Portal de Producción</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
@@ -554,8 +574,14 @@ const App = () => {
     <div className="flex h-screen overflow-hidden bg-[#f3f4f6]">
       <aside className="w-72 text-white flex flex-col p-8 space-y-10 z-20" style={{ backgroundColor: config.sidebarBg || '#0f172a', color: config.sidebarText || '#ffffff' }}>
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-lg" style={{ backgroundColor: config.primaryColor }}>{config.logoText}</div>
-          <span className="font-bold text-xl tracking-tight">{config.appName}</span>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center font-black text-2xl shadow-lg overflow-hidden" style={{ backgroundColor: config.primaryColor }}>
+            {config.logoImageUrl ? (
+              <img src={config.logoImageUrl} alt="logo" className="w-full h-full object-cover" />
+            ) : (
+              <span>{config.logoText}</span>
+            )}
+          </div>
+          <span className="font-bold text-xl tracking-tight whitespace-pre-line">{config.appName}</span>
         </div>
         <nav className="flex-1 space-y-3">
           {(config.menuSections || []).map(section => {
@@ -2952,7 +2978,7 @@ const HourDistributionModal = ({ elapsedTime, availableOTs, config, onClose, onS
 };
 
 const ConfigurationView = ({ config, setConfig }) => {
-  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', secondaryColor: '', sidebarBg: '', sidebarText: '', sidebarItemText: '', logoText: '', menuSections: [] });
+  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', secondaryColor: '', sidebarBg: '', sidebarText: '', sidebarItemText: '', logoText: '', logoImageUrl: '', faviconUrl: '', menuSections: [] });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -2969,6 +2995,8 @@ const ConfigurationView = ({ config, setConfig }) => {
           sidebarText: data.sidebarText || '#ffffff',
           sidebarItemText: data.sidebarItemText || '#94a3b8',
           logoText: data.logoText || 'B',
+          logoImageUrl: data.logoImageUrl || '',
+          faviconUrl: data.faviconUrl || '',
           menuSections: data.menuSections || []
         });
       } catch (e) {
@@ -2999,6 +3027,8 @@ const ConfigurationView = ({ config, setConfig }) => {
           sidebarText: localConfig.sidebarText,
           sidebarItemText: localConfig.sidebarItemText,
           logoText: localConfig.logoText,
+          logoImageUrl: localConfig.logoImageUrl,
+          faviconUrl: localConfig.faviconUrl,
           menuSections: localConfig.menuSections
         });
         setMessage('✅ Configuración guardada y aplicada correctamente.');
@@ -3049,6 +3079,44 @@ const ConfigurationView = ({ config, setConfig }) => {
           <div>
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Icono del logo (1 letra)</label>
             <input type="text" maxLength="1" value={localConfig.logoText} onChange={(e) => setLocalConfig({ ...localConfig, logoText: e.target.value.toUpperCase() })} className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700 text-center text-2xl" placeholder="B" />
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Logo PNG (opcional)</label>
+            <div className="flex items-center space-x-4">
+              <input type="file" accept="image/png" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  try {
+                    const res = await fetch(`${API_BASE}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'logo', data: reader.result }) });
+                    const out = await res.json();
+                    if (out.success) setLocalConfig({ ...localConfig, logoImageUrl: out.url });
+                  } catch (err) { console.error('Upload logo error', err); }
+                };
+                reader.readAsDataURL(file);
+              }} />
+              {localConfig.logoImageUrl && <img src={localConfig.logoImageUrl} alt="logo" className="w-10 h-10 rounded-lg object-cover" />}
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Favicon PNG (16x16 o 32x32)</label>
+            <div className="flex items-center space-x-4">
+              <input type="file" accept="image/png" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async () => {
+                  try {
+                    const res = await fetch(`${API_BASE}/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'favicon', data: reader.result }) });
+                    const out = await res.json();
+                    if (out.success) setLocalConfig({ ...localConfig, faviconUrl: out.url });
+                  } catch (err) { console.error('Upload favicon error', err); }
+                };
+                reader.readAsDataURL(file);
+              }} />
+              {localConfig.faviconUrl && <img src={localConfig.faviconUrl} alt="favicon" className="w-8 h-8 rounded object-cover" />}
+            </div>
           </div>
         </div>
       </section>
