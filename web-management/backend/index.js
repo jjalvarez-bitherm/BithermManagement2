@@ -82,10 +82,38 @@ app.get('/api/config', (req, res) => {
             appName: vars.app_config?.app_name || 'Bitherm Admin',
             primaryColor: vars.login_module?.login_screen?.primary_color || '#3b82f6',
             logoText: 'B',
-            version: vars.app_config?.version_name || '1.0'
+            version: vars.app_config?.version_name || '1.0',
+            menuSections: vars.ui_config?.menu_sections || [
+                { id: 'dashboard', label: 'Control Horario', icon: 'LayoutDashboard' },
+                { id: 'vacations', label: 'Control Vacaciones', icon: 'Calendar' },
+                { id: 'profile', label: 'Mi perfil', icon: 'User' },
+                { id: 'settings', label: 'Configuración', icon: 'Settings', superadminOnly: true }
+            ]
         });
     } catch (e) {
-        res.json({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', logoText: 'B' });
+        res.json({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', logoText: 'B', menuSections: [] });
+    }
+});
+
+// 0b. GUARDAR CONFIGURACIÓN DE UI (solo SUPERADMIN)
+app.post('/api/config', (req, res) => {
+    try {
+        const { appName, primaryColor, logoText, menuSections } = req.body;
+        let vars = {};
+        try {
+            vars = JSON.parse(fs.readFileSync(VARIABLES_PATH, 'utf8'));
+        } catch (e) {
+            vars = { app_config: {}, login_module: { login_screen: {} }, ui_config: {} };
+        }
+        
+        if (appName) vars.app_config.app_name = appName;
+        if (primaryColor) vars.login_module.login_screen.primary_color = primaryColor;
+        if (menuSections) vars.ui_config = { ...vars.ui_config, menu_sections: menuSections };
+        
+        fs.writeFileSync(VARIABLES_PATH, JSON.stringify(vars, null, 2), 'utf8');
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 

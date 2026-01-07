@@ -565,7 +565,9 @@ const App = () => {
           {/* Botón temporalmente oculto: Historial */}
           {/* <NavItem icon={<History size={22} />} label="Historial" active={activeTab === 'history'} color={config.primaryColor} onClick={() => setActiveTab('history')} /> */}
           <NavItem icon={<User size={22} />} label="Mi perfil" active={activeTab === 'profile'} color={config.primaryColor} onClick={() => setActiveTab('profile')} />
-          <NavItem icon={<Settings size={22} />} label="Configuración" active={activeTab === 'settings'} color={config.primaryColor} onClick={() => setActiveTab('settings')} />
+          {user.role === 'SUPERADMIN' && (
+            <NavItem icon={<Settings size={22} />} label="Configuración" active={activeTab === 'settings'} color={config.primaryColor} onClick={() => setActiveTab('settings')} />
+          )}
         </nav>
         <div className="pt-8 border-t border-slate-700">
           <div className="flex items-center space-x-4 bg-slate-800/40 p-4 rounded-xl">
@@ -761,6 +763,8 @@ const App = () => {
           (user.role === 'ADMIN' || user.role === 'SUPERADMIN')
             ? <AdminProfileTabs user={user} config={config} onLogout={() => setUser(null)} />
             : <ProfileView user={user} config={config} onLogout={() => setUser(null)} />
+        ) : activeTab === 'settings' ? (
+          <ConfigurationView config={config} setConfig={setConfig} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
             <Settings size={48} className="animate-spin-slow" />
@@ -2942,6 +2946,118 @@ const HourDistributionModal = ({ elapsedTime, availableOTs, config, onClose, onS
         </div>
       </motion.div>
     </motion.div>
+  );
+};
+
+const ConfigurationView = ({ config, setConfig }) => {
+  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', menuSections: [] });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/config`);
+        const data = await res.json();
+        setLocalConfig({
+          appName: data.appName || '',
+          primaryColor: data.primaryColor || '#3b82f6',
+          menuSections: data.menuSections || []
+        });
+      } catch (e) {
+        console.error('Error cargando configuración:', e);
+      }
+    };
+    loadConfig();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const res = await fetch(`${API_BASE}/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localConfig)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setConfig({ ...config, ...localConfig });
+        setMessage('✅ Configuración guardada. Los cambios se aplicarán al recargar.');
+      } else {
+        setMessage('❌ Error al guardar: ' + (data.error || 'desconocido'));
+      }
+    } catch (e) {
+      setMessage('❌ Servidor fuera de línea');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateSection = (index, field, value) => {
+    const updated = [...localConfig.menuSections];
+    updated[index] = { ...updated[index], [field]: value };
+    setLocalConfig({ ...localConfig, menuSections: updated });
+  };
+
+  const availableIcons = ['LayoutDashboard', 'Calendar', 'ClipboardCheck', 'History', 'User', 'Settings', 'Clock', 'TrendingUp'];
+
+  return (
+    <div className="mx-auto space-y-8 animate-in fade-in duration-300 px-8 ml-0 md:ml-80">
+      <header className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Configuración de la aplicación</h2>
+          <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Panel exclusivo para SUPERADMIN</p>
+        </div>
+        <button onClick={handleSave} disabled={saving} className="px-6 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center space-x-2">
+          {saving ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+          <span>{saving ? 'Guardando...' : 'Guardar cambios'}</span>
+        </button>
+      </header>
+
+      {message && (
+        <div className={`p-4 rounded-xl font-bold text-sm border ${message.includes('✅') ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+          {message}
+        </div>
+      )}
+
+      <section className="rounded-2xl p-8 border-8 border-slate-100 shadow-lg bg-white">
+        <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600">General</h3>
+        <div className="space-y-6">
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nombre de la aplicación</label>
+            <input type="text" value={localConfig.appName} onChange={(e) => setLocalConfig({ ...localConfig, appName: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700" />
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Color primario</label>
+            <div className="flex items-center space-x-4">
+              <input type="color" value={localConfig.primaryColor} onChange={(e) => setLocalConfig({ ...localConfig, primaryColor: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
+              <input type="text" value={localConfig.primaryColor} onChange={(e) => setLocalConfig({ ...localConfig, primaryColor: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl p-8 border-8 border-slate-100 shadow-lg bg-white">
+        <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600">Menú lateral</h3>
+        <div className="space-y-4">
+          {localConfig.menuSections.map((section, idx) => (
+            <div key={idx} className="flex items-center space-x-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
+              <div className="flex-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Etiqueta</label>
+                <input type="text" value={section.label} onChange={(e) => updateSection(idx, 'label', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700" />
+              </div>
+              <div className="w-48">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Icono</label>
+                <select value={section.icon} onChange={(e) => updateSection(idx, 'icon', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700">
+                  {availableIcons.map(icon => <option key={icon} value={icon}>{icon}</option>)}
+                </select>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 };
 
