@@ -6,7 +6,7 @@ import {
   Check, ArrowRight, ArrowLeft, ChevronLeft, MapPinned,
   Crosshair, X, Signal, SignalHigh, HelpCircle, Calendar, Plus,
   Minus, Save, Info, Users, Edit2, Trash2, CheckCircle, XCircle,
-  Search, Filter, ChevronUp, ChevronDown, ListFilter, Calendar as CalendarIcon, RefreshCw, Archive, CheckCheck
+  Search, Filter, ChevronUp, ChevronDown, ListFilter, Calendar as CalendarIcon, RefreshCw, Archive, CheckCheck, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,6 +22,30 @@ function formatDateWithZeros(dateStr) {
   const year = parts[2];
   return `${day}/${month}/${year}`;
 }
+
+// Helpers para caducidades
+const parseDDMMYYYY = (v) => {
+  if (!v) return null;
+  const str = v.toString().trim();
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (!m) return null;
+  const d = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10) - 1;
+  const y = parseInt(m[3].length === 2 ? (m[3] < 50 ? '20' + m[3] : '19' + m[3]) : m[3], 10);
+  const dt = new Date(y, mo, d);
+  return isNaN(dt.getTime()) ? null : dt;
+};
+
+const caducityStatus = (value) => {
+  const date = parseDDMMYYYY(value);
+  if (!date) return null; // no es fecha
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diffDays = Math.floor((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return 'expired';
+  if (diffDays <= 30) return 'warning';
+  return 'valid';
+};
 
 const App = () => {
   const [user, setUser] = useState(null);
@@ -1149,19 +1173,31 @@ const ProfileView = ({ user, config, onLogout }) => {
                 <span>{groupName}</span>
               </h3>
               <div className="space-y-4">
-                {items.map((item) => (
-                  <div key={`${groupName}-${item.field}`} className="flex items-center justify-between">
-                    <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{item.label}</span>
-                    <div className="flex items-center space-x-3">
-                      <span className="font-bold text-slate-800">{item.value || '-'}</span>
-                      {isEditable(groupName, item) && (
-                        <button onClick={() => handleEditClick(item)} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Editar">
-                          <Edit2 size={16} />
-                        </button>
-                      )}
+                {items.map((item) => {
+                  const isCadGroup = (groupName || '').toLowerCase().includes('caducidades');
+                  const status = isCadGroup ? caducityStatus(item.value) : null;
+                  const isEmpty = !item.value || item.value.toString().trim() === '';
+                  const dotColor = status === 'valid' ? 'bg-emerald-500' : status === 'warning' ? 'bg-amber-500' : status === 'expired' ? 'bg-red-500' : 'bg-slate-300';
+                  return (
+                    <div key={`${groupName}-${item.field}`} className="flex items-center justify-between">
+                      <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{item.label}</span>
+                      <div className="flex items-center space-x-3">
+                        {isCadGroup && (
+                          <span className={`inline-block w-2.5 h-2.5 rounded-full ${dotColor}`} title={status === 'valid' ? 'Vigente' : status === 'warning' ? 'Caduca en ≤30 días' : status === 'expired' ? 'Caducada' : 'Sin fecha'}></span>
+                        )}
+                        <span className="font-bold text-slate-800">{item.value || '-'}</span>
+                        {isEmpty && (
+                          <AlertTriangle size={16} className="text-amber-500" title="Campo vacío" />
+                        )}
+                        {isEditable(groupName, item) && (
+                          <button onClick={() => handleEditClick(item)} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Editar">
+                            <Edit2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -1441,17 +1477,30 @@ const EditWorkerTab = ({ config, currentUser }) => {
                 <span>{groupName}</span>
               </h3>
               <div className="space-y-4">
-                {items.map((item) => (
-                  <div key={`${groupName}-${item.field}`} className="flex items-center justify-between">
-                    <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{item.label}</span>
-                    <div className="flex items-center space-x-3">
-                      <span className="font-bold text-slate-800">{item.value || '-'}</span>
-                      <button onClick={() => handleEditClick(item)} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Editar">
-                        <Edit2 size={16} />
-                      </button>
+                {items.map((item) => {
+                  const isCadGroup = (groupName || '').toLowerCase().includes('caducidades');
+                  const status = isCadGroup ? caducityStatus(item.value) : null;
+                  const isEmpty = !item.value || item.value.toString().trim() === '';
+                  const dotColor = status === 'valid' ? 'bg-emerald-500' : status === 'warning' ? 'bg-amber-500' : status === 'expired' ? 'bg-red-500' : 'bg-slate-300';
+                  return (
+                    <div key={`${groupName}-${item.field}`} className="flex items-center justify-between">
+                      <span className="text-slate-400 text-xs font-black uppercase tracking-widest">{item.label}</span>
+                      <div className="flex items-center space-x-3">
+                        {isCadGroup && (
+                          <span className={`inline-block w-2.5 h-2.5 rounded-full ${dotColor}`} title={status === 'valid' ? 'Vigente' : status === 'warning' ? 'Caduca en ≤30 días' : status === 'expired' ? 'Caducada' : 'Sin fecha'}></span>
+                        )}
+                        <span className="font-bold text-slate-800">{item.value || '-'}
+                        </span>
+                        {isEmpty && (
+                          <AlertTriangle size={16} className="text-amber-500" title="Campo vacío" />
+                        )}
+                        <button onClick={() => handleEditClick(item)} className="p-2 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Editar">
+                          <Edit2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
