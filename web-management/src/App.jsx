@@ -49,7 +49,7 @@ const caducityStatus = (value) => {
 
 const App = () => {
   const [user, setUser] = useState(null);
-  const [config, setConfig] = useState({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', logoText: 'B' });
+  const [config, setConfig] = useState({ appName: 'Bitherm Admin', primaryColor: '#3b82f6', secondaryColor: '#ef4444', sidebarBg: '#0f172a', sidebarText: '#ffffff', sidebarItemText: '#94a3b8', logoText: 'B' });
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -567,7 +567,7 @@ const App = () => {
               section.icon === 'User' ? User :
               section.icon === 'Settings' ? Settings : LayoutDashboard;
             return (
-              <NavItem key={section.id} icon={<IconComponent size={22} />} label={section.label} active={activeTab === section.id} color={config.secondaryColor || config.primaryColor} onClick={() => setActiveTab(section.id)} />
+              <NavItem key={section.id} icon={<IconComponent size={22} />} label={section.label} active={activeTab === section.id} color={config.secondaryColor || config.primaryColor} itemColor={config.sidebarItemText || '#94a3b8'} onClick={() => setActiveTab(section.id)} />
             );
           })}
         </nav>
@@ -839,10 +839,10 @@ const App = () => {
   );
 };
 
-const NavItem = ({ icon, label, active = false, color, onClick }) => (
-  <div onClick={onClick} className={`flex items-center space-x-4 p-4 rounded-xl cursor-pointer transition-all ${active ? 'text-white shadow-xl translate-x-1' : 'text-slate-500 hover:text-white hover:bg-slate-800'
-    }`} style={active ? { backgroundColor: color } : {}}>
-    {icon} <span className="font-bold">{label}</span>
+const NavItem = ({ icon, label, active = false, color, itemColor, onClick }) => (
+  <div onClick={onClick} className={`flex items-center space-x-4 p-4 rounded-xl cursor-pointer transition-all ${active ? 'text-white shadow-xl translate-x-1' : 'hover:text-white hover:bg-slate-800'
+    }`} style={active ? { backgroundColor: color, color: '#ffffff' } : { color: itemColor }}>
+    {icon} <span className="font-bold whitespace-pre-line">{label}</span>
   </div>
 );
 
@@ -2952,7 +2952,7 @@ const HourDistributionModal = ({ elapsedTime, availableOTs, config, onClose, onS
 };
 
 const ConfigurationView = ({ config, setConfig }) => {
-  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', secondaryColor: '', sidebarBg: '', sidebarText: '', logoText: '', menuSections: [] });
+  const [localConfig, setLocalConfig] = useState({ appName: '', primaryColor: '', secondaryColor: '', sidebarBg: '', sidebarText: '', sidebarItemText: '', logoText: '', menuSections: [] });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -2967,6 +2967,7 @@ const ConfigurationView = ({ config, setConfig }) => {
           secondaryColor: data.secondaryColor || '#ef4444',
           sidebarBg: data.sidebarBg || '#0f172a',
           sidebarText: data.sidebarText || '#ffffff',
+          sidebarItemText: data.sidebarItemText || '#94a3b8',
           logoText: data.logoText || 'B',
           menuSections: data.menuSections || []
         });
@@ -2996,6 +2997,7 @@ const ConfigurationView = ({ config, setConfig }) => {
           secondaryColor: localConfig.secondaryColor,
           sidebarBg: localConfig.sidebarBg,
           sidebarText: localConfig.sidebarText,
+          sidebarItemText: localConfig.sidebarItemText,
           logoText: localConfig.logoText,
           menuSections: localConfig.menuSections
         });
@@ -3042,7 +3044,7 @@ const ConfigurationView = ({ config, setConfig }) => {
         <div className="space-y-6">
           <div>
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Nombre de la aplicación</label>
-            <input type="text" value={localConfig.appName} onChange={(e) => setLocalConfig({ ...localConfig, appName: e.target.value })} className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700" />
+            <textarea value={localConfig.appName} onChange={(e) => setLocalConfig({ ...localConfig, appName: e.target.value })} rows="2" className="w-full px-4 py-3 border border-slate-200 rounded-xl font-bold text-slate-700 resize-none" placeholder="Presiona Enter para salto de línea" />
           </div>
           <div>
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Icono del logo (1 letra)</label>
@@ -3076,10 +3078,17 @@ const ConfigurationView = ({ config, setConfig }) => {
             </div>
           </div>
           <div>
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Texto barra lateral</label>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Texto barra lateral (título)</label>
             <div className="flex items-center space-x-4">
               <input type="color" value={localConfig.sidebarText} onChange={(e) => setLocalConfig({ ...localConfig, sidebarText: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
               <input type="text" value={localConfig.sidebarText} onChange={(e) => setLocalConfig({ ...localConfig, sidebarText: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Texto items menú</label>
+            <div className="flex items-center space-x-4">
+              <input type="color" value={localConfig.sidebarItemText} onChange={(e) => setLocalConfig({ ...localConfig, sidebarItemText: e.target.value })} className="w-16 h-12 border border-slate-200 rounded-xl cursor-pointer" />
+              <input type="text" value={localConfig.sidebarItemText} onChange={(e) => setLocalConfig({ ...localConfig, sidebarItemText: e.target.value })} className="flex-1 px-4 py-3 border border-slate-200 rounded-xl font-mono text-slate-700" />
             </div>
           </div>
         </div>
@@ -3089,10 +3098,10 @@ const ConfigurationView = ({ config, setConfig }) => {
         <h3 className="font-black text-sm uppercase tracking-widest mb-6 text-slate-600">Menú lateral</h3>
         <div className="space-y-4">
           {localConfig.menuSections.map((section, idx) => (
-            <div key={idx} className="flex items-center space-x-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
+            <div key={idx} className="flex items-start space-x-4 p-4 border border-slate-200 rounded-xl bg-slate-50">
               <div className="flex-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Etiqueta</label>
-                <input type="text" value={section.label} onChange={(e) => updateSection(idx, 'label', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700" />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Etiqueta (presiona Enter para salto de línea)</label>
+                <textarea value={section.label} onChange={(e) => updateSection(idx, 'label', e.target.value)} rows="2" className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 resize-none" />
               </div>
               <div className="w-48">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 block">Icono</label>
