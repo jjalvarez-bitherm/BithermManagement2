@@ -54,7 +54,10 @@ const App = () => {
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const [geoModal, setGeoModal] = useState({ show: false, accuracy: null, target: 40 });
+  // Helper: detectar dispositivo móvil
+  const isMobile = () => /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(navigator.userAgent) || window.innerWidth < 768;
+
+  const [geoModal, setGeoModal] = useState({ show: false, accuracy: null, target: 40, status: '', retryMode: 'high' });
   const [geoError, setGeoError] = useState(null);
   const [showFallback, setShowFallback] = useState(false);
   const latestPosRef = useRef(null);
@@ -283,10 +286,13 @@ const App = () => {
         return;
       }
 
+      const mobile = isMobile();
+      const targetAccuracy = mobile ? 30 : 100;
+
       setGeoError(null);
       setShowFallback(false);
       latestPosRef.current = null;
-      setGeoModal({ show: true, accuracy: null, target: 40 });
+      setGeoModal({ show: true, accuracy: null, target: targetAccuracy, status: mobile ? 'Buscando GPS...' : 'Buscando ubicación...', retryMode: 'high' });
 
       const finish = (position) => {
         if (watchIdRef.current !== null) {
@@ -301,10 +307,8 @@ const App = () => {
         for (const loc of locations) {
           const [locLat, locLon] = loc.coords.split(',').map(c => parseFloat(c.trim()));
           const distance = calculateDistance(lat, lon, locLat, locLon);
-          // Si la señal es buena (<=40), comprobamos tolerancia exacta.
-          // Si la señal es de PC/WiFi (>40), somos más flexibles si la distancia es coherente.
-          const isCloseEnough = (position.coords.accuracy <= 40 && distance <= loc.tolerance) ||
-            (position.coords.accuracy > 40 && distance <= Math.max(loc.tolerance, position.coords.accuracy));
+          const isCloseEnough = (position.coords.accuracy <= targetAccuracy && distance <= loc.tolerance) ||
+            (position.coords.accuracy > targetAccuracy && distance <= Math.max(loc.tolerance, position.coords.accuracy * 1.5));
 
           if (isCloseEnough) { detectedLocation = loc.name; break; }
         }
@@ -316,6 +320,9 @@ const App = () => {
       const startWatching = (highAccuracy) => {
         if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
 
+        const mode = highAccuracy ? 'high' : 'low';
+        setGeoModal(prev => ({ ...prev, retryMode: mode, status: highAccuracy ? (mobile ? 'GPS activado...' : 'Alta precisión...') : 'Modo Wi-Fi/Red...' }));
+
         watchIdRef.current = navigator.geolocation.watchPosition(
           (position) => {
             const acc = Math.round(position.coords.accuracy);
@@ -323,19 +330,20 @@ const App = () => {
             setGeoModal(prev => ({ ...prev, accuracy: acc }));
             setShowFallback(true);
 
-            if (acc <= 40) {
+            if (acc <= targetAccuracy) {
               finish(position);
             }
           },
           (error) => {
             console.warn("Geo error:", error);
             if (highAccuracy && (error.code === 3 || error.code === 2)) {
-              startWatching(false);
+              setGeoModal(prev => ({ ...prev, status: 'Reintentando con baja precisión...' }));
+              setTimeout(() => startWatching(false), 500);
             } else {
               let msg = "Error de ubicación.";
-              if (error.code === 1) msg = "Permiso denegado.";
+              if (error.code === 1) msg = "Permiso denegado. Activa ubicación en ajustes.";
               else if (error.code === 2) msg = "Señal no disponible.";
-              else if (error.code === 3) msg = "Tiempo agotado.";
+              else if (error.code === 3) msg = "Tiempo agotado. Usa el botón para continuar.";
               setGeoError(msg);
               setShowFallback(true);
             }
@@ -343,7 +351,7 @@ const App = () => {
           {
             enableHighAccuracy: highAccuracy,
             maximumAge: 0,
-            timeout: highAccuracy ? 10000 : 30000
+            timeout: highAccuracy ? 20000 : 8000
           }
         );
       };
@@ -822,9 +830,7 @@ const App = () => {
 
               <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Detectando posición...</h3>
               <p className="text-slate-500 font-bold mb-8 leading-snug">
-                {geoModal.accuracy > 100
-                  ? 'Señal de red detectada (baja precisión). Puedes registrar ahora o esperar.'
-                  : 'El sistema está buscando tu coordenada exacta...'}
+                {geoModal.status || 'El sistema está buscando tu ubicación...'}
               </p>
 
               {geoError && (
@@ -838,14 +844,24 @@ const App = () => {
                 <div className="bg-slate-50 rounded-2xl p-6 border-2 border-slate-100 mb-6">
                   <div className="flex justify-between items-end mb-4">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Precisión actual</span>
-                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Objetivo: {geoModal.target}m</span>
+                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Objetivo: ≤{geoModal.target}m</span>
                   </div>
                   <div className="flex items-baseline justify-center space-x-2">
-                    <span className={`text-5xl font-black tabular-nums ${geoModal.accuracy ? 'text-slate-900' : 'text-slate-300'}`}>
+                    <span className={`text-5xl font-black tabular-nums ${
+                      !geoModal.accuracy ? 'text-slate-300' :
+                      geoModal.accuracy <= geoModal.target ? 'text-emerald-600' :
+                      geoModal.accuracy <= geoModal.target * 2 ? 'text-amber-600' :
+                      'text-red-600'
+                    }`}>
                       {geoModal.accuracy || '--'}
                     </span>
                     <span className="text-xl font-black text-slate-400">m</span>
                   </div>
+                  {geoModal.accuracy && geoModal.accuracy > geoModal.target && (
+                    <p className="text-[10px] font-bold text-slate-500 mt-3 uppercase tracking-wide">
+                      {geoModal.accuracy <= geoModal.target * 2 ? '⚠️ Precisión aceptable' : '❌ Baja precisión (Wi-Fi/Red)'}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -854,7 +870,9 @@ const App = () => {
                   onClick={() => window.__forceGeo()}
                   className="w-full bg-slate-900 text-white font-black py-4 px-6 rounded-xl shadow-xl hover:bg-black transition-all flex items-center justify-center space-x-3 overflow-hidden">
                   <SignalHigh size={20} className="text-emerald-400" />
-                  <span className="truncate">REGISTRAR CON ESTA SEÑAL</span>
+                  <span className="truncate">
+                    {geoModal.accuracy && geoModal.accuracy <= geoModal.target * 2 ? 'ACEPTAR UBICACIÓN ACTUAL' : 'CONTINUAR SIN GPS'}
+                  </span>
                 </motion.button>
               )}
             </motion.div>
