@@ -387,7 +387,8 @@ app.get('/api/profile/:username', async (req, res) => {
         const sheets = await getSheetsService();
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'TRABAJADORES!A1:Z500',
+            // Ampliamos el rango para incluir columnas más allá de Z
+            range: 'TRABAJADORES!A1:ZZ500',
         });
         const rows = response.data.values || [];
         if (!rows || rows.length < 2) return res.status(404).json({ message: 'Sin datos' });
@@ -404,45 +405,65 @@ app.get('/api/profile/:username', async (req, res) => {
         const userRow = dataRows.find(r => (r[appIndex] || '').toString().trim().toLowerCase() === username.trim().toLowerCase());
         if (!userRow) return res.status(404).json({ message: 'Usuario no encontrado' });
 
-        // Helper seguro para leer valor por columna
-        const val = (col) => {
-            const idx = headers.indexOf(col);
-            return idx !== -1 && userRow.length > idx ? (userRow[idx] || '') : '';
+        // Normalizador de nombres de columna para tolerar variantes
+        const normalize = (s) => (s || '')
+            .toString()
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, '');
+
+        // Buscar índice real de cabecera entre varias opciones
+        const findHeader = (candidates) => {
+            const candList = Array.isArray(candidates) ? candidates : [candidates];
+            const normalizedHeaders = headers.map(h => normalize(h));
+            for (const c of candList) {
+                const idx = normalizedHeaders.indexOf(normalize(c));
+                if (idx !== -1) return idx;
+            }
+            return -1;
+        };
+
+        // Obtener valor y nombre de campo real según candidatos
+        const valField = (candidates) => {
+            const idx = findHeader(candidates);
+            const value = idx !== -1 && userRow.length > idx ? (userRow[idx] || '') : '';
+            const realField = idx !== -1 ? headers[idx] : (Array.isArray(candidates) ? candidates[0] : candidates);
+            return { value, field: realField };
         };
 
         // Mapeo de grupos a campos
         const groups = {
             'Datos Personales': [
-                { label: 'ID', field: 'COD', value: val('COD') },
-                { label: 'DNI', field: 'DNI', value: val('DNI') },
-                { label: 'Nombre', field: 'NOMBRE', value: val('NOMBRE') },
-                { label: 'Apellidos', field: 'APELLIDOS', value: val('APELLIDOS') },
-                { label: 'Fecha nacimiento', field: 'FECHA_NAC', value: val('FECHA_NAC') },
-                { label: 'Usuario APP', field: 'APP', value: val('APP') },
-                { label: 'Apodo', field: 'APODO', value: val('APODO') },
-                { label: 'Nº Cuenta', field: 'N_CUENTA', value: val('N_CUENTA') },
+                (() => { const { value, field } = valField('COD'); return { label: 'ID', field, value }; })(),
+                (() => { const { value, field } = valField('DNI'); return { label: 'DNI', field, value }; })(),
+                (() => { const { value, field } = valField('NOMBRE'); return { label: 'Nombre', field, value }; })(),
+                (() => { const { value, field } = valField('APELLIDOS'); return { label: 'Apellidos', field, value }; })(),
+                (() => { const { value, field } = valField(['FECHA_NAC','FECHANAC']); return { label: 'Fecha nacimiento', field, value }; })(),
+                (() => { const { value, field } = valField('APP'); return { label: 'Usuario APP', field, value }; })(),
+                (() => { const { value, field } = valField('APODO'); return { label: 'Apodo', field, value }; })(),
+                (() => { const { value, field } = valField(['N_CUENTA','NCUENTA']); return { label: 'Nº Cuenta', field, value }; })(),
             ],
             'Información Laboral': [
-                { label: 'Categoría', field: 'CATEGORIA', value: val('CATEGORIA') },
-                { label: 'Alta empresa', field: 'ALTA_EMP', value: val('ALTA_EMP') },
-                { label: 'Baja empresa', field: 'BAJA_EMP', value: val('BAJA_EMP') },
-                { label: 'Equipo asignado', field: 'EQUIPO_ASIGN', value: val('EQUIPO_ASIGN') },
-                { label: 'Rol', field: 'ROL', value: val('ROL') },
-                { label: 'SW Web', field: 'SW WEB', value: val('SW WEB') },
+                (() => { const { value, field } = valField('CATEGORIA'); return { label: 'Categoría', field, value }; })(),
+                (() => { const { value, field } = valField(['ALTA_EMP','ALTAEMP']); return { label: 'Alta empresa', field, value }; })(),
+                (() => { const { value, field } = valField(['BAJA_EMP','BAJAEMP']); return { label: 'Baja empresa', field, value }; })(),
+                (() => { const { value, field } = valField(['EQUIPO_ASIGN','EQUIPOASIGN']); return { label: 'Equipo asignado', field, value }; })(),
+                (() => { const { value, field } = valField('ROL'); return { label: 'Rol', field, value }; })(),
+                (() => { const { value, field } = valField('SW WEB'); return { label: 'SW Web', field, value }; })(),
             ],
             'Datos de contacto': [
-                { label: 'Teléfono empresa', field: 'TELF_EMP', value: val('TELF_EMP') },
-                { label: 'Email empresa', field: 'EMAIL_EMP', value: val('EMAIL_EMP') },
-                { label: 'Teléfono personal', field: 'TELF_PERS', value: val('TELF_PERS') },
-                { label: 'Email personal', field: 'EMAIL_PERS', value: val('EMAIL_PERS') },
+                (() => { const { value, field } = valField(['TELF_EMP','TELFEMP']); return { label: 'Teléfono empresa', field, value }; })(),
+                (() => { const { value, field } = valField(['EMAIL_EMP','EMAILEMP']); return { label: 'Email empresa', field, value }; })(),
+                (() => { const { value, field } = valField(['TELF_PERS','TELFPERS']); return { label: 'Teléfono personal', field, value }; })(),
+                (() => { const { value, field } = valField(['EMAIL_PERS','EMAILPERS']); return { label: 'Email personal', field, value }; })(),
             ],
             'Caducidades / Otros': [
-                { label: 'Reconocimiento médico', field: 'R.MEDICO', value: val('R.MEDICO') },
-                { label: 'Control de acceso', field: 'C.ACCESO', value: val('C.ACCESO') },
-                { label: 'Supervisor ejecución', field: 'SUP.EJEC', value: val('SUP.EJEC') },
-                { label: 'Fecha calibración', field: 'FECHA_CAL', value: val('FECHA_CAL') },
-                { label: 'Test', field: 'TEST', value: val('TEST') },
-                { label: 'Test2', field: 'TEST2', value: val('TEST2') },
+                (() => { const { value, field } = valField(['R.MEDICO','R_MEDICO','RMEDICO','R MEDICO']); return { label: 'Reconocimiento médico', field, value: formatDateWithZeros(value) || value }; })(),
+                (() => { const { value, field } = valField(['C.ACCESO','C_ACCESO','CACCESO','C ACCESO']); return { label: 'Control de acceso', field, value: formatDateWithZeros(value) || value }; })(),
+                (() => { const { value, field } = valField(['SUP.EJEC','SUP_EJEC','SUPEJEC','SUP EJEC']); return { label: 'Supervisor ejecución', field, value: formatDateWithZeros(value) || value }; })(),
+                (() => { const { value, field } = valField(['FECHA_CAL','FECHACAL']); return { label: 'Fecha calibración', field, value: formatDateWithZeros(value) || value }; })(),
+                (() => { const { value, field } = valField('TEST'); return { label: 'Test', field, value }; })(),
+                (() => { const { value, field } = valField('TEST2'); return { label: 'Test2', field, value }; })(),
             ],
         };
 
@@ -462,7 +483,8 @@ app.post('/api/profile/update', async (req, res) => {
         const sheets = await getSheetsService();
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'TRABAJADORES!A1:Z500',
+            // Aseguramos que la actualización localiza columnas más allá de Z
+            range: 'TRABAJADORES!A1:ZZ500',
         });
 
         const rows = response.data.values || [];
